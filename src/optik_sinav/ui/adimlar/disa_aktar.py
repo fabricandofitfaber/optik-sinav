@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel,
+    QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QGroupBox, QGridLayout, QHBoxLayout, QHeaderView, QLabel,
     QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
 )
 
@@ -89,19 +89,19 @@ class DisaAktarAdimi(Adim):
         self.duzen.addWidget(self.onizleme_secim)
         self.duzen.addWidget(self.onizleme, 1)
 
-        s = QHBoxLayout()
-        for metin, islev, ipucu in (
+        s = QGridLayout()
+        for sira, (metin, islev, ipucu) in enumerate((
             ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon profiline göre dosya yazar."),
             ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş profiline göre dosya yazar."),
             ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
             ("Panoya kopyala…", self._panoya, "Seçili sütunları sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalar."),
             ("Öğrenci karneleri…", self._karneler, "Her öğrenciye bir sayfa: puan, sıra, öğrenme çıktıları ve soru soru sonuç. Tarayıcıda açılır, yazdırılır."),
             ("Tüm raporları klasöre yaz…", self._hepsi, "Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları."),
-        ):
+        )):
             b = QPushButton(metin)
             b.setToolTip(ipucu)
             b.clicked.connect(islev)
-            s.addWidget(b)
+            s.addWidget(b, sira // 3, sira % 3)
         self.duzen.addLayout(s)
         self.bilgi = QLabel()
         self.bilgi.setWordWrap(True)

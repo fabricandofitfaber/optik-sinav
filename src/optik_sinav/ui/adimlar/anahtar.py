@@ -272,9 +272,10 @@ class AnahtarAdimi(Adim):
                                        "yapıştırılacak soru numarası, puan ve öğrenme çıktısı yüzdelerini panoya kopyalar.")
         self.sistem_dugmesi.setStyleSheet("font-weight: bold")
         self.sistem_dugmesi.clicked.connect(self._sisteme_kopyala)
-        for x in (self.sistem_dugmesi, b1, b2, b3):
-            s.addWidget(x)
-        s.addStretch(1)
+        s = QGridLayout()
+        for sira, x in enumerate((self.sistem_dugmesi, b1, b2, b3)):
+            s.addWidget(x, sira // 2, sira % 2)
+        s.setColumnStretch(2, 1)
         a.addLayout(s)
         self.duzen.addWidget(alt)
         durum.degisti.connect(self.durumdan_yukle)

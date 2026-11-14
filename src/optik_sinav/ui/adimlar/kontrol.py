@@ -26,6 +26,12 @@ def _salt_okunur_tablo(basliklar: list[str]) -> QTableWidget:
     return t
 
 
+
+def _sarili(metin):
+    l = QLabel(metin)
+    l.setWordWrap(True)
+    return l
+
 class YapistirilabilirTablo(QTableView):
     """Excel'den kopyalanan blok (sekmeyle ayrılmış) seçili hücreden başlayarak yapıştırılır."""
 
@@ -96,7 +102,7 @@ class KontrolAdimi(Adim):
             s.addWidget(b)
         s.addStretch(1)
         v.addLayout(s)
-        v.addWidget(QLabel("Ya da tabloda hücreye tıklayıp yazın. Excel'den bir bloğu kopyalayıp seçili hücreye Ctrl+V (Mac'te Cmd+V) "
+        v.addWidget(_sarili("Ya da tabloda hücreye tıklayıp yazın. Excel'den bir bloğu kopyalayıp seçili hücreye Ctrl+V (Mac'te Cmd+V) "
                            "ile yapıştırabilirsiniz. Boş bırakılan öğrenci sınava girmemiş sayılır. \"Kâğıttaki toplam\" sütunu isteğe bağlıdır; "
                            "tutmazsa kırmızı görünür."))
         self.klasik_model = KlasikGirisModeli(self.durum, self)
@@ -127,7 +133,7 @@ class KontrolAdimi(Adim):
         self.olmayan_tablo.doubleClicked.connect(self._olmayan_duzelt)
         w = QWidget()
         v = QVBoxLayout(w)
-        v.addWidget(QLabel("Birebir eşleşmeyen numaralar otomatik eşleştirilmez. Numarayı düzeltmek için satıra çift tıklayın."))
+        v.addWidget(_sarili("Birebir eşleşmeyen numaralar otomatik eşleştirilmez. Numarayı düzeltmek için satıra çift tıklayın."))
         v.addWidget(self.olmayan_tablo)
         self.sekmeler.addTab(w, "Listede olmayanlar")
         self.duzeltme_tablo = _salt_okunur_tablo(["Dosya satırı", "Alan", "Eski değer", "Yeni değer", "Kim", "Ne zaman"])

@@ -105,11 +105,13 @@ class DosyalarAdimi(Adim):
         self.liste_no = QComboBox()
         self.liste_ad = QComboBox()
         self.liste_soyad = QComboBox()
-        s = QHBoxLayout()
-        for etiket, w in (("Sayfa", self.liste_sayfa), ("Başlık satırı", self.liste_baslik), ("Numara", self.liste_no),
-                          ("Ad (soyad)", self.liste_ad), ("Soyad", self.liste_soyad)):
-            s.addWidget(QLabel(etiket))
-            s.addWidget(w, 1)
+        s = QGridLayout()
+        for sira, (etiket, w) in enumerate((("Sayfa", self.liste_sayfa), ("Başlık satırı", self.liste_baslik),
+                                            ("Numara", self.liste_no), ("Ad (soyad)", self.liste_ad), ("Soyad", self.liste_soyad))):
+            s.addWidget(QLabel(etiket), sira // 3, 2 * (sira % 3))
+            s.addWidget(w, sira // 3, 2 * (sira % 3) + 1)
+        for k in (1, 3, 5):
+            s.setColumnStretch(k, 1)
         self.esleme_kutusu = QWidget()
         self.esleme_kutusu.setLayout(s)
         s.setContentsMargins(0, 0, 0, 0)

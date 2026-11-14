@@ -162,6 +162,7 @@ class IstatistikAdimi(Adim):
         self.duzen.addWidget(self.sekmeler, 1)
         self.not_ = QLabel("Bütün tablolar ve grafikler 6. adımdaki \"Tüm raporları klasöre yaz\" ile Excel'e (istatistik ve öğrenme çıktısı dosyaları) yazılır.")
         self.not_.setStyleSheet("color: gray")
+        self.not_.setWordWrap(True)
         self.duzen.addWidget(self.not_)
 
     def girildi(self):

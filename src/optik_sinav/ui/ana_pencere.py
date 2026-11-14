@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
-    QApplication, QFileDialog, QHBoxLayout, QLabel, QListWidget, QMainWindow, QMessageBox, QPushButton, QStackedWidget,
+    QApplication, QFileDialog, QFrame, QScrollArea, QHBoxLayout, QLabel, QListWidget, QMainWindow, QMessageBox, QPushButton, QStackedWidget,
     QVBoxLayout, QWidget,
 )
 
@@ -43,7 +43,11 @@ class AnaPencere(QMainWindow):
         self.adimlar = [DosyalarAdimi(self.durum), AnahtarAdimi(self.durum), PuanlamaAdimi(self.durum),
                         KontrolAdimi(self.durum), IstatistikAdimi(self.durum), DisaAktarAdimi(self.durum)]
         for a in self.adimlar:
-            self.yigin.addWidget(a)
+            kaydirma = QScrollArea()
+            kaydirma.setWidgetResizable(True)
+            kaydirma.setFrameShape(QFrame.NoFrame)
+            kaydirma.setWidget(a)
+            self.yigin.addWidget(kaydirma)
             a.tamamlik_degisti.connect(self._dugmeleri_guncelle)
         sag.addWidget(self.yigin, 1)
         alt = QHBoxLayout()

@@ -193,13 +193,14 @@ pyinstaller --noconfirm optik_sinav.spec             # paket
 
 Puanlama motoru (`src/optik_sinav/core/`) arayüzden bağımsızdır ve saf fonksiyonlardan oluşur. Bir `v*` etiketi gönderildiğinde GitHub Actions testleri macOS ve Windows'ta çalıştırır, paketleri üretir ve Sürümler sayfasına ekler.
 
-## Yapılacaklar
+## Bilinen sınırlamalar
 
-- [ ] Sınav Akreditasyon soru bazlı giriş ekranının gerçek biçimi ve şablonu: şablon gelince profil eklenecek.
-- [ ] Not Giriş ekranının toplu aktarım biçimi.
-- [ ] Optik okuyucunun özgün dosya kodlamasının okuyucudan doğrudan alınmış bir kopyayla teyidi.
-- [ ] Optik formda kitapçık alanının konumu (gerçek A/B kitapçıklı bir `.dat` dosyasıyla teyit).
-- [ ] Optik ve klasik bölümü birlikte olan karma sınav.
+- Optik ve klasik bölümü birlikte olan karma sınav henüz desteklenmiyor.
+- Akademik Bilgi Sistemi'nin öğrenci puanı ve not giriş ekranları için hazırlanan aktarım dosyaları örnek biçimdedir; sisteme yüklemeden önce bir öğrencinin satırını ekranla karşılaştırın. Soru tanımı aktarımı (2. adım) sistemin kendi ekranına göre hazırlanmıştır.
+- Dönem sonu notundaki harf tabloları örnektir; kendi üniversitenizin yönetmeliğine göre değiştirin.
+- Komut satırı sürümü klasik sınavı ve kitapçıkları desteklemiyor; bunlar için uygulamayı kullanın.
+
+Bir hata görürseniz ya da bir öneriniz varsa [GitHub'da bildirin](https://github.com/fabricandofitfaber/optik-sinav/issues).
 
 ## Üçüncü taraf kitaplıklar
 
@@ -207,4 +208,6 @@ Tarayıcı sürümüne şu kitaplıklar gömülüdür (sürümler sabittir, `web
 
 ## Lisans
 
-MIT. Ayrıntı için `LICENSE` dosyasına bakın.
+[MIT lisansı](LICENSE) ile yayımlanmıştır. Kısaca: programı ücretsiz kullanabilir, kopyalayabilir, değiştirebilir ve başkalarıyla paylaşabilirsiniz; paylaşırken lisans metnini ve telif satırını korumanız yeterlidir. Program "olduğu gibi" sunulur, hiçbir garanti verilmez: sisteme aktarmadan önce puanları kontrol etmek kullanıcının sorumluluğundadır. Bağlayıcı olan, `LICENSE` dosyasındaki İngilizce metindir.
+
+Telif hakkı © 2026 Ali Osman Öztop.

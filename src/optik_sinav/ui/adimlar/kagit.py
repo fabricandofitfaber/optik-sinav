@@ -45,8 +45,10 @@ class KagitPaneli(QGroupBox):
         self.durum_etiketi = QLabel()
         self.durum_etiketi.setWordWrap(True)
         v.addWidget(self.durum_etiketi)
-        v.addWidget(QLabel("Kâğıtlar elinizdeki sırayla gelsin: öğrenciyi bulun, puanları yazın (Enter bir sonraki kutuya geçer), "
-                           "son kutuda Enter kaydeder ve yeni kâğıda hazırlar."))
+        yol = QLabel("Kâğıtlar elinizdeki sırayla gelsin: öğrenciyi bulun, puanları yazın (Enter bir sonraki kutuya geçer), "
+                     "son kutuda Enter kaydeder ve yeni kâğıda hazırlar.")
+        yol.setWordWrap(True)
+        v.addWidget(yol)
 
     def kur(self):
         """Soru sayısı ve puanlar değişmiş olabilir: kutuları yeniden kurar."""

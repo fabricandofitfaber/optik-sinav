@@ -59,6 +59,7 @@ Ayrıntılı tanım `PROJE_TANIMI.md` dosyasındadır. Bu dosya önemli kararlar
 - **Karne:** `export/karne.py` ve `web/src/donem.js` aynı HTML'i üretir; güçlü/gelişmeli = sınıftan ±10 puan, yoksa en yüksek/en düşük fark.
 - **Kâğıt sırasıyla giriş (klasik):** `ui/adimlar/kagit.py` ve `arayuz2.js` (`kagitPaneli`); numara ya da Türkçe harf duyarsız ad parçasıyla arama. `SinavProjesi.klasik_toplamlar`: kâğıttaki toplam; `klasik_degerlendir(..., toplamlar)` tutmazsa uyarır (iki motorda, paritede).
 - **Dağıtım:** Sürüm dosya adları sürümsüzdür (`OptikSinav.html`, `OptikSinav-Mac-AppleSilicon.dmg`, `OptikSinav-Mac-Intel.dmg`, `OptikSinav-Windows-Kurulum.exe`, `OptikSinav-Windows-Tasinabilir.zip`); README ve indirme sayfası `releases/latest/download/<dosya>` bağlantılarını kullanır. İndirme sayfası `site/index.html`, GitHub Pages'e `.github/workflows/sayfa.yml` ile yayımlanır (uygulama da `uygulama.html` olarak).
+- Masaüstünde her adım `QScrollArea` içindedir ve uzun açıklamalar satıra kayar; altı adım 900×600 pencereye yatay kaydırmasız sığar. Yeni uzun `QLabel` eklerken `setWordWrap(True)` verin, uzun düğme sıralarını ızgaraya dizin.
 - Okuyucu şablonu 1. adımda "Gelişmiş ayarlar" düğmesinin arkasındadır; okunan satırların %30'undan çoğu uyarılıysa kendiliğinden açılır.
 - Rapor dosyası adı `madde_analizi` yerine `istatistik` oldu (grafikli, çok sayfalı).
 - Kabul testi 6 (63 kişilik liste) için gerçek 63 kişilik liste yok; mevcut 61 kişilik listeye iki uydurma öğrenci eklenerek denenir.
@@ -86,4 +87,5 @@ Yerel macOS derlemesinde imza `com.apple.provenance` öznitelikleri yüzünden d
 - [ ] Gerçek A/B kitapçıklı bir `.dat` ile kitapçık alanının konumu (UTL4513 formunda 35-36. sütunlar boş; kitapçık alanı olabilir).
 - [ ] Karma sınav (optik + klasik bölüm).
 - [ ] Komut satırı (`cli.py`) klasik sınavı ve kitapçığı henüz desteklemiyor.
+- [ ] Bu liste geliştirici içindir; README'de yalnızca kullanıcıya dönük "Bilinen sınırlamalar" vardır, ikisi birlikte güncellenir.
 - [x] GitHub Actions Intel macOS çalıştırıcısı (`macos-15-intel`) v1.0.0 sürümünde çalıştı (14 Kasım 2026).
