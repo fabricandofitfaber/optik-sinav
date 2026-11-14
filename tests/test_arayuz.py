@@ -23,22 +23,28 @@ def qapp_():
     return QApplication.instance() or QApplication([])
 
 
+
+def _hazir(pencere):
+    """Bulunulan adımın zorunlu bilgileri tam mı (eksikler artık gezinmeyi engellemez, yalnızca gösterilir)."""
+    return not pencere.adimlar[pencere.yigin.currentIndex()].eksikler()
+
 def test_butun_adimlar(pencere, fix, tmp_path):
     from optik_sinav.ui.adimlar.kontrol import KontrolAdimi
 
     d = pencere.durum
-    assert not pencere.sonraki.isEnabled()  # dosya ve ders kodu yok
+    assert not _hazir(pencere)  # dosya yok (ders kodu isteğe bağlı)
+    assert pencere.sonraki.isEnabled()  # eksik olsa da ileri geçilebilir
     pencere.adimlar[0].ders_kodu.setText("UYD1001")
     pencere.adimlar[0]._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
     pencere.adimlar[0]._liste_ac(str(fix / "uydurma_liste.xlsx"))
     assert d.proje.okuyucu.soru_sayisi == 10 and len(d.okuma.kayitlar) == 11
-    assert pencere.sonraki.isEnabled()
+    assert _hazir(pencere)
     pencere.sonraki.click()
     a = pencere.adimlar[1]
-    assert pencere.yigin.currentIndex() == 1 and not pencere.sonraki.isEnabled()
+    assert pencere.yigin.currentIndex() == 1 and not _hazir(pencere)
     a.hizli.setText("ABCDE ABCDE")
     a._hizli_uygula()
-    assert d.proje.anahtar.metne() == "ABCDEABCDE" and pencere.sonraki.isEnabled()
+    assert d.proje.anahtar.metne() == "ABCDEABCDE" and _hazir(pencere)
     # yuvarlak şıklarla değiştirme
     a.satirlar[0].kabarciklar["B"].click()  # 1. soru B
     assert d.proje.anahtar.sorular[0].dogru == "B"
@@ -56,12 +62,12 @@ def test_butun_adimlar(pencere, fix, tmp_path):
     a.satirlar[0].oc.setText("1, 2")
     a._oc_degisti(0)
     assert d.proje.anahtar.sorular[0].cikti_dagilimi() == {"Ö01": 50, "Ö02": 50}
-    assert not pencere.sonraki.isEnabled()  # öteki sorulara çıktı atanmadı
+    assert not _hazir(pencere)  # öteki sorulara çıktı atanmadı
     for i in range(1, 10):
         a.satirlar[i].oc.setText("Ö01 %70, Ö03")
         a._oc_degisti(i)
     assert d.proje.anahtar.sorular[1].cikti_dagilimi() == {"Ö01": 70, "Ö03": 30}
-    assert pencere.sonraki.isEnabled()
+    assert _hazir(pencere)
     # soru puanı değiştirilince soru bazlı puana geçilir, toplam korunur
     a.satirlar[0].puan.setValue(12)
     from optik_sinav.core.modeller import PuanYontemi
@@ -113,13 +119,13 @@ def test_kitapcik_arayuzu(pencere, fix):
     assert a.sekmeler.count() == 2
     a.sekmeler.setCurrentIndex(1)
     assert a.kitapcik == "B" and a.satirlar[0].esleme is not None and a.satirlar[0].puan is None
-    assert not pencere.sonraki.isEnabled()  # B anahtarı boş
+    assert not _hazir(pencere)  # B anahtarı boş
     a.hizli.setText("EDCBAEDCBA")
     a._hizli_uygula()
     assert d.proje.anahtar.kitapcik_anahtarlari["B"] == "EDCBAEDCBA"
     a.satirlar[0].esleme.setValue(2)
     a.satirlar[1].esleme.setValue(1)
-    assert d.proje.anahtar.esleme("B")[1] == 2 and pencere.sonraki.isEnabled()
+    assert d.proje.anahtar.esleme("B")[1] == 2 and _hazir(pencere)
 
 
 def test_klasik_sinav_arayuzu(pencere, fix, tmp_path):
@@ -127,30 +133,30 @@ def test_klasik_sinav_arayuzu(pencere, fix, tmp_path):
     p1 = pencere.adimlar[0]
     p1.ders_kodu.setText("UYD1001")
     p1.bicim_klasik.setChecked(True)
-    assert d.proje.klasik and not pencere.sonraki.isEnabled()  # liste yok
+    assert d.proje.klasik and not _hazir(pencere)  # liste yok
     p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
     p1.klasik_sayi.setValue(4)
-    assert d.proje.anahtar.soru_sayisi == 4 and pencere.sonraki.isEnabled()
+    assert d.proje.anahtar.soru_sayisi == 4 and _hazir(pencere)
     pencere.sonraki.click()
     a = pencere.adimlar[1]
     assert [s.puan for s in d.proje.anahtar.sorular] == ["25", "25", "25", "25"]
-    assert a.satirlar[0].kabarciklar == {} and pencere.sonraki.isEnabled()
+    assert a.satirlar[0].kabarciklar == {} and _hazir(pencere)
     a.satirlar[3].puan.setValue(40)
     a.satirlar[0].puan.setValue(10)
     pencere.sonraki.click()
-    assert pencere.sonraki.isEnabled()  # 10 + 25 + 25 + 40 = 100
+    assert _hazir(pencere)  # 10 + 25 + 25 + 40 = 100
     pencere.sonraki.click()
     k = pencere.adimlar[3]
     m = k.klasik_model
     assert m.rowCount() == len(d.liste.ogrenciler) and m.columnCount() == 3 + 4 + 2
-    assert not pencere.sonraki.isEnabled()  # puan yok
+    assert not _hazir(pencere)  # puan yok
     m.setData(m.index(0, 3), "10")
     m.setData(m.index(0, 4), "12,5")
     m.setData(m.index(1, 6), "40")
     assert d.sonuc.klasik and len(d.sonuc.ogrenciler) == 2
     o = d.sonuc.no_ile()[d.liste.ogrenciler[0].no]
     assert float(o.puan) == 22.5
-    assert pencere.sonraki.isEnabled()
+    assert _hazir(pencere)
     pencere.sonraki.click()
     pencere.sonraki.click()
     d.kaydet(str(tmp_path / "k.osd"))
@@ -209,3 +215,14 @@ def test_kagit_sirasiyla_giris(pencere, fix):
     assert panel.secili is None and "Girilen kâğıt: 1" in panel.kalan.text()
     m = k.klasik_model
     assert m.data(m.index(2, 3 + 3 + 1)) == "61"
+
+
+def test_serbest_gezinme_ve_eksik_seridi(pencere):
+    """Boş projede 6. adıma doğrudan gidilir; sonuç hesaplanmaz, üstteki şerit eksikleri ve adımlarını gösterir."""
+    pencere.adim_listesi.setCurrentRow(5)
+    assert pencere.yigin.currentIndex() == 5
+    assert pencere.durum.sonuc is None
+    assert not pencere.serit.isHidden() and "1. adım" in pencere.serit.text()
+    pencere.adim_listesi.setCurrentRow(0)
+    assert pencere.serit.isHidden()
+    assert pencere.adimlar[0].dat_dugmesi.styleSheet()  # zorunlu dosya düğmesi vurgulu

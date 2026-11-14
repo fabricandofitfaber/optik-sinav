@@ -50,6 +50,16 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
 .birak { border: 2px dashed var(--cizgi); border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: .15s; }
 .birak:hover, .birak.uzerinde { border-color: var(--vurgu); background: var(--vurgu-acik); }
 .birak .baslik { font-weight: 600; }
+.birak.zorunlu { border: 2px solid var(--iyi); background: color-mix(in srgb, var(--iyi) 7%, transparent); padding: 20px 16px; }
+.birak.zorunlu .baslik { font-size: 17px; }
+.birak.zorunlu:hover, .birak.zorunlu.uzerinde { background: color-mix(in srgb, var(--iyi) 14%, transparent); border-color: var(--iyi); }
+.zorunlu-dugme { display: inline-block; margin-top: 10px; background: #2e7d32; color: #fff; font-weight: 600; font-size: 15px; padding: 9px 22px; border-radius: 8px; border: 2px solid #1b5e20; }
+.birak.tamam { border-style: solid; }
+.birak.tamam .baslik { color: var(--iyi); }
+nav.adimlar button .tamam { float: right; color: var(--iyi); font-weight: 700; }
+.serit { background: #fff4e5; color: #7a4100; border: 1px solid #f0c27a; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
+.serit a { color: inherit; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .serit { background: #3a2a10; color: #f5d7a8; border-color: #7a5a20; } }
 .ikili { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 900px) { .ikili { grid-template-columns: 1fr; } nav.adimlar { width: 160px; } }
 details summary { cursor: pointer; color: var(--vurgu); margin: 6px 0; }

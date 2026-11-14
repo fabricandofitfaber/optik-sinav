@@ -7,6 +7,8 @@ from PySide6.QtCore import QObject, QSettings, Signal
 
 from ..core.dogrulama import duzeltme_olustur, sinavi_degerlendir
 from ..core.klasik import klasik_degerlendir
+from ..core.puanlama import anahtar_eksikleri
+from .. import metinler as M
 from ..io.ders_paketi import DersPaketi, ders_bul, ders_kaydet, pdf_oku
 from ..core.modeller import DatOkumaSonucu, OgrenciListesi, SinavSonucu, Soru
 from ..core.proje import SinavProjesi, ders_eslemesi_kaydet, ders_eslemesi_uygula
@@ -136,8 +138,27 @@ class Durum(QObject):
         self.degisti.emit()
 
     # ---------------------------------------------------------- değerlendirme
-    def degerlendir(self) -> SinavSonucu | None:
+    def hesap_eksikleri(self) -> list[str]:
+        """Sonucun hesaplanmasına engel olan eksikler (boşsa hesaplanabilir)."""
+        e = []
         if self.proje.klasik:
+            if self.liste is None:
+                e.append("Klasik sınavda öğrenci listesi gerekli.")
+        elif self.okuma is None:
+            e.append(M.EKSIK["dat"])
+        try:
+            float(self.proje.ayarlar.toplam_puan)
+        except ValueError:
+            e.append("Toplam puan sayı olmalı.")
+            return e
+        if self.okuma is not None or self.proje.klasik:
+            e.extend(anahtar_eksikleri(self.proje.anahtar, self.proje.ayarlar, self.proje.klasik))
+        return e
+
+    def degerlendir(self) -> SinavSonucu | None:
+        if self.hesap_eksikleri():
+            self.sonuc = None
+        elif self.proje.klasik:
             self.sonuc = (klasik_degerlendir(self.liste, self.proje.anahtar, self.proje.ayarlar, self.proje.klasik_puanlar, self.proje.klasik_toplamlar)
                           if self.liste is not None else None)
         elif self.okuma is None:

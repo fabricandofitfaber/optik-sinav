@@ -139,9 +139,19 @@
     D.proje.liste_esleme = D.liste.esleme;
     D.sonuc = null;
   };
+  // Sonucun hesaplanmasına engel olan eksikler (masaüstündeki Durum.hesap_eksikleri ile aynı)
+  UI.hesapEksikleri = function () {
+    const p = D.proje, kl = p.bicim === "klasik", e2 = [];
+    if (kl) { if (!D.liste) e2.push("Klasik sınavda öğrenci listesi gerekli."); }
+    else if (!D.okuma) e2.push(OS.EKSIK.dat);
+    if (!isFinite(parseFloat(String(p.ayarlar.toplam_puan).replace(",", ".")))) { e2.push("Toplam puan sayı olmalı."); return e2; }
+    if (D.okuma || kl) e2.push(...OS.anahtarEksikleri(p.anahtar, p.ayarlar, kl));
+    return e2;
+  };
   UI.degerlendir = function () {
     const p = D.proje;
-    if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar) : null;
+    if (UI.hesapEksikleri().length) D.sonuc = null;
+    else if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar) : null;
     else D.sonuc = D.okuma ? OS.sinaviDegerlendir(D.okuma.kayitlar, p.anahtar, p.ayarlar, D.liste, p.duzeltmeler) : null;
     return D.sonuc;
   };
@@ -246,19 +256,32 @@
     $("#icerik").innerHTML = "";
     a.ciz($("#icerik"));
     UI.altGuncelle();
-    $$("nav.adimlar button[data-adim]").forEach((b) => b.classList.toggle("secili", Number(b.dataset.adim) === D.adim));
+    // Hazırlık adımları (1-3): kendisi ve öncekiler eksiksizse listede ✓; sonuç adımlarında (4-6) eksikler üstte şerit
+    const on = [0, 1, 2].map((j) => UI.adimlar[j].eksikler());
+    let tamam = true;
+    $$("nav.adimlar button[data-adim]").forEach((b) => {
+      const j = Number(b.dataset.adim);
+      b.classList.toggle("secili", j === D.adim);
+      if (j < 3) { tamam = tamam && !on[j].length; b.querySelector(".tamam").textContent = tamam ? "✓" : ""; }
+    });
+    if (D.adim >= 3 && !D.sonuc) {
+      let sat = on.map((x, j) => (x.length ? `<a href="#" data-git="${j}">${j + 1}. adım</a>: ${e(x.join(" "))}` : "")).filter(Boolean);
+      if (!sat.length) sat = [e(UI.hesapEksikleri().join(" "))].filter(Boolean);
+      if (sat.length) {
+        $("#icerik").insertAdjacentHTML("afterbegin", `<div class="serit"><b>Sonuç için önce bunlar tamamlanmalı.</b><br>${sat.join("<br>")}</div>`);
+        $$("#icerik .serit a[data-git]").forEach((x) => (x.onclick = (ev) => { ev.preventDefault(); UI.git(Number(x.dataset.git)); }));
+      }
+    }
     UI.otomatikKaydet();
   };
   UI.altGuncelle = function () {
     const ek = UI.adimlar[D.adim].eksikler();
     $("#eksik").textContent = ek.length ? "Eksik: " + ek.join(" ") : "";
     $("#geri").disabled = D.adim === 0;
-    $("#sonraki").disabled = D.adim === ADIMLAR.length - 1 || ek.length > 0;
+    $("#sonraki").disabled = D.adim === ADIMLAR.length - 1;  // eksikler gezinmeyi engellemez, yalnızca gösterilir
   };
   UI.git = function (i) {
-    for (let j = Math.min(D.adim, i); j < i; j++) {
-      if (UI.adimlar[j].eksikler().length) { D.adim = j; UI.ciz(); return; }
-    }
+    if (i < 0 || i >= ADIMLAR.length) return;
     D.adim = i;
     if (UI.adimlar[i].girildi) UI.adimlar[i].girildi();
     UI.ciz();
@@ -278,7 +301,7 @@
         <button id="yardim">Yardım</button>
       </div>
       <div class="govde">
-        <nav class="adimlar">${ADIMLAR.map((a, i) => `<button data-adim="${i}"><span class="no">${i + 1}.</span>${a}</button>`).join("")}
+        <nav class="adimlar">${ADIMLAR.map((a, i) => `<button data-adim="${i}"><span class="no">${i + 1}.</span>${a}<span class="tamam"></span></button>`).join("")}
           <div class="gizlilik">Program internete bağlanmaz. Öğrenci verisi yalnızca bu tarayıcıda işlenir. Son çalışma bu tarayıcıda saklanır; ortak bilgisayarda işiniz bitince "Yeni sınav"a basın.</div>
         </nav>
         <main><div id="icerik"></div>
@@ -339,9 +362,11 @@
 
   // ------------------------------------------------------------------ 1. adım
   const SINAV_TURLERI = ["Ara Sınav", "Yarıyıl Sonu", "Bütünleme", "Mazeret"];
-  function birakAlani(id, baslik, alt, bilgiMetni) {
-    return `<div class="birak" id="${id}" tabindex="0"><div class="baslik">${baslik}</div><div class="soluk">${alt}</div>
-      <div style="margin-top:8px">${bilgiMetni}</div></div>`;
+  // durum: "zorunlu" (seçilmesi gereken, henüz seçilmemiş: yeşil, belirgin), "tamam" (seçildi) ya da boş
+  function birakAlani(id, baslik, alt, bilgiMetni, durum = "") {
+    const dugme = durum === "zorunlu" ? `<div><span class="zorunlu-dugme">Dosyayı seç…</span></div>` : "";
+    return `<div class="birak ${durum}" id="${id}" tabindex="0"><div class="baslik">${durum === "tamam" ? "✓ " : ""}${baslik}</div><div class="soluk">${alt}</div>
+      ${dugme}<div style="margin-top:8px">${bilgiMetni}</div></div>`;
   }
   function onizlemeHtml() {
     const o = D.proje.okuyucu;
@@ -363,7 +388,6 @@
       const e2 = [];
       if (D.proje.bicim === "klasik") { if (!D.liste) e2.push("Klasik sınavda öğrenci listesi gerekli."); }
       else if (!D.okuma) e2.push(OS.EKSIK.dat);
-      if (!D.proje.sinav.ders_kodu) e2.push(OS.EKSIK.ders_kodu);
       if (UI.soruSayisi() <= 0) e2.push(OS.EKSIK.soru_sayisi);
       return e2;
     },
@@ -377,7 +401,7 @@
       const o = D.okuma;
       const uyarili = o ? o.kayitlar.filter((x) => x.uyarilar.length).length : 0;
       const datBilgi = o ? `<b>${e(p.dat_yolu)}</b><br>${o.kayitlar.length} öğrenci, ${p.okuyucu.soru_sayisi} soru okundu. Okuma uyarısı olan satır: ${uyarili}.`
-        : `<span class="soluk">Tıklayın ya da dosyayı buraya sürükleyin</span>`;
+        : `<span class="soluk">ya da dosyayı buraya sürükleyin</span>`;
       const l = D.liste;
       const listeBilgi = l ? `<b>${e(p.liste_yolu)}</b><br>${l.ogrenciler.length} öğrenci${l.ogrenciler[0] ? `; ilk: ${e(l.ogrenciler[0].no)} ${e(l.ogrenciler[0].ad)}` : ""} <button class="kucuk" id="listeKaldir">Kaldır</button>`
         : `<span class="soluk">Tıklayın ya da dosyayı buraya sürükleyin</span>`;
@@ -400,12 +424,12 @@
           <label>Soyad</label><select id="lSoyad">${secenek(es.soyad_sutun, true)}</select></div>`;
       }
       k.innerHTML = `<h2>1. Sınav ve dosyalar</h2>
-        <div class="kutu"><h3>Sınav</h3>
+        <div class="kutu"><h3>Sınav <span class="soluk" style="font-weight:400;font-size:13px">bilgiler isteğe bağlı; raporlarda ve dosya adlarında görünür</span></h3>
           <div class="satir"><label>Biçim</label>
             <label><input type="radio" name="bicim" value="optik" ${!kl ? "checked" : ""}> Optik (test, optik okuyucu dosyası)</label>
             <label><input type="radio" name="bicim" value="klasik" ${kl ? "checked" : ""}> Klasik (yazılı; puanları siz girersiniz)</label>
             ${kl ? `<label>Soru sayısı</label><input type="number" id="klasikSayi" min="1" max="100" style="width:70px" value="${p.klasik_soru_sayisi}">` : ""}</div>
-          <div class="satir"><label>Ders</label><input type="text" id="dersKodu" list="dersListesi" placeholder="Ders kodu, örneğin UTL4513" style="width:170px" value="${e(s.ders_kodu)}">
+          <div class="satir"><label>Ders</label><input type="text" id="dersKodu" list="dersListesi" placeholder="Ders kodu, örnek: UTL4513" style="width:170px" value="${e(s.ders_kodu)}">
             <datalist id="dersListesi">${Object.values(dersler).map((x) => `<option value="${e(x.kod)}">${e(x.ad)}</option>`).join("")}</datalist>
             <input type="text" id="dersAdi" placeholder="Ders adı" style="flex:1;min-width:200px" value="${e(s.ders_adi)}"></div>
           <div class="satir"><label>Sınav türü</label><select id="sinavTuru">${[...new Set([...SINAV_TURLERI, s.sinav_turu])].map((t) => `<option ${t === s.sinav_turu ? "selected" : ""}>${e(t)}</option>`).join("")}</select>
@@ -416,8 +440,8 @@
           <div class="satir"><button id="dersPdf">Ders bilgi paketini yükle (PDF)…</button><span style="flex:1">${dersBilgi}</span></div>
         </div>
         <div class="ikili">
-          ${!kl ? birakAlani("birakDat", "Optik okuyucu dosyası", ".dat ya da .txt", datBilgi) : ""}
-          ${birakAlani("birakListe", "Öğrenci listesi", kl ? "Excel ya da CSV; klasik sınavda gerekli" : "Excel ya da CSV; isteğe bağlı ama önerilir (sınava girmeyenler ve doğru adlar için)", listeBilgi)}
+          ${!kl ? birakAlani("birakDat", "Optik okuyucu dosyası", ".dat ya da .txt; puanlama için gerekli", datBilgi, o ? "tamam" : "zorunlu") : ""}
+          ${birakAlani("birakListe", "Öğrenci listesi", kl ? "Excel ya da CSV; klasik sınavda gerekli" : "Excel ya da CSV; isteğe bağlı ama önerilir (sınava girmeyenler ve doğru adlar için)", listeBilgi, l ? "tamam" : kl ? "zorunlu" : "")}
         </div>
         <details class="kutu" id="gelismis" ${gelismisAcik ? "open" : ""}><summary>Gelişmiş ayarlar: okuyucu şablonu ve liste sütunları</summary>
           <p class="soluk">Okuyucu şablonu, optik dosyanın her satırında adın, numaranın ve cevapların hangi karakterlerde olduğunu söyler. Program bunu kendisi bulur; yalnızca farklı düzende bir optik formda değiştirmeniz gerekir.</p>

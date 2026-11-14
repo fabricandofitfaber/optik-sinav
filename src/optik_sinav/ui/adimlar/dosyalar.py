@@ -17,6 +17,12 @@ from ..tema import renk_hex
 from .temel import Adim
 
 
+
+VURGULU_DUGME = ("QPushButton { background-color: #2e7d32; color: white; font-weight: bold; font-size: 14px;"
+                 " border: 2px solid #1b5e20; border-radius: 7px; padding: 6px 18px; }"
+                 " QPushButton:hover { background-color: #388e3c; }"
+                 " QPushButton:pressed { background-color: #1b5e20; }")
+
 class DosyalarAdimi(Adim):
     def __init__(self, durum, parent=None):
         super().__init__(durum, M.ADIMLAR[0], parent)
@@ -24,7 +30,7 @@ class DosyalarAdimi(Adim):
         self._yukleniyor = False
 
         # --- Sınav bilgileri
-        g = QGroupBox("Sınav bilgileri")
+        g = QGroupBox("Sınav bilgileri (isteğe bağlı; raporlarda ve dosya adlarında görünür)")
         f = QFormLayout(g)
         s = QHBoxLayout()
         self.bicim_optik = QRadioButton("Optik (test, optik okuyucu dosyası)")
@@ -42,7 +48,7 @@ class DosyalarAdimi(Adim):
         f.addRow("Sınav biçimi", s)
         self.bicim_optik.toggled.connect(self._bicim_degisti)
         self.klasik_sayi.valueChanged.connect(self._klasik_sayi_degisti)
-        self.ders_kodu = QLineEdit(placeholderText="UTL4513")
+        self.ders_kodu = QLineEdit(placeholderText="örnek: UTL4513")
         self.ders_adi = QLineEdit(placeholderText="Yatırım Analizi")
         self.sinav_turu = QComboBox()
         self.sinav_turu.addItems(SINAV_TURLERI)
@@ -81,9 +87,11 @@ class DosyalarAdimi(Adim):
         f = QFormLayout(g)
         self.dosya_formu = f
         self.dat_etiket = QLabel("Seçilmedi")
+        self.dat_etiket.setWordWrap(True)
         self.dat_etiket.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         b = QPushButton("Optik dosyayı seç…")
         b.clicked.connect(self._dat_sec)
+        self.dat_dugmesi = b
         s = QHBoxLayout()
         s.addWidget(b)
         s.addWidget(self.dat_etiket, 1)
@@ -92,6 +100,7 @@ class DosyalarAdimi(Adim):
         self.liste_etiket = QLabel("Seçilmedi (isteğe bağlı)")
         b2 = QPushButton("Öğrenci listesini seç…")
         b2.clicked.connect(self._liste_sec)
+        self.liste_dugmesi = b2
         b3 = QPushButton("Kaldır")
         b3.clicked.connect(lambda: self.durum.liste_yukle(None))
         s = QHBoxLayout()
@@ -151,6 +160,7 @@ class DosyalarAdimi(Adim):
         self.onizleme.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         self.onizleme.setMinimumHeight(160)
         self.duzen.addWidget(self.onizleme, 1)
+        self.duzen.addStretch(0)  # önizleme gizliyken boşluk altta kalsın, başlık yukarıda dursun
 
         durum.degisti.connect(self.durumdan_yukle)
         self.durumdan_yukle()
@@ -314,7 +324,22 @@ class DosyalarAdimi(Adim):
             self._onizleme_yaz()
         finally:
             self._yukleniyor = False
+        self._vurgula()
         self.tamamlik_degisti.emit()
+
+    def _vurgula(self):
+        """Zorunlu dosya seçilmemişse düğmesini belirgin (yeşil, dolgulu) gösterir; seçilince sade düğmeye döner."""
+        p = self.durum.proje
+        dat_eksik = not p.klasik and (not p.dat_yolu or self.durum.okuma is None)
+        liste_eksik = p.klasik and self.durum.liste is None
+        for dugme, eksik in ((self.dat_dugmesi, dat_eksik), (self.liste_dugmesi, liste_eksik)):
+            dugme.setStyleSheet(VURGULU_DUGME if eksik else "")
+            dugme.setMinimumHeight(38 if eksik else 0)
+        if dat_eksik:
+            self.dat_etiket.setText("Gerekli. Dosyayı bu pencereye sürükleyip de bırakabilirsiniz.")
+        elif not p.klasik:
+            self.dat_etiket.setText("✓ " + p.dat_yolu)
+        self.dat_etiket.setStyleSheet("color: #b45309" if dat_eksik else "color: #1e7b34")
 
     def _esleme_doldur(self):
         d = self.durum
@@ -389,8 +414,6 @@ class DosyalarAdimi(Adim):
                 e.append("Klasik sınavda öğrenci listesi gerekli.")
         elif not self.durum.proje.dat_yolu or self.durum.okuma is None:
             e.append(M.EKSIK["dat"])
-        if not self.durum.proje.sinav.ders_kodu:
-            e.append(M.EKSIK["ders_kodu"])
         if self.durum.soru_sayisi <= 0:
             e.append(M.EKSIK["soru_sayisi"])
         return e

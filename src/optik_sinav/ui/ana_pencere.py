@@ -39,6 +39,12 @@ class AnaPencere(QMainWindow):
         yatay.addWidget(self.adim_listesi)
 
         sag = QVBoxLayout()
+        self.serit = QLabel()
+        self.serit.setWordWrap(True)
+        self.serit.setStyleSheet("background: #fff4e5; color: #7a4100; border: 1px solid #f0c27a; border-radius: 6px; padding: 8px;")
+        self.serit.linkActivated.connect(lambda j: self.adim_listesi.setCurrentRow(int(j)))
+        self.serit.setVisible(False)
+        sag.addWidget(self.serit)
         self.yigin = QStackedWidget()
         self.adimlar = [DosyalarAdimi(self.durum), AnahtarAdimi(self.durum), PuanlamaAdimi(self.durum),
                         KontrolAdimi(self.durum), IstatistikAdimi(self.durum), DisaAktarAdimi(self.durum)]
@@ -69,6 +75,7 @@ class AnaPencere(QMainWindow):
         self._menuler()
         self.adim_listesi.setCurrentRow(0)
         self.durum.degisti.connect(self._dugmeleri_guncelle)
+        self.durum.sonuc_degisti.connect(self._dugmeleri_guncelle)
         self._dugmeleri_guncelle()
 
     # ---------------------------------------------------------------- menüler
@@ -108,19 +115,9 @@ class AnaPencere(QMainWindow):
 
     # ---------------------------------------------------------------- gezinme
     def _adima_git(self, i: int):
+        # Adımlar arasında serbestçe dolaşılır; eksikler engellemez, sayfanın üstünde gösterilir.
         if i < 0:
             return
-        onceki = self.yigin.currentIndex()
-        # İleri atlarken aradaki adımların zorunlu bilgileri tam olmalı
-        for j in range(min(onceki, i), i):
-            if j < i and self.adimlar[j].eksikler():
-                self.adim_listesi.blockSignals(True)
-                self.adim_listesi.setCurrentRow(j)
-                self.adim_listesi.blockSignals(False)
-                self.yigin.setCurrentIndex(j)
-                self.adimlar[j].girildi()
-                self._dugmeleri_guncelle()
-                return
         self.yigin.setCurrentIndex(i)
         self.adimlar[i].girildi()
         self._dugmeleri_guncelle()
@@ -129,8 +126,22 @@ class AnaPencere(QMainWindow):
         i = self.yigin.currentIndex()
         eksik = self.adimlar[i].eksikler() if i >= 0 else []
         self.geri.setEnabled(i > 0)
-        self.sonraki.setEnabled(i < len(self.adimlar) - 1 and not eksik)
+        self.sonraki.setEnabled(i < len(self.adimlar) - 1)
         self.eksik.setText(("Eksik: " + " ".join(eksik)) if eksik else "")
+        # Hazırlık adımlarının (1-3) durumu: listede işaret, sonuç adımlarında (4-6) üstte şerit
+        on = [(j, self.adimlar[j].eksikler()) for j in range(3)]
+        tamam = True  # bir adım, kendisi ve öncekiler eksiksizse işaretlenir
+        for j, e in on:
+            tamam = tamam and not e
+            self.adim_listesi.item(j).setText(M.ADIMLAR[j] + ("  ✓" if tamam else ""))
+        if i >= 3:
+            satirlar = [f"<a href='{j}'>{j + 1}. adım</a>: {' '.join(e)}" for j, e in on if e]
+            if self.durum.sonuc is None and not satirlar:
+                satirlar = [" ".join(self.durum.hesap_eksikleri())]
+            self.serit.setText("<b>Sonuç için önce bunlar tamamlanmalı.</b><br>" + "<br>".join(satirlar))
+            self.serit.setVisible(bool(satirlar) and self.durum.sonuc is None)
+        else:
+            self.serit.setVisible(False)
         baslik = M.UYGULAMA_ADI
         if self.durum.proje_yolu:
             baslik += f" — {self.durum.proje_yolu.name}"
