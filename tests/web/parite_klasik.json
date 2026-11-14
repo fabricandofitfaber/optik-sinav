@@ -168,6 +168,10 @@
     "18"
    ]
   },
+  "klasik_toplamlar": {
+   "990000001": "999",
+   "990000002": "abc"
+  },
   "final_puanlar": {},
   "harf_ayarlari": {}
  },
@@ -203,6 +207,10 @@
      [
       "cevapta_gecersiz",
       "4. soruda girilen puan (41) sorunun puanından (40) büyük"
+     ],
+     [
+      "cevapta_gecersiz",
+      "Kâğıttaki toplam (999) soru puanlarının toplamıyla (62,5) tutmuyor"
      ]
     ]
    },
@@ -231,7 +239,12 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [
+     [
+      "cevapta_gecersiz",
+      "Kâğıttaki toplam sayı değil: 'abc'"
+     ]
+    ]
    },
    {
     "no": "990000003",

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optik Sınav Değerlendirme</title>
+<meta name="description" content="Optik okuyucu ve klasik sınavları soru bazında puanlayan, öğrenme çıktısı ve istatistik raporu üreten ücretsiz, çevrim dışı program.">
+<link rel="icon" href="simge.png">
+<style>
+:root { --zemin:#f4f6fa; --kart:#fff; --yazi:#1f2328; --soluk:#5f6b7a; --cizgi:#d9dfe8; --vurgu:#2f5597; --vurgu2:#e8eef9; --iyi:#1e7b34; }
+@media (prefers-color-scheme: dark) { :root { --zemin:#14171c; --kart:#1d2127; --yazi:#e8e8e8; --soluk:#9aa3ad; --cizgi:#343a43; --vurgu:#7aa2e6; --vurgu2:#22304a; --iyi:#7fd38a; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--zemin); color:var(--yazi); font:16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+main { max-width: 920px; margin: 0 auto; padding: 32px 18px 60px; }
+header { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
+header img { width:64px; height:64px; border-radius:14px; }
+h1 { font-size:28px; margin:0; }
+.alt { color:var(--soluk); margin:4px 0 26px; }
+.kart { background:var(--kart); border:1px solid var(--cizgi); border-radius:16px; padding:22px; margin-bottom:16px; }
+.kart.onerilen { border:2px solid var(--vurgu); box-shadow:0 4px 18px rgba(47,85,151,.12); }
+.rozet { display:inline-block; background:#2f5597; color:#fff; font-size:13px; font-weight:600; border-radius:20px; padding:2px 12px; margin-bottom:8px; }
+.kart h2 { margin:0 0 6px; font-size:22px; display:flex; align-items:center; gap:10px; }
+.kart h2 span.simge { font-size:30px; }
+.kart p { margin:6px 0; color:var(--soluk); }
+a.dugme { display:inline-flex; align-items:center; gap:10px; background:#2f5597; color:#fff; text-decoration:none; font-weight:600; font-size:17px; padding:13px 22px; border-radius:12px; margin:10px 10px 4px 0; }
+a.dugme:hover { filter:brightness(1.08); }
+a.dugme.ikincil { background:var(--vurgu2); color:var(--vurgu); }
+a.dugme small { font-weight:400; opacity:.85; font-size:13px; }
+details { margin-top:10px; }
+summary { cursor:pointer; color:var(--vurgu); font-weight:600; }
+ol { margin:8px 0 0; padding-left:22px; } li { margin:4px 0; }
+.ipucu { background:var(--vurgu2); border-radius:10px; padding:10px 14px; margin-top:10px; font-size:15px; }
+.ozellik { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin-top:6px; }
+.ozellik div { background:var(--zemin); border-radius:10px; padding:10px 12px; font-size:15px; }
+footer { color:var(--soluk); font-size:14px; margin-top:28px; }
+footer a { color:var(--vurgu); }
+kbd { background:var(--zemin); border:1px solid var(--cizgi); border-radius:4px; padding:0 5px; font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="simge.png" alt=""><div><h1>Optik Sınav Değerlendirme</h1></div></header>
+  <p class="alt">Optik okuyucu ve klasik sınavları soru bazında puanlar; öğrenme çıktısı başarısını, istatistikleri ve öğrenci karnelerini hazırlar; Akademik Bilgi Sistemi'ne aktarılacak soru tanımını kopyalar. Ücretsizdir, internete bağlanmaz, öğrenci dosyaları bilgisayarınızdan çıkmaz.</p>
+
+  <div class="kart" id="kart-tarayici">
+    <h2><span class="simge">🌐</span> Kurulum yok: tarayıcıda açın</h2>
+    <p>Hiçbir şey indirmeden hemen kullanın. Chrome, Edge, Safari ve Firefox'ta çalışır. Seçtiğiniz dosyalar sunucuya gönderilmez; yalnızca sizin tarayıcınızda işlenir.</p>
+    <a class="dugme" href="uygulama.html">▶ Programı aç</a>
+    <a class="dugme ikincil" href="https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav.html">⬇ Tek dosya olarak indir <small>(internetsiz de açılır)</small></a>
+  </div>
+
+  <div class="kart" id="kart-mac">
+    <h2><span class="simge">🍎</span> Mac için uygulama</h2>
+    <p>Uygulamalar klasörüne kurulan, simgeli program.</p>
+    <a class="dugme" href="https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Mac-AppleSilicon.dmg">⬇ Mac (M1, M2, M3, M4…) <small>çoğu Mac için</small></a>
+    <a class="dugme ikincil" href="https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Mac-Intel.dmg">⬇ Mac (Intel işlemcili, eski)</a>
+    <details><summary>Mac'imin hangisi olduğunu nasıl anlarım?</summary>
+      <p>Ekranın sol üstündeki <b>elma menüsü → Bu Mac Hakkında</b>. "Çip: Apple M…" yazıyorsa ilk düğme, "İşlemci: … Intel" yazıyorsa ikinci düğme. 2021'den sonra alınan Mac'lerin neredeyse hepsi ilk düğmedir.</p></details>
+    <details><summary>Nasıl kurulur? (ilk açılıştaki uyarı dahil)</summary><ol>
+      <li>İnen <b>.dmg</b> dosyasına çift tıklayın.</li>
+      <li>Açılan pencerede <b>Optik Sinav</b> simgesini yandaki <b>Applications</b> (Uygulamalar) klasörüne sürükleyin.</li>
+      <li>Uygulamalar klasöründe <b>Optik Sinav</b>'a <b>sağ tıklayın → Aç</b>, çıkan pencerede yine <b>Aç</b> deyin.</li>
+      <li>Uyarı yine çıkarsa: <b>Sistem Ayarları → Gizlilik ve Güvenlik</b>, aşağıda <b>Yine de Aç</b>. Bu yalnızca bir kez gerekir.</li></ol>
+      <div class="ipucu">Uyarının nedeni programın Apple'a ücretli imza yaptırılmamış olmasıdır; programla ilgili bir sorun değildir.</div></details>
+  </div>
+
+  <div class="kart" id="kart-windows">
+    <h2><span class="simge">🪟</span> Windows için uygulama</h2>
+    <p>Windows 10 ve 11. Masaüstüne ve Başlat menüsüne simge ekler.</p>
+    <a class="dugme" href="https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Windows-Kurulum.exe">⬇ Windows kurulum dosyası</a>
+    <a class="dugme ikincil" href="https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Windows-Tasinabilir.zip">⬇ Kurulumsuz (taşınabilir) sürüm</a>
+    <details><summary>Nasıl kurulur? (ilk açılıştaki uyarı dahil)</summary><ol>
+      <li>İnen <b>OptikSinav-Windows-Kurulum.exe</b> dosyasına çift tıklayın.</li>
+      <li>Mavi "Windows bilgisayarınızı korudu" penceresi çıkarsa <b>Ek bilgi</b>'ye, sonra <b>Yine de çalıştır</b>'a tıklayın.</li>
+      <li><b>İleri → İleri → Yükle</b>. Program masaüstünde ve Başlat menüsünde <b>Optik Sinav</b> olarak görünür.</li></ol>
+      <div class="ipucu">Uyarının nedeni programın Microsoft'a ücretli imza yaptırılmamış olmasıdır; programla ilgili bir sorun değildir. Kurulum yapmak istemezseniz taşınabilir sürümü bir klasöre açıp içindeki <kbd>OptikSinav.exe</kbd>'yi çalıştırabilirsiniz.</div></details>
+  </div>
+
+  <div class="kart">
+    <h2><span class="simge">✨</span> Neler yapar?</h2>
+    <div class="ozellik">
+      <div><b>Optik ve klasik sınav</b><br>Optik okuyucu dosyasını okur; klasik sınavda puanları kâğıt sırasıyla hızlıca girersiniz.</div>
+      <div><b>Akademik Bilgi Sistemi</b><br>Soru puanları ve öğrenme çıktısı yüzdeleriyle soru tanımını tek düğmeyle kopyalar.</div>
+      <div><b>Öğrenme çıktıları</b><br>%100 kuralını denetler; çıktı başarısını sınıf ve öğrenci bazında hesaplar.</div>
+      <div><b>İstatistikler</b><br>Madde analizi, kavram yanılgıları, sınav yapısı, olası anahtar hatası, sınırdaki öğrenciler.</div>
+      <div><b>Dönem sonu notu</b><br>Final puanlarıyla mutlak ya da bağıl harf notu.</div>
+      <div><b>Öğrenci karnesi</b><br>Her öğrenciye bir sayfalık geri bildirim; yazdırılabilir.</div>
+    </div>
+  </div>
+
+  <footer>Açık kaynaklıdır (MIT lisansı). Kaynak kod, bütün sürümler ve ayrıntılı kullanım kılavuzu: <a href="https://github.com/fabricandofitfaber/optik-sinav">github.com/fabricandofitfaber/optik-sinav</a> · <a href="https://github.com/fabricandofitfaber/optik-sinav/releases">Bütün sürümler</a></footer>
+</main>
+<script>
+// Kullanıcının işletim sistemine uygun kartı öne çıkar.
+(function () {
+  var ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || "";
+  var id = /win/i.test(ua) ? "kart-windows" : /mac/i.test(ua) ? "kart-mac" : null;
+  if (!id) return;
+  var k = document.getElementById(id);
+  k.classList.add("onerilen");
+  k.insertAdjacentHTML("afterbegin", '<span class="rozet">Bilgisayarınız için</span>');
+  var t = document.getElementById("kart-tarayici");
+  t.parentNode.insertBefore(k, t.nextSibling);
+})();
+</script>
+</body>
+</html>

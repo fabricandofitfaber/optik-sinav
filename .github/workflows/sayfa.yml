@@ -1,0 +1,46 @@
+name: İndirme sayfası
+
+# GitHub Pages: site/index.html (indirme sayfası) ve tarayıcıda çalışan uygulama (uygulama.html).
+# Uygulama sayfası da ağa bağlanamaz; açılan dosyalar yalnızca kullanıcının tarayıcısında işlenir.
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "web/**", "dersler/**", "tools/web_derle.py", ".github/workflows/sayfa.yml"]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sayfa
+  cancel-in-progress: true
+
+jobs:
+  yayimla:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dagit.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sayfayı hazırla
+        run: |
+          python tools/web_derle.py
+          mkdir -p _site
+          cp site/index.html _site/index.html
+          cp web/dist/OptikSinav.html _site/uygulama.html
+          cp assets/simge.png _site/simge.png
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: dagit
+        uses: actions/deploy-pages@v4

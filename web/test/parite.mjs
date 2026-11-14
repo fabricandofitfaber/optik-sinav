@@ -97,7 +97,7 @@ for (const f of dosyalar) {
     const { kayitlar } = OS.satirlariOku(m.satirlar, proje.okuyucu);
     sonuc = OS.sinaviDegerlendir(kayitlar, proje.anahtar, proje.ayarlar, liste, proje.duzeltmeler);
   } else {
-    sonuc = OS.klasikDegerlendir(liste, proje.anahtar, proje.ayarlar, proje.klasik_puanlar);
+    sonuc = OS.klasikDegerlendir(liste, proje.anahtar, proje.ayarlar, proje.klasik_puanlar, proje.klasik_toplamlar);
   }
   karsilastir(sen.beklenen, hesapla(sen, proje, sonuc), sen.ad, farklar);
   if (farklar.length) { hata++; console.log(`✗ ${sen.ad}: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }

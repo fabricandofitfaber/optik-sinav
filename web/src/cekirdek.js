@@ -165,6 +165,7 @@
     klasik_fazla: "{soru}. soruda girilen puan ({puan}) sorunun puanından ({en_fazla}) büyük",
     klasik_eksi: "{soru}. soruda eksi puan girilmiş",
     klasik_eksik: "Puanı girilmemiş soru: {sorular} (sıfır sayıldı)",
+    klasik_toplam: "Kâğıttaki toplam ({kagit}) soru puanlarının toplamıyla ({hesap}) tutmuyor",
   };
   const EKSIK = {
     dat: "Optik okuyucu dosyası seçilmedi.",
@@ -200,7 +201,7 @@
       ayarlar: yeniAyarlar(), okuyucu: yeniOkuyucu(), dat_yolu: "", liste_yolu: "",
       liste_esleme: { sayfa: null, baslik_satiri: null, no_sutun: null, ad_sutun: null, soyad_sutun: null },
       duzeltmeler: [], profil_akreditasyon: "akreditasyon_soru_bazli_varsayilan", profil_not_giris: "not_giris_varsayilan",
-      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, final_puanlar: {}, harf_ayarlari: {},
+      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, final_puanlar: {}, harf_ayarlari: {},
     };
   }
   /** Masaüstü programın kaydettiği .osd dosyasını eksik alanları tamamlayarak yükler. */
@@ -214,6 +215,7 @@
     p.anahtar.sorular = (p.anahtar.sorular || []).map((s) => Object.assign(yeniSoru(s.no), s));
     p.klasik_puanlar = d.klasik_puanlar || {};
     p.final_puanlar = d.final_puanlar || {};
+    p.klasik_toplamlar = d.klasik_toplamlar || {};
     p.harf_ayarlari = d.harf_ayarlari || {};
     return p;
   }
@@ -667,7 +669,8 @@
     if (x.q === 1n) return String(x.p);
     return sayiYaz(x, 2).replace(/0+$/, "").replace(/,$/, "");
   }
-  function klasikDegerlendir(liste, anahtar, ayar, puanlar) {
+  function klasikDegerlendir(liste, anahtar, ayar, puanlar, toplamlar = {}) {
+    toplamlar = toplamlar || {};
     const enFazla = soruPuanlari(anahtar, ayar);
     const n = anahtar.sorular.length;
     const ogrenciler = [], girmeyenler = [];
@@ -702,6 +705,13 @@
         sonuclar.push({ isaret: x !== null ? klasikYaz(x) : "", durum, puan: p });
       });
       if (eksik.length && eksik.length < n) uyarilar.push({ tur: "cevapta_gecersiz", mesaj: bicimle(UYARI.klasik_eksik, { sorular: eksik.join(", ") }), satir_no: sira });
+      const kagit = toplamlar[og.no];
+      if (kagit !== null && kagit !== undefined && kagit !== "") {
+        let kt = null;
+        try { kt = puanCoz(kagit); } catch (_) { kt = null; }
+        if (kt === null) uyarilar.push({ tur: "cevapta_gecersiz", mesaj: `Kâğıttaki toplam sayı değil: ${pyRepr(String(kagit))}`, satir_no: sira });
+        else if (!kt.esit(ham)) uyarilar.push({ tur: "cevapta_gecersiz", mesaj: bicimle(UYARI.klasik_toplam, { kagit: klasikYaz(kt), hesap: klasikYaz(ham) }), satir_no: sira });
+      }
       const kayit = { satir_no: sira, ham_satir: "", ad: og.ad, ogrenci_no: og.no, cevaplar: sonuclar.map((s) => s.isaret), kitapcik: "", uyarilar: [] };
       ogrenciler.push({ kayit, no: og.no, ad: og.ad, okunan_ad: og.ad, cevaplar: sonuclar.map((s) => s.isaret), sorular: sonuclar, dogru, yanlis, bos,
         ham_puan: ham, ceza: Kesir.SIFIR, puan: ham.kars(0) < 0 ? Kesir.SIFIR : ham, listede: true, uyarilar, oneriler: [], kitapcik: "",

@@ -160,7 +160,9 @@ def main():
     rnd = random.Random(7)
     for i, og in enumerate(lst.ogrenciler[:-2]):
         p.klasik_puanlar[og.no] = [str(rnd.randint(0, 10)), f"{rnd.randint(0, 50) / 2:g}".replace(".", ","), None if i == 3 else str(rnd.randint(0, 25)), str(rnd.randint(0, 45))]
-    sonuc = klasik_degerlendir(lst, p.anahtar, p.ayarlar, p.klasik_puanlar)
+    nolar = list(p.klasik_puanlar)
+    p.klasik_toplamlar = {nolar[0]: "999", nolar[1]: "abc"}
+    sonuc = klasik_degerlendir(lst, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar)
     senaryolar.append({"ad": "klasik", "dat": None, "liste": str(liste.relative_to(KOK)), "proje": p.to_dict(), "ders_kodlari": None,
                        "beklenen": ciktilar(p, sonuc)})
 

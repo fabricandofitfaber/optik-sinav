@@ -152,7 +152,21 @@ class KlasikGirisModeli(QAbstractTableModel):
         return 0 if parent.isValid() else len(self.ogrenciler)
 
     def columnCount(self, parent=QModelIndex()):
-        return 0 if parent.isValid() else 3 + self.n + 1
+        return 0 if parent.isValid() else 3 + self.n + 2
+
+    def _kagit(self, satir):
+        return (self.durum.proje.klasik_toplamlar or {}).get(self.ogrenciler[satir].no)
+
+    def _toplam(self, satir):
+        from ..core.klasik import puan_coz
+
+        t, girildi = 0, False
+        for k in range(self.n):
+            p = puan_coz(self._deger(satir, k))
+            if p is not None:
+                t += p
+                girildi = True
+        return t, girildi
 
     def _tam(self):
         from ..core.puanlama import soru_puanlari
@@ -170,7 +184,7 @@ class KlasikGirisModeli(QAbstractTableModel):
         if bolum < 3 + self.n:
             tam = self._tam()[bolum - 3]
             return f"S{bolum - 2}" + (f" ({sayi_yaz(tam, 2).rstrip('0').rstrip(',')})" if tam is not None else "")
-        return "Toplam"
+        return "Toplam" if bolum == 3 + self.n else "Kâğıttaki toplam"
 
     def _deger(self, satir, k):
         v = self.durum.proje.klasik_puanlar.get(self.ogrenciler[satir].no) or []
@@ -178,7 +192,7 @@ class KlasikGirisModeli(QAbstractTableModel):
 
     def flags(self, ix):
         f = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-        if 3 <= ix.column() < 3 + self.n:
+        if 3 <= ix.column() < 3 + self.n or ix.column() == 3 + self.n + 1:
             f |= Qt.ItemFlag.ItemIsEditable
         return f
 
@@ -198,6 +212,8 @@ class KlasikGirisModeli(QAbstractTableModel):
                 return o.ad
             if j < 3 + self.n:
                 return self._deger(ix.row(), j - 3) or ""
+            if j == 3 + self.n + 1:
+                return self._kagit(ix.row()) or ""
             toplam = 0
             girildi = False
             for k in range(self.n):
@@ -209,6 +225,15 @@ class KlasikGirisModeli(QAbstractTableModel):
                     toplam += p
                     girildi = True
             return sayi_yaz(toplam, 2) if girildi else "girmedi"
+        if rol == Qt.ItemDataRole.BackgroundRole and j == 3 + self.n + 1:
+            kt = self._kagit(ix.row())
+            if not kt:
+                return None
+            try:
+                t, _ = self._toplam(ix.row())
+                return renk("D") if puan_coz(kt) == t else renk("Y")
+            except (ValueError, ArithmeticError):
+                return renk("Y")
         if rol == Qt.ItemDataRole.BackgroundRole and 3 <= j < 3 + self.n:
             try:
                 p = puan_coz(self._deger(ix.row(), j - 3))
@@ -227,8 +252,19 @@ class KlasikGirisModeli(QAbstractTableModel):
         return None
 
     def setData(self, ix, deger, rol=Qt.ItemDataRole.EditRole):
-        if rol != Qt.ItemDataRole.EditRole or not (3 <= ix.column() < 3 + self.n):
+        if rol != Qt.ItemDataRole.EditRole:
+            return False
+        if ix.column() == 3 + self.n + 1:
+            no = self.ogrenciler[ix.row()].no
+            x = str(deger or "").strip()
+            if x:
+                self.durum.proje.klasik_toplamlar[no] = x
+            else:
+                self.durum.proje.klasik_toplamlar.pop(no, None)
+            self.dataChanged.emit(self.index(ix.row(), 3 + self.n + 1), self.index(ix.row(), 3 + self.n + 1))
+            return True
+        if not (3 <= ix.column() < 3 + self.n):
             return False
         self.durum.klasik_puan_yaz(self.ogrenciler[ix.row()].no, ix.column() - 3, str(deger) if deger is not None else None)
-        self.dataChanged.emit(self.index(ix.row(), 3), self.index(ix.row(), 3 + self.n))
+        self.dataChanged.emit(self.index(ix.row(), 3), self.index(ix.row(), 3 + self.n + 1))
         return True

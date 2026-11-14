@@ -1,5 +1,20 @@
 # Optik Sınav Değerlendirme
 
+## ⬇️ İndir
+
+### 👉 [İndirme sayfası](https://fabricandofitfaber.github.io/optik-sinav/): bilgisayarınızı tanır, doğru dosyayı gösterir
+
+| | Ne indirmeliyim? | Kimin için |
+|---|---|---|
+| 🌐 | **[Tarayıcıda hemen aç](https://fabricandofitfaber.github.io/optik-sinav/uygulama.html)** (kurulum yok) · [tek dosya olarak indir](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav.html) | Herkes; Mac ve Windows |
+| 🍎 | **[Mac (M1, M2, M3, M4…) için indir](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Mac-AppleSilicon.dmg)** | 2021'den sonra alınan Mac'lerin çoğu |
+| 🍎 | [Mac (Intel işlemcili) için indir](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Mac-Intel.dmg) | Eski Mac'ler |
+| 🪟 | **[Windows için kurulum dosyası](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Windows-Kurulum.exe)** · [kurulumsuz sürüm](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Windows-Tasinabilir.zip) | Windows 10 ve 11 |
+
+Mac'inizin hangisi olduğunu öğrenmek için: sol üstteki elma menüsü → **Bu Mac Hakkında**. "Çip: Apple M…" yazıyorsa M1-M4 düğmesi, "İşlemci: Intel" yazıyorsa Intel düğmesi. İlk açılışta çıkabilecek güvenlik uyarısının nasıl geçileceği indirme sayfasında ve aşağıdaki "İmzasız uygulama uyarıları" bölümünde anlatılıyor.
+
+---
+
 Optik okuyucudan çıkan ham `.dat` dosyasını (ya da klasik sınavda elle girilen puanları) **soru bazında** puanlayan, okuma hatalarını gösterip düzelttiren ve Muğla Sıtkı Koçman Üniversitesi Akademik Bilgi Sistemi'ne aktarılacak soru tanımını, puan dosyalarını, istatistikleri ve öğrenme çıktısı raporunu üreten program.
 
 İki biçimde gelir; ikisi aynı motoru kullanır ve aynı `.osd` sınav dosyasını açar:
@@ -17,7 +32,7 @@ Optik okuyucudan çıkan ham `.dat` dosyasını (ya da klasik sınavda elle giri
 
 ### Tarayıcı sürümü
 
-[Sürümler](../../releases) sayfasından `OptikSinav-<sürüm>.html` dosyasını indirin ve çift tıklayın. Başka bir şey gerekmez. Son çalışma o tarayıcıda saklanır; **Kaydet** düğmesi sınavı, optik dosya ve öğrenci listesi içine gömülü olarak tek bir `.osd` dosyasına indirir. Excel dosyaları tarayıcının İndirilenler klasörüne düşer. Excel içinde grafik yoktur; grafikler "Yazdırılabilir rapor"dadır.
+[İndirme sayfasından](https://fabricandofitfaber.github.io/optik-sinav/) "Programı aç" ile kurulumsuz kullanın ya da [`OptikSinav.html`](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav.html) dosyasını indirip çift tıklayın. Başka bir şey gerekmez. Son çalışma o tarayıcıda saklanır; **Kaydet** düğmesi sınavı, optik dosya ve öğrenci listesi içine gömülü olarak tek bir `.osd` dosyasına indirir. Excel dosyaları tarayıcının İndirilenler klasörüne düşer. Excel içinde grafik yoktur; grafikler "Yazdırılabilir rapor"dadır.
 
 Kaynaktan derlemek için: `python tools/web_derle.py` → `web/dist/OptikSinav.html`.
 
@@ -27,9 +42,9 @@ Kaynaktan derlemek için: `python tools/web_derle.py` → `web/dist/OptikSinav.h
 
 | Sistem | Dosya |
 |---|---|
-| macOS, Apple Silicon (M1 ve sonrası) | `OptikSinav-<sürüm>-macos-apple-silicon.dmg` |
-| macOS, Intel | `OptikSinav-<sürüm>-macos-intel.dmg` |
-| Windows 10/11 | `OptikSinav-<sürüm>-windows-kurulum.exe` ya da `OptikSinav-<sürüm>-windows.zip` |
+| macOS, Apple Silicon (M1 ve sonrası) | [`OptikSinav-Mac-AppleSilicon.dmg`](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Mac-AppleSilicon.dmg) |
+| macOS, Intel | [`OptikSinav-Mac-Intel.dmg`](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Mac-Intel.dmg) |
+| Windows 10/11 | [`OptikSinav-Windows-Kurulum.exe`](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Windows-Kurulum.exe) ya da kurulumsuz [`OptikSinav-Windows-Tasinabilir.zip`](https://github.com/fabricandofitfaber/optik-sinav/releases/latest/download/OptikSinav-Windows-Tasinabilir.zip) |
 
 ### İmzasız uygulama uyarıları
 
@@ -96,7 +111,7 @@ Kabul edilen öğrenci listeleri: Akademik Bilgi Sistemi'nden indirilen Excel li
 
 Doğru yeşil, yanlış kırmızı, boş sarı, iptal gri görünür; uyarılı satırlar turuncudur. "Yalnızca uyarılıları göster" ile süzün. Numara, ad ya da tek bir cevabı düzeltmek için hücreye çift tıklayın (ya da Enter'a basın). **Özgün okuma hiçbir zaman silinmez**; her düzeltme "kim, ne zaman, eski değer, yeni değer" olarak kaydedilir ve sonuç dosyasında ayrı bir sayfada yer alır.
 
-**Klasik sınavda** bu adımın "Puan girişi" sekmesinde öğrenci listesi ve soru sütunları vardır: hücreye tıklayıp puanı yazın, ya da Excel'den bir bloğu kopyalayıp yapıştırın (Ctrl+V / Cmd+V). "Excel'den puan al" numara ve S1, S2… sütunları olan bir dosyayı okur; "Boş puan şablonu oluştur" doldurulacak Excel'i üretir. Tam puan yeşil, kısmi puan mavi, sıfır kırmızı, sorunun puanını aşan değer turuncu görünür. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.
+**Klasik sınavda** bu adımın "Puan girişi" sekmesinin üstünde **kâğıt sırasıyla giriş** paneli vardır: öğrencinin numarasını ya da adının birkaç harfini yazıp Enter'a basın, soru puanlarını yazın (Enter bir sonraki kutuya geçer), isterseniz kâğıdın üstündeki toplamı da yazın; son kutuda Enter kaydeder ve yeni kâğıda hazırlar. Kâğıttaki toplam soru puanlarının toplamıyla tutmazsa uyarılır. Altında da öğrenci listesi ve soru sütunları vardır: hücreye tıklayıp puanı yazın, ya da Excel'den bir bloğu kopyalayıp yapıştırın (Ctrl+V / Cmd+V). "Excel'den puan al" numara ve S1, S2… sütunları olan bir dosyayı okur; "Boş puan şablonu oluştur" doldurulacak Excel'i üretir. Tam puan yeşil, kısmi puan mavi, sıfır kırmızı, sorunun puanını aşan değer turuncu görünür. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.
 
 Uyarı türleri: numarada okunamayan karakter, boş ad, Türkçe karakteri bozuk ad, kısa satır, soru alanı dışında işaret, çift işaret, geçersiz işaret, aynı numaranın iki kez okunması, listede olmayan numara. Listede olup dosyada olmayan öğrenciler "Sınava girmeyenler" sekmesinde, eşleşmeyen numaralar olası numara önerileriyle "Listede olmayanlar" sekmesinde görünür. Numara uzunlukları farklı olabileceği için (9 ve 10 hane) **otomatik eşleştirme yapılmaz**; doğru numarayı siz seçersiniz. Doğru ad her zaman öğrenci listesinden alınır.
 

@@ -81,6 +81,10 @@ class KontrolAdimi(Adim):
         # --- klasik sınav puan girişi
         self.klasik_sayfa = QWidget()
         v = QVBoxLayout(self.klasik_sayfa)
+        from .kagit import KagitPaneli
+
+        self.kagit = KagitPaneli(self.durum, self)
+        v.addWidget(self.kagit)
         s = QHBoxLayout()
         for metin, islev, ipucu in (
             ("Excel'den puan al…", self._excelden_al, "Öğrenci numarası ve S1, S2… sütunları olan bir Excel dosyasından puanları okur."),
@@ -92,8 +96,9 @@ class KontrolAdimi(Adim):
             s.addWidget(b)
         s.addStretch(1)
         v.addLayout(s)
-        v.addWidget(QLabel("Hücreye tıklayıp puanı yazın (Enter ile alttaki öğrenciye geçer). Excel'den bir bloğu kopyalayıp "
-                           "seçili hücreye Ctrl+V (Mac'te Cmd+V) ile yapıştırabilirsiniz. Boş bırakılan öğrenci sınava girmemiş sayılır."))
+        v.addWidget(QLabel("Ya da tabloda hücreye tıklayıp yazın. Excel'den bir bloğu kopyalayıp seçili hücreye Ctrl+V (Mac'te Cmd+V) "
+                           "ile yapıştırabilirsiniz. Boş bırakılan öğrenci sınava girmemiş sayılır. \"Kâğıttaki toplam\" sütunu isteğe bağlıdır; "
+                           "tutmazsa kırmızı görünür."))
         self.klasik_model = KlasikGirisModeli(self.durum, self)
         self.klasik_model.dataChanged.connect(lambda *_: self.durum.degerlendir())
         self.klasik_tablo = YapistirilabilirTablo()
@@ -136,6 +141,7 @@ class KontrolAdimi(Adim):
         self.sekmeler.setTabVisible(i, klasik)
         if klasik:
             self.klasik_model.yenile()
+            self.kagit.kur()
             h = self.klasik_tablo.horizontalHeader()
             h.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
             if self.sekmeler.currentIndex() != i and not self.durum.proje.klasik_puanlar:

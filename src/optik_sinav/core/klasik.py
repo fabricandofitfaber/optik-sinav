@@ -37,7 +37,9 @@ def puan_coz(metin: object) -> Fraction | None:
 
 
 def klasik_degerlendir(liste: OgrenciListesi, anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari,
-                       puanlar: dict[str, list[str | None]]) -> SinavSonucu:
+                       puanlar: dict[str, list[str | None]], toplamlar: dict[str, str | None] | None = None) -> SinavSonucu:
+    """`toplamlar`: kâğıdın üstüne yazılan toplam (isteğe bağlı); soru puanlarının toplamıyla tutmazsa uyarı verilir."""
+    toplamlar = toplamlar or {}
     en_fazla = soru_puanlari(anahtar, ayarlar)
     n = anahtar.soru_sayisi
     ogrenciler: list[OgrenciSonucu] = []
@@ -86,6 +88,16 @@ def klasik_degerlendir(liste: OgrenciListesi, anahtar: CevapAnahtari, ayarlar: P
             sonuclar.append(SoruSonucu(isaret=_yaz(v) if v is not None else "", durum=durum, puan=p))
         if eksik and len(eksik) < n:
             uyarilar.append(Uyari(UyariTuru.CEVAPTA_GECERSIZ, M.UYARI["klasik_eksik"].format(sorular=", ".join(map(str, eksik))), sira))
+        kagit = toplamlar.get(ogr.no)
+        if kagit not in (None, ""):
+            try:
+                kt = puan_coz(kagit)
+            except (ValueError, ArithmeticError):
+                kt = None
+            if kt is None:
+                uyarilar.append(Uyari(UyariTuru.CEVAPTA_GECERSIZ, f"Kâğıttaki toplam sayı değil: {kagit!r}", sira))
+            elif kt != ham:
+                uyarilar.append(Uyari(UyariTuru.CEVAPTA_GECERSIZ, M.UYARI["klasik_toplam"].format(kagit=_yaz(kt), hesap=_yaz(ham)), sira))
         kayit = HamKayit(satir_no=sira, ham_satir="", ad=ogr.ad, ogrenci_no=ogr.no, cevaplar=[s.isaret for s in sonuclar])
         ogrenciler.append(OgrenciSonucu(
             kayit=kayit, no=ogr.no, ad=ogr.ad, okunan_ad=ogr.ad, cevaplar=[s.isaret for s in sonuclar], sorular=sonuclar,

@@ -52,9 +52,31 @@
     try { tam = OS.soruPuanlari(a, D.proje.ayarlar); } catch (_) { tam = []; }
     const satir = (og, i) => {
       const d = D.proje.klasik_puanlar[og.no] || [];
-      return `<tr data-no="${e(og.no)}"><td>${i + 1}</td><td>${e(og.no)}</td><td class="sol">${e(og.ad)}</td>${Array.from({ length: n }, (_, k) => `<td class="${hucreSinifi(d[k], tam[k])}"><input class="hucre" data-k="${k}" value="${e(d[k] ?? "")}" inputmode="decimal"></td>`).join("")}<td class="kalin toplam">${klasikToplam(d)}</td></tr>`;
+      const kt = (D.proje.klasik_toplamlar || {})[og.no];
+      return `<tr data-no="${e(og.no)}"><td>${i + 1}</td><td>${e(og.no)}</td><td class="sol">${e(og.ad)}</td>${Array.from({ length: n }, (_, k) => `<td class="${hucreSinifi(d[k], tam[k])}"><input class="hucre" data-k="${k}" value="${e(d[k] ?? "")}" inputmode="decimal"></td>`).join("")}<td class="kalin toplam">${klasikToplam(d)}</td><td class="${toplamSinifi(d, kt)}"><input class="hucre kagit" value="${e(kt ?? "")}" inputmode="decimal" title="Kâğıdın üstüne yazdığınız toplam (isteğe bağlı, kontrol için)"></td></tr>`;
     };
-    return `<div class="tablo-kap"><table class="veri" id="klasikTablo"><thead><tr><th>Sıra</th><th>Öğrenci No</th><th class="sol">Ad Soyad</th>${Array.from({ length: n }, (_, k) => `<th>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</th>`).join("")}<th>Toplam</th></tr></thead><tbody>${L.map(satir).join("")}</tbody></table></div>`;
+    return `<div class="tablo-kap"><table class="veri" id="klasikTablo"><thead><tr><th>Sıra</th><th>Öğrenci No</th><th class="sol">Ad Soyad</th>${Array.from({ length: n }, (_, k) => `<th>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</th>`).join("")}<th>Toplam</th><th title="Kâğıdın üstündeki toplam; tutmazsa kırmızı">Kâğıttaki toplam</th></tr></thead><tbody>${L.map(satir).join("")}</tbody></table></div>`;
+  }
+  function toplamSinifi(d, kt) {
+    if (kt === null || kt === undefined || kt === "") return "";
+    let k2, t = OS.Kesir.SIFIR;
+    try { k2 = OS.puanCoz(kt); for (const x of d || []) { const p = OS.puanCoz(x); if (p !== null) t = t.ekle(p); } } catch (_) { return "Y"; }
+    return k2 !== null && k2.esit(t) ? "D" : "Y";
+  }
+  function kagitPaneli() {
+    const a = D.proje.anahtar, n = a.sorular.length;
+    let tam = [];
+    try { tam = OS.soruPuanlari(a, D.proje.ayarlar); } catch (_) { tam = []; }
+    const L = D.liste ? D.liste.ogrenciler : [];
+    const girilen = L.filter((o) => (D.proje.klasik_puanlar[o.no] || []).some((x) => x !== null && x !== "")).length;
+    return `<div class="kutu" id="kagitPaneli"><h3>Kâğıt sırasıyla giriş</h3>
+      <div class="satir"><label>Öğrenci</label><input type="text" id="kagitAra" placeholder="Numaranın ya da adın birkaç harfi, sonra Enter" style="width:300px" autocomplete="off">
+        <span id="kagitKim" class="kalin"></span><span id="kagitKalan" class="soluk">Girilen kâğıt: ${girilen} / ${L.length}</span></div>
+      <div id="kagitOneri" class="satir" style="min-height:8px"></div>
+      <div class="satir" id="kagitKutular">${Array.from({ length: n }, (_, k) => `<label>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</label><input type="text" class="kagitPuan" data-k="${k}" style="width:62px" inputmode="decimal" disabled>`).join("")}
+        <label>Kâğıttaki toplam</label><input type="text" id="kagitToplam" style="width:70px" inputmode="decimal" disabled title="İsteğe bağlı: kâğıdın üstüne yazdığınız toplam; tutmazsa uyarılır">
+        <button id="kagitKaydet" class="ana" disabled>Kaydet, sonraki kâğıt</button></div>
+      <p class="soluk" style="margin:4px 0 0">Kâğıtlar elinizdeki sırayla gelsin: öğrenciyi bulun, puanları yazın (Enter bir sonraki kutuya geçer), son kutuda Enter kaydeder ve yeni kâğıda hazırlar.</p></div>`;
   }
   function hucreSinifi(x, tam) {
     if (x === null || x === undefined || x === "") return "";
@@ -94,8 +116,8 @@
       const sek = [...(kl ? [["giris", "Puan girişi"]] : []), ["sonuc", "Sonuçlar"], ["girmeyen", `Sınava girmeyenler (${s.girmeyenler.length})`],
         ...(kl ? [] : [["olmayan", `Listede olmayanlar (${s.listede_olmayanlar.length})`], ["duzeltme", `Düzeltme kaydı (${D.proje.duzeltmeler.length})`]])];
       let icerik = "";
-      if (K.sekme === "giris") icerik = `<div class="satir"><button id="exceldenAl">Excel'den puan al…</button><button id="sablonIndir">Boş puan şablonu indir</button>
-          <span class="soluk">Hücreye tıklayıp puanı yazın (Enter alttaki öğrenciye geçer). Excel'den bir bloğu kopyalayıp bir hücreye yapıştırabilirsiniz. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.</span></div>${klasikTablo()}`;
+      if (K.sekme === "giris") icerik = `${kagitPaneli()}<div class="satir"><button id="exceldenAl">Excel'den puan al…</button><button id="sablonIndir">Boş puan şablonu indir</button>
+          <span class="soluk">Ya da tabloda hücreye tıklayıp yazın (Enter alttaki öğrenciye geçer; soru soru puanlamaya uygun). Excel'den bir bloğu kopyalayıp bir hücreye yapıştırabilirsiniz. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.</span></div>${klasikTablo()}`;
       else if (K.sekme === "sonuc") icerik = `<div class="satir"><label><input type="checkbox" id="yalnizUyarili" ${K.yalnizUyarili ? "checked" : ""}> Yalnızca uyarılıları göster</label>
           <span class="efsane"><span style="background:var(--dogru)">doğru</span><span style="background:var(--yanlis)">yanlış</span><span style="background:var(--bos)">boş</span><span style="background:var(--iptal)">iptal</span>${kl ? '<span style="background:var(--kismi)">kısmi</span>' : ""}<span style="background:var(--uyari)">uyarılı</span></span>
           <span class="soluk">${kl ? "Puanı değiştirmek için Puan girişi sekmesini kullanın." : "Numara, ad, tek bir cevap ya da kitapçığı düzeltmek için hücreye tıklayın. Özgün okuma silinmez."} Sütun başlığına tıklayarak sıralayın.</span></div>${sonucTablosu(s)}`;
@@ -130,6 +152,74 @@
     if (b) b.textContent = `Sınava girmeyenler (${s.girmeyenler.length})`;
     UI.altGuncelle();
     UI.otomatikKaydet();
+  }
+  function kagitOlaylari(k, satirGuncelle) {
+    const ara = $("#kagitAra", k);
+    if (!ara) return;
+    const L = D.liste ? D.liste.ogrenciler : [];
+    const kutular = $$(".kagitPuan", k), toplam = $("#kagitToplam", k), kaydet = $("#kagitKaydet", k);
+    let secili = null;
+    const sadeAd = (x) => String(x || "").toLocaleLowerCase("tr").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i");
+    const bul = (m) => {
+      const t = m.trim();
+      if (!t) return [];
+      const ts = sadeAd(t);
+      return L.filter((o) => o.no.includes(t) || sadeAd(o.ad).includes(ts));
+    };
+    const sec = (o) => {
+      secili = o;
+      const d = D.proje.klasik_puanlar[o.no] || [];
+      $("#kagitKim", k).textContent = `${o.no} ${o.ad}${d.some((x) => x !== null && x !== "") ? " (daha önce girilmiş; üzerine yazılır)" : ""}`;
+      $("#kagitOneri", k).innerHTML = "";
+      kutular.forEach((b) => { b.disabled = false; b.value = d[Number(b.dataset.k)] ?? ""; });
+      toplam.disabled = false;
+      toplam.value = (D.proje.klasik_toplamlar || {})[o.no] ?? "";
+      kaydet.disabled = false;
+      kutular[0].focus();
+      kutular[0].select();
+    };
+    const temizle = () => {
+      secili = null;
+      ara.value = "";
+      $("#kagitKim", k).textContent = "";
+      kutular.forEach((b) => { b.value = ""; b.disabled = true; });
+      toplam.value = ""; toplam.disabled = true; kaydet.disabled = true;
+      ara.focus();
+    };
+    const oneriGoster = () => {
+      const r = bul(ara.value);
+      $("#kagitOneri", k).innerHTML = r.slice(0, 8).map((o, i) => `<button class="kucuk" data-i="${i}">${e(o.no)} ${e(o.ad)}</button>`).join("") + (r.length > 8 ? `<span class="soluk">+${r.length - 8} öğrenci daha; biraz daha yazın</span>` : "") + (ara.value.trim() && !r.length ? '<span class="kirmizi">Listede bulunamadı</span>' : "");
+      $$("#kagitOneri button", k).forEach((b) => (b.onclick = () => sec(r[Number(b.dataset.i)])));
+      return r;
+    };
+    ara.oninput = oneriGoster;
+    ara.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); const r = oneriGoster(); if (r.length >= 1) sec(r[0]); } };
+    const kaydetVeSonraki = () => {
+      if (!secili) return;
+      kutular.forEach((b) => klasikYaz(secili.no, Number(b.dataset.k), b.value));
+      const t = (D.proje.klasik_toplamlar = D.proje.klasik_toplamlar || {});
+      if (toplam.value.trim()) t[secili.no] = toplam.value.trim(); else delete t[secili.no];
+      const tr = $(`#klasikTablo tr[data-no="${CSS.escape(secili.no)}"]`, k);
+      if (tr) {
+        const d = D.proje.klasik_puanlar[secili.no] || [];
+        $$("input.hucre:not(.kagit)", tr).forEach((i) => (i.value = d[Number(i.dataset.k)] ?? ""));
+        const kg = $("input.kagit", tr);
+        if (kg) kg.value = t[secili.no] ?? "";
+        satirGuncelle(tr);
+      }
+      klasikOzetGuncelle();
+      const s = D.sonuc;
+      const o = s && s.ogrenciler.find((x) => x.no === secili.no);
+      const uy = o ? o.uyarilar.filter((u) => /toplam|büyük|eksi|sayı/.test(u.mesaj)).map((u) => u.mesaj) : [];
+      bildir(uy.length ? `${secili.ad}: kaydedildi, ama dikkat: ${uy.join("; ")}` : `${secili.ad}: kaydedildi (${o ? OS.sayiYaz(o.puan, 2) : "-"} puan).`, uy.length ? 7000 : 2500);
+      const girilen = L.filter((x) => (D.proje.klasik_puanlar[x.no] || []).some((y) => y !== null && y !== "")).length;
+      $("#kagitKalan", k).textContent = `Girilen kâğıt: ${girilen} / ${L.length}`;
+      temizle();
+    };
+    kutular.forEach((b, j) => (b.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); (kutular[j + 1] || toplam).focus(); (kutular[j + 1] || toplam).select(); } }));
+    toplam.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); kaydetVeSonraki(); } };
+    kaydet.onclick = kaydetVeSonraki;
+    setTimeout(() => ara.focus(), 0);
   }
   async function duzeltmePenceresi(o, alan, k) {
     let r = null;
@@ -169,9 +259,15 @@
       const d = D.proje.klasik_puanlar[no] || [];
       $$("input.hucre", tr).forEach((i) => (i.parentElement.className = hucreSinifi(d[Number(i.dataset.k)], tam[Number(i.dataset.k)])));
       $(".toplam", tr).innerHTML = klasikToplam(d);
+      const kg = $("input.kagit", tr);
+      if (kg) kg.parentElement.className = toplamSinifi(d, (D.proje.klasik_toplamlar || {})[no]);
     };
     const yaz = (i) => { const tr = i.closest("tr"); klasikYaz(tr.dataset.no, Number(i.dataset.k), i.value); satirGuncelle(tr); klasikOzetGuncelle(); };
-    $$("input.hucre", tablo).forEach((i) => {
+    $$("input.kagit", tablo).forEach((i) => {
+      i.onchange = () => { const tr = i.closest("tr"); const t = (D.proje.klasik_toplamlar = D.proje.klasik_toplamlar || {}); const x = i.value.trim(); if (x) t[tr.dataset.no] = x; else delete t[tr.dataset.no]; satirGuncelle(tr); klasikOzetGuncelle(); };
+    });
+    kagitOlaylari(k, satirGuncelle);
+    $$("input.hucre:not(.kagit)", tablo).forEach((i) => {
       i.onchange = () => yaz(i);
       i.onkeydown = (ev) => {
         const tr = i.closest("tr"), kk = Number(i.dataset.k);

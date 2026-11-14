@@ -11,6 +11,7 @@
   const $ = (s, k = document) => k.querySelector(s);
   const $$ = (s, k = document) => [...k.querySelectorAll(s)];
   function bildir(m, sure = 3500) {
+    document.querySelectorAll(".bildirim").forEach((x) => x.remove());
     const b = document.createElement("div");
     b.className = "bildirim";
     b.textContent = m;
@@ -140,7 +141,7 @@
   };
   UI.degerlendir = function () {
     const p = D.proje;
-    if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar) : null;
+    if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar) : null;
     else D.sonuc = D.okuma ? OS.sinaviDegerlendir(D.okuma.kayitlar, p.anahtar, p.ayarlar, D.liste, p.duzeltmeler) : null;
     return D.sonuc;
   };

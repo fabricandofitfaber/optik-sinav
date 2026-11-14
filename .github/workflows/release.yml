@@ -1,5 +1,8 @@
 name: Sürüm
 
+# Dosya adları sürüm numarası içermez; böylece README'deki ve indirme sayfasındaki
+# https://github.com/<sahip>/<depo>/releases/latest/download/<dosya> bağlantıları her zaman en yeni sürümü indirir.
+
 on:
   push:
     tags: ["v*"]
@@ -18,11 +21,11 @@ jobs:
       matrix:
         include:
           - os: macos-latest        # Apple Silicon (arm64)
-            ad: macos-apple-silicon
+            dosya: OptikSinav-Mac-AppleSilicon
           - os: macos-15-intel      # Intel (x86_64); etiket GitHub tarafında değişirse güncelleyin
-            ad: macos-intel
+            dosya: OptikSinav-Mac-Intel
           - os: windows-latest
-            ad: windows
+            dosya: OptikSinav-Windows
     runs-on: ${{ matrix.os }}
     env:
       QT_QPA_PLATFORM: offscreen
@@ -41,20 +44,16 @@ jobs:
       - name: macOS disk görüntüsü
         if: runner.os == 'macOS'
         run: |
-          SURUM="${GITHUB_REF_NAME#v}"
           codesign -s - --force --deep "dist/Optik Sinav.app" || true
           mkdir -p dmg && cp -R "dist/Optik Sinav.app" dmg/ && ln -s /Applications dmg/Applications
-          hdiutil create -volname "Optik Sinav" -srcfolder dmg -ov -format UDZO "OptikSinav-${SURUM}-${{ matrix.ad }}.dmg"
-          ditto -c -k --keepParent "dist/Optik Sinav.app" "OptikSinav-${SURUM}-${{ matrix.ad }}.zip"
+          hdiutil create -volname "Optik Sinav" -srcfolder dmg -ov -format UDZO "${{ matrix.dosya }}.dmg"
 
-      - name: Windows arşivi
+      - name: Windows taşınabilir arşiv
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          $surum = "${{ github.ref_name }}".TrimStart("v")
-          Compress-Archive -Path dist\OptikSinav -DestinationPath "OptikSinav-$surum-windows.zip"
+        run: Compress-Archive -Path dist\OptikSinav -DestinationPath "${{ matrix.dosya }}-Tasinabilir.zip"
 
-      - name: Windows kurulum dosyası (Inno Setup, isteğe bağlı)
+      - name: Windows kurulum dosyası (Inno Setup)
         if: runner.os == 'Windows'
         continue-on-error: true
         shell: pwsh
@@ -62,15 +61,15 @@ jobs:
           $surum = "${{ github.ref_name }}".TrimStart("v")
           if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) { choco install innosetup -y --no-progress }
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DSurum=$surum paketleme\kurulum.iss
-          Copy-Item "dist\OptikSinav-$surum-windows-kurulum.exe" .
+          Copy-Item "dist\OptikSinav-$surum-windows-kurulum.exe" "${{ matrix.dosya }}-Kurulum.exe"
 
       - name: Sürüm sayfasına ekle
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            OptikSinav-*.dmg
-            OptikSinav-*.zip
-            OptikSinav-*-kurulum.exe
+            OptikSinav-Mac-*.dmg
+            OptikSinav-Windows-*.zip
+            OptikSinav-Windows-Kurulum.exe
           fail_on_unmatched_files: false
 
   tarayici:
@@ -84,8 +83,8 @@ jobs:
       - name: Tek dosyalık tarayıcı sürümünü derle
         run: |
           python tools/web_derle.py
-          cp web/dist/OptikSinav.html "OptikSinav-${GITHUB_REF_NAME#v}.html"
+          cp web/dist/OptikSinav.html OptikSinav.html
       - name: Sürüm sayfasına ekle
         uses: softprops/action-gh-release@v2
         with:
-          files: OptikSinav-*.html
+          files: OptikSinav.html

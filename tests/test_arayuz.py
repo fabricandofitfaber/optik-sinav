@@ -142,7 +142,7 @@ def test_klasik_sinav_arayuzu(pencere, fix, tmp_path):
     pencere.sonraki.click()
     k = pencere.adimlar[3]
     m = k.klasik_model
-    assert m.rowCount() == len(d.liste.ogrenciler) and m.columnCount() == 3 + 4 + 1
+    assert m.rowCount() == len(d.liste.ogrenciler) and m.columnCount() == 3 + 4 + 2
     assert not pencere.sonraki.isEnabled()  # puan yok
     m.setData(m.index(0, 3), "10")
     m.setData(m.index(0, 4), "12,5")
@@ -181,3 +181,31 @@ def test_istatistik_yeni_sekmeler(pencere, fix):
     ist.donem.tablo.item(0, 3).setText("20")
     assert d.proje.final_puanlar[ist.donem.tablo.item(0, 0).text()] == "20"
     assert ist.donem.donem() is not None
+
+
+def test_kagit_sirasiyla_giris(pencere, fix):
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.ders_kodu.setText("UYD1001")
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    p1.klasik_sayi.setValue(3)
+    pencere.sonraki.click()
+    pencere.sonraki.click()
+    pencere.sonraki.click()
+    k = pencere.adimlar[3]
+    panel = k.kagit
+    assert len(panel.kutular) == 3
+    hedef = d.liste.ogrenciler[2]
+    bulunan = panel.bul(hedef.ad.split()[0][:3].lower())
+    assert hedef in bulunan
+    panel.sec(hedef)
+    for e, x in zip(panel.kutular, ["30", "20,5", "10"]):
+        e.setText(x)
+    panel.toplam.setText("61")
+    panel.kaydet()
+    o = d.sonuc.no_ile()[hedef.no]
+    assert float(o.puan) == 60.5 and any("tutmuyor" in u.mesaj for u in o.uyarilar)
+    assert panel.secili is None and "Girilen kâğıt: 1" in panel.kalan.text()
+    m = k.klasik_model
+    assert m.data(m.index(2, 3 + 3 + 1)) == "61"

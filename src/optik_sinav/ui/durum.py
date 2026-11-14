@@ -138,7 +138,7 @@ class Durum(QObject):
     # ---------------------------------------------------------- değerlendirme
     def degerlendir(self) -> SinavSonucu | None:
         if self.proje.klasik:
-            self.sonuc = (klasik_degerlendir(self.liste, self.proje.anahtar, self.proje.ayarlar, self.proje.klasik_puanlar)
+            self.sonuc = (klasik_degerlendir(self.liste, self.proje.anahtar, self.proje.ayarlar, self.proje.klasik_puanlar, self.proje.klasik_toplamlar)
                           if self.liste is not None else None)
         elif self.okuma is None:
             self.sonuc = None

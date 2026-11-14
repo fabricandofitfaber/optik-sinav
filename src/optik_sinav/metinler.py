@@ -21,6 +21,7 @@ UYARI = {
     "klasik_fazla": "{soru}. soruda girilen puan ({puan}) sorunun puanından ({en_fazla}) büyük",
     "klasik_eksi": "{soru}. soruda eksi puan girilmiş",
     "klasik_eksik": "Puanı girilmemiş soru: {sorular} (sıfır sayıldı)",
+    "klasik_toplam": "Kâğıttaki toplam ({kagit}) soru puanlarının toplamıyla ({hesap}) tutmuyor",
 }
 
 DURUM_ADI = {"D": "Doğru", "Y": "Yanlış", "B": "Boş", "I": "İptal", "-": "Anahtarsız", "K": "Kısmi puan"}
