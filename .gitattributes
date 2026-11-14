@@ -1,0 +1,5 @@
+# Test dosyaları bayt bayt karşılaştırılır; Windows'ta git satır sonlarını değiştirmesin.
+tests/fixtures/** -text
+tests/golden/** -text
+tests/web/** -text
+*.dat -text
