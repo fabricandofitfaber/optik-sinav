@@ -1,0 +1,27 @@
+{
+  "ad": "akreditasyon_soru_bazli_varsayilan",
+  "baslik": "Akreditasyon: soru bazlı puan (geçici varsayılan)",
+  "aciklama": "Sınav Akreditasyon İşlemleri ekranının gerçek biçimi görülene kadar kullanılan geçici profil: Öğrenci No, Ad Soyad, S1..Sn.",
+  "dosya_turu": "xlsx",
+  "sayfa_adi": "Soru Puanları",
+  "ust_satirlar": [],
+  "baslik_satiri_yaz": true,
+  "sutunlar": [
+    {"alan": "ogrenci_no", "baslik": "Öğrenci No", "deger": ""},
+    {"alan": "ad_soyad", "baslik": "Ad Soyad", "deger": ""},
+    {"alan": "soru_puanlari", "baslik": "S{n}", "deger": ""}
+  ],
+  "ogrenci_no_bicimi": "metin",
+  "ondalik_ayirici": ",",
+  "ondalik_basamak": 2,
+  "yuvarlama": "yarim_yukari",
+  "girmedi_gosterimi": "G",
+  "girmeyenleri_dahil_et": true,
+  "listede_olmayanlari_dahil_et": false,
+  "sira": "liste",
+  "kodlama": "utf-8",
+  "ayrac": ";",
+  "satir_sonu": "CRLF",
+  "sablon": null,
+  "taslak": true
+}

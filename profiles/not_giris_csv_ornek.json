@@ -1,0 +1,27 @@
+{
+  "ad": "not_giris_csv_ornek",
+  "baslik": "Not Giriş: noktalı virgüllü metin dosyası (örnek)",
+  "aciklama": "Sistem metin dosyası kabul ederse kullanılacak örnek: Windows-1254, noktalı virgül, CRLF, virgüllü ondalık.",
+  "dosya_turu": "csv",
+  "sayfa_adi": "",
+  "ust_satirlar": [],
+  "baslik_satiri_yaz": true,
+  "sutunlar": [
+    {"alan": "ogrenci_no", "baslik": "Öğrenci No", "deger": ""},
+    {"alan": "ad_soyad", "baslik": "Ad Soyad", "deger": ""},
+    {"alan": "puan", "baslik": "Puan", "deger": ""}
+  ],
+  "ogrenci_no_bicimi": "metin",
+  "ondalik_ayirici": ",",
+  "ondalik_basamak": 2,
+  "yuvarlama": "yarim_yukari",
+  "girmedi_gosterimi": "G",
+  "girmeyenleri_dahil_et": true,
+  "listede_olmayanlari_dahil_et": false,
+  "sira": "liste",
+  "kodlama": "windows-1254",
+  "ayrac": ";",
+  "satir_sonu": "CRLF",
+  "sablon": null,
+  "taslak": true
+}

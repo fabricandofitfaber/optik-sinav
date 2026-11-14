@@ -1,0 +1,21 @@
+# Kişisel veri: gerçek öğrenci dosyaları asla depoya girmez
+ornek_veri/
+cikti/
+ciktilar/
+*.dat
+*.xlsx
+*.xls
+*.osd
+!tests/fixtures/**
+!tests/golden/**
+
+# Python ve paketleme
+.venv
+.venv *
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.DS_Store

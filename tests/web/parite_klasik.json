@@ -1,0 +1,773 @@
+{
+ "ad": "klasik",
+ "dat": null,
+ "liste": "tests/fixtures/uydurma_liste.xlsx",
+ "proje": {
+  "surum": 1,
+  "uygulama": "optik-sinav",
+  "sinav": {
+   "ders_kodu": "",
+   "ders_adi": "",
+   "sinav_turu": "Ara Sınav",
+   "tarih": "",
+   "saat": "",
+   "etki_orani": "",
+   "donem": ""
+  },
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "",
+     "durum": "normal",
+     "puan": "10",
+     "ogrenme_ciktilari": [
+      "Ö01"
+     ],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "",
+     "durum": "normal",
+     "puan": "25",
+     "ogrenme_ciktilari": [
+      "Ö02"
+     ],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "",
+     "durum": "normal",
+     "puan": "25",
+     "ogrenme_ciktilari": [
+      "Ö02",
+      "Ö03"
+     ],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "",
+     "durum": "normal",
+     "puan": "40",
+     "ogrenme_ciktilari": [
+      "Ö04"
+     ],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "ayarlar": {
+   "basari_esigi": 50,
+   "gecme_ortalamasi": 50,
+   "final_alt_siniri": 50,
+   "toplam_puan": "100",
+   "yontem": "soru_bazli",
+   "yanlis_cezasi": false,
+   "ceza_orani": 4,
+   "cift_isaret": "bos",
+   "yuvarlama": "yarim_yukari",
+   "ondalik": 2
+  },
+  "okuyucu": {
+   "ad": "varsayilan_136",
+   "aciklama": "",
+   "ad_baslangic": 1,
+   "ad_uzunluk": 25,
+   "no_baslangic": 26,
+   "no_uzunluk": 9,
+   "cevap_baslangic": 37,
+   "soru_sayisi": 15,
+   "kitapcik_baslangic": null,
+   "kitapcik_uzunluk": 1,
+   "satir_uzunlugu": 136
+  },
+  "dat_yolu": "",
+  "liste_yolu": "",
+  "liste_esleme": {
+   "sayfa": null,
+   "baslik_satiri": null,
+   "no_sutun": null,
+   "ad_sutun": null,
+   "soyad_sutun": null
+  },
+  "duzeltmeler": [],
+  "profil_akreditasyon": "akreditasyon_soru_bazli_varsayilan",
+  "profil_not_giris": "not_giris_varsayilan",
+  "sistem_sablonu_yolu": "",
+  "bicim": "klasik",
+  "klasik_soru_sayisi": 4,
+  "klasik_puanlar": {
+   "990000001": [
+    "5",
+    "4,5",
+    "12",
+    "41"
+   ],
+   "990000002": [
+    "0",
+    "2",
+    "17",
+    "6"
+   ],
+   "990000003": [
+    "5",
+    "18,5",
+    "1",
+    "32"
+   ],
+   "990000004": [
+    "3",
+    "1",
+    null,
+    "5"
+   ],
+   "990000005": [
+    "6",
+    "13",
+    "2",
+    "15"
+   ],
+   "990000006": [
+    "1",
+    "17,5",
+    "13",
+    "3"
+   ],
+   "990000007": [
+    "9",
+    "3,5",
+    "7",
+    "40"
+   ],
+   "990000008": [
+    "10",
+    "18,5",
+    "1",
+    "36"
+   ],
+   "990000009": [
+    "9",
+    "12,5",
+    "1",
+    "14"
+   ],
+   "990000010": [
+    "0",
+    "17,5",
+    "4",
+    "18"
+   ]
+  }
+ },
+ "ders_kodlari": null,
+ "beklenen": {
+  "ogrenciler": [
+   {
+    "no": "990000001",
+    "ad": "ÇİĞDEM ÖZTÜRK",
+    "puan": "125/2",
+    "ham": "125/2",
+    "ceza": "0/1",
+    "durum": "KKKD",
+    "cevaplar": [
+     "5",
+     "4,5",
+     "12",
+     "41"
+    ],
+    "dogru": 1,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": [
+     [
+      "cevapta_gecersiz",
+      "4. soruda girilen puan (41) sorunun puanından (40) büyük"
+     ]
+    ]
+   },
+   {
+    "no": "990000002",
+    "ad": "ŞÜKRÜ IŞIK",
+    "puan": "25/1",
+    "ham": "25/1",
+    "ceza": "0/1",
+    "durum": "YKKK",
+    "cevaplar": [
+     "0",
+     "2",
+     "17",
+     "6"
+    ],
+    "dogru": 0,
+    "yanlis": 1,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000003",
+    "ad": "AYŞE GÜNEŞ",
+    "puan": "113/2",
+    "ham": "113/2",
+    "ceza": "0/1",
+    "durum": "KKKK",
+    "cevaplar": [
+     "5",
+     "18,5",
+     "1",
+     "32"
+    ],
+    "dogru": 0,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000004",
+    "ad": "MEHMET ÇAKIR",
+    "puan": "9/1",
+    "ham": "9/1",
+    "ceza": "0/1",
+    "durum": "KKBK",
+    "cevaplar": [
+     "3",
+     "1",
+     "",
+     "5"
+    ],
+    "dogru": 0,
+    "yanlis": 0,
+    "bos": 1,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": [
+     [
+      "cevapta_gecersiz",
+      "Puanı girilmemiş soru: 3 (sıfır sayıldı)"
+     ]
+    ]
+   },
+   {
+    "no": "990000005",
+    "ad": "BURAK ERDOĞAN",
+    "puan": "36/1",
+    "ham": "36/1",
+    "ceza": "0/1",
+    "durum": "KKKK",
+    "cevaplar": [
+     "6",
+     "13",
+     "2",
+     "15"
+    ],
+    "dogru": 0,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000006",
+    "ad": "ZEYNEP DEMİR",
+    "puan": "69/2",
+    "ham": "69/2",
+    "ceza": "0/1",
+    "durum": "KKKK",
+    "cevaplar": [
+     "1",
+     "17,5",
+     "13",
+     "3"
+    ],
+    "dogru": 0,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000007",
+    "ad": "ALİ VELİ",
+    "puan": "119/2",
+    "ham": "119/2",
+    "ceza": "0/1",
+    "durum": "KKKD",
+    "cevaplar": [
+     "9",
+     "3,5",
+     "7",
+     "40"
+    ],
+    "dogru": 1,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000008",
+    "ad": "HASAN KAYA",
+    "puan": "131/2",
+    "ham": "131/2",
+    "ceza": "0/1",
+    "durum": "DKKK",
+    "cevaplar": [
+     "10",
+     "18,5",
+     "1",
+     "36"
+    ],
+    "dogru": 1,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000009",
+    "ad": "FATMA YILDIZ",
+    "puan": "73/2",
+    "ham": "73/2",
+    "ceza": "0/1",
+    "durum": "KKKK",
+    "cevaplar": [
+     "9",
+     "12,5",
+     "1",
+     "14"
+    ],
+    "dogru": 0,
+    "yanlis": 0,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   },
+   {
+    "no": "990000010",
+    "ad": "EMRE ŞAHİN",
+    "puan": "79/2",
+    "ham": "79/2",
+    "ceza": "0/1",
+    "durum": "YKKK",
+    "cevaplar": [
+     "0",
+     "17,5",
+     "4",
+     "18"
+    ],
+    "dogru": 0,
+    "yanlis": 1,
+    "bos": 0,
+    "kitapcik": "",
+    "kaynak": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "listede": true,
+    "oneriler": [],
+    "uyarilar": []
+   }
+  ],
+  "girmeyenler": [
+   "990000011",
+   "990000012"
+  ],
+  "soru_puanlari": [
+   "10/1",
+   "25/1",
+   "25/1",
+   "40/1"
+  ],
+  "maddeler": [
+   {
+    "soru_no": 1,
+    "analiz_disi": false,
+    "guclik": 0.48,
+    "ayirt": 0.6666666666666666,
+    "r": 0.5725972704322467,
+    "r_duz": 0.4077869429840514,
+    "alfa_c": -0.2564299106079285,
+    "bes": [
+     0.15,
+     0.35,
+     0.45,
+     0.7,
+     0.75
+    ],
+    "sik": {},
+    "sorunlar": [],
+    "celdirici": []
+   },
+   {
+    "soru_no": 2,
+    "analiz_disi": false,
+    "guclik": 0.434,
+    "ayirt": 0.08000000000000002,
+    "r": 0.34855427732224237,
+    "r_duz": -0.05636725512280032,
+    "alfa_c": 0.09505761067313506,
+    "bes": [
+     0.06,
+     0.61,
+     0.6,
+     0.44,
+     0.45999999999999996
+    ],
+    "sik": {},
+    "sorunlar": [
+     "Ayırt edicilik düşük (0,08)",
+     "Soru çıkarılırsa güvenirlik artıyor (0,02 → 0,10)"
+    ],
+    "celdirici": []
+   },
+   {
+    "soru_no": 3,
+    "analiz_disi": false,
+    "guclik": 0.23200000000000004,
+    "ayirt": -0.13333333333333341,
+    "r": -0.03342197472002218,
+    "r_duz": -0.34654649767811363,
+    "alfa_c": 0.3453262812543677,
+    "bes": [
+     0.34,
+     0.3,
+     0.1,
+     0.16,
+     0.26
+    ],
+    "sik": {},
+    "sorunlar": [
+     "Ayırt edicilik düşük (-0,13)",
+     "Soru çıkarılırsa güvenirlik artıyor (0,02 → 0,35)"
+    ],
+    "celdirici": []
+   },
+   {
+    "soru_no": 4,
+    "analiz_disi": false,
+    "guclik": 0.525,
+    "ayirt": 0.8583333333333333,
+    "r": 0.9199809261527484,
+    "r_duz": 0.2504619957759296,
+    "alfa_c": -1.3969127311630751,
+    "bes": [
+     0.1375,
+     0.225,
+     0.4,
+     0.9,
+     0.9624999999999999
+    ],
+    "sik": {},
+    "sorunlar": [],
+    "celdirici": []
+   }
+  ],
+  "genel": {
+   "ogrenci_sayisi": 10,
+   "ortalama": 42.45,
+   "standart_sapma": 18.23831437143003,
+   "en_dusuk": 9.0,
+   "en_yuksek": 65.5,
+   "medyan": 38.0,
+   "kr20": null,
+   "birinci_ceyrek": 34.875,
+   "ucuncu_ceyrek": 58.75,
+   "carpiklik": -0.359687998833352,
+   "basiklik": -0.553839133122226,
+   "alfa": 0.01781504090500411,
+   "olcme_hatasi": 18.07512614576134,
+   "basari_orani": 0.4,
+   "ortalama_guclik": 0.41775,
+   "ortalama_ayirt_edicilik": 0.3679166666666666,
+   "bos_orani_sirayla": [
+    0.0,
+    0.0,
+    0.1,
+    0.0
+   ],
+   "hiz_uyarisi": "",
+   "yorumlar": [
+    "Sınıf ortalaması 42,5, ortanca 38,0. 50 ve üstü alan öğrenci oranı %40.",
+    "Puan dağılımı ortaya göre dengeli.",
+    "Güvenirlik katsayısı 0,02 (düşük). Ölçmenin standart hatası yaklaşık ±18,1 puan; bir öğrencinin puanı ölçme hatası yüzünden bu kadar oynayabilir.",
+    "Gözden geçirilmesi önerilen sorular: 2, 3 (ayrıntı Madde Analizi sayfasında)."
+   ]
+  },
+  "kisi_uyumu": [],
+  "benzer": [],
+  "cikti_raporu": [
+   [
+    "Öğrenme çıktısı",
+    "Ö01",
+    [
+     1
+    ],
+    48.0,
+    10.0,
+    0.6,
+    {
+     "990000001": 50.0,
+     "990000002": 0.0,
+     "990000003": 50.0,
+     "990000004": 30.0,
+     "990000005": 60.0,
+     "990000006": 10.0,
+     "990000007": 90.0,
+     "990000008": 100.0,
+     "990000009": 90.0,
+     "990000010": 0.0
+    }
+   ],
+   [
+    "Öğrenme çıktısı",
+    "Ö02",
+    [
+     2,
+     3
+    ],
+    36.66666666666667,
+    37.5,
+    0.4,
+    {
+     "990000001": 28.0,
+     "990000002": 28.0,
+     "990000003": 50.666666666666664,
+     "990000004": 2.6666666666666665,
+     "990000005": 37.333333333333336,
+     "990000006": 64.0,
+     "990000007": 18.666666666666668,
+     "990000008": 50.666666666666664,
+     "990000009": 34.666666666666664,
+     "990000010": 52.0
+    }
+   ],
+   [
+    "Öğrenme çıktısı",
+    "Ö03",
+    [
+     3
+    ],
+    23.2,
+    12.5,
+    0.2,
+    {
+     "990000001": 48.0,
+     "990000002": 68.0,
+     "990000003": 4.0,
+     "990000004": 0.0,
+     "990000005": 8.0,
+     "990000006": 52.0,
+     "990000007": 28.0,
+     "990000008": 4.0,
+     "990000009": 4.0,
+     "990000010": 16.0
+    }
+   ],
+   [
+    "Öğrenme çıktısı",
+    "Ö04",
+    [
+     4
+    ],
+    52.5,
+    40.0,
+    0.4,
+    {
+     "990000001": 102.5,
+     "990000002": 15.0,
+     "990000003": 80.0,
+     "990000004": 12.5,
+     "990000005": 37.5,
+     "990000006": 7.5,
+     "990000007": 100.0,
+     "990000008": 90.0,
+     "990000009": 35.0,
+     "990000010": 45.0
+    }
+   ]
+  ],
+  "cikti_dagilimi": {
+   "Ö01": "10/1",
+   "Ö02": "75/2",
+   "Ö03": "25/2",
+   "Ö04": "40/1"
+  },
+  "tam_sayi_dagilim": {
+   "Ö01": 10,
+   "Ö02": 38,
+   "Ö03": 12,
+   "Ö04": 40
+  },
+  "cikti_denetimi": [
+   [],
+   []
+  ],
+  "anahtar_eksikleri": [],
+  "soru_tanimi": "1\t10\tSoru 1\t1\t100\n2\t25\tSoru 2\t2\t100\n3\t25\tSoru 3\t2\t50\t3\t50\n4\t40\tSoru 4\t4\t100",
+  "sinir": [
+   [
+    "990000006",
+    -15.5
+   ],
+   [
+    "990000005",
+    -14.0
+   ],
+   [
+    "990000009",
+    -13.5
+   ],
+   [
+    "990000010",
+    -10.5
+   ],
+   [
+    "990000003",
+    6.5
+   ],
+   [
+    "990000007",
+    9.5
+   ],
+   [
+    "990000001",
+    12.5
+   ],
+   [
+    "990000008",
+    15.5
+   ]
+  ],
+  "final": [
+   [
+    "990000004",
+    77.34
+   ],
+   [
+    "990000002",
+    66.67
+   ],
+   [
+    "990000006",
+    60.34
+   ],
+   [
+    "990000005",
+    59.34
+   ],
+   [
+    "990000009",
+    59.0
+   ],
+   [
+    "990000010",
+    57.0
+   ],
+   [
+    "990000001",
+    50.0
+   ],
+   [
+    "990000003",
+    50.0
+   ],
+   [
+    "990000007",
+    50.0
+   ],
+   [
+    "990000008",
+    50.0
+   ]
+  ],
+  "sans": null,
+  "tasarim": null,
+  "kitapcik": null,
+  "rasch": null
+ }
+}

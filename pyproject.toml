@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optik-sinav"
+version = "0.1.0"
+description = "Optik okuyucu dosyalarını soru bazında puanlayan, çevrim dışı çalışan sınav değerlendirme programı"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Ali Osman Öztop" }]
+requires-python = ">=3.11"
+dependencies = ["PySide6-Essentials>=6.6", "openpyxl>=3.1", "xlrd>=2.0", "pypdf>=4.0"]
+
+[project.optional-dependencies]
+pdf = ["matplotlib>=3.8"]
+gelistirme = ["pytest>=8", "matplotlib>=3.8", "pyinstaller>=6.3"]
+
+[project.scripts]
+optik-sinav = "optik_sinav.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,85 @@
+{
+  "kod": "UTL4513",
+  "ad": "Yatırım Analizi",
+  "program": "Uluslararası Ticaret ve Lojistik",
+  "ogrenme_ciktilari": [
+    {
+      "kod": "Ö01",
+      "aciklama": "Yatırım kararlarının alınmasında temel prensipleri öğrenmeliler"
+    },
+    {
+      "kod": "Ö02",
+      "aciklama": "Borç enstrümanlarının değerlemesini ve durasyon hesabını yapabilmeliler"
+    },
+    {
+      "kod": "Ö03",
+      "aciklama": "Sermaye hesabını yapabilmeliler"
+    },
+    {
+      "kod": "Ö04",
+      "aciklama": "Firma değerlemesi yapabilmeliler"
+    },
+    {
+      "kod": "Ö05",
+      "aciklama": "Türev ürünlerinin temel özelliklerini öğrenmeliler"
+    }
+  ],
+  "program_ciktilari": [
+    {
+      "kod": "P01",
+      "aciklama": "Toplumsal ve mesleki etik değerleri bilir."
+    },
+    {
+      "kod": "P02",
+      "aciklama": "Uluslararası ticaret ve lojistik alanındaki temel kavramlar, kuramlar, ilkeler ve olgular hakkında bilgi sahibi olur."
+    },
+    {
+      "kod": "P03",
+      "aciklama": "Düşünce ve önerilerini Türkçe ve en az Avrupa Dil Portföyü B1 Genel düzeyinde yabancı dilde ilgililere yazılı ve sözlü olarak aktarır, çalışma yaşamındaki paydaşlarıyla etkili iletişim kurar."
+    },
+    {
+      "kod": "P04",
+      "aciklama": "Temel bilişim ve iletişim teknolojilerini kullanabilir ve uluslararası ticaret ve lojistik alanının güncel bilgilerini çalışanlar ve ekip arkadaşlarına aktarabilme becerisine sahiptir."
+    },
+    {
+      "kod": "P05",
+      "aciklama": "Uluslararası ticaret ve lojistik alanlarındaki ulusal ve uluslar arası güncel gelişmeleri izleyebilme ve yorumlayabilme becerisi kazanır."
+    },
+    {
+      "kod": "P06",
+      "aciklama": "Uluslararası ticaret ve lojistik alanları ile ilgili konularda diğer disiplinlerden yararlanır ve bu disiplinlere ilişkin temel bilgilere sahip olur."
+    },
+    {
+      "kod": "P07",
+      "aciklama": "Uluslararası ticaret ve lojistik verilerin analiz edilmesi ve modellenmesi için gerekli olan yöntemleri, teknikleri ve araçları sağlar ve elde edilen sonuçları değerlendirir."
+    },
+    {
+      "kod": "P08",
+      "aciklama": "Kalite, iş etiği ve sosyal sorumluluk, çevre koruma, iş sağlığı ve güvenliği, sosyal haklar ve sosyal adalet bilincini kazanır ve görev aldığı işletmelerde bu bilinçle iş yapma ve sonuçlandırma becerisine sahip olur."
+    },
+    {
+      "kod": "P09",
+      "aciklama": "Küreselleşme, uluslararası ticaret, lojistik ve ekonomik etkinlikleri tarihsel bir perspektif çerçevesinde yorumlar."
+    },
+    {
+      "kod": "P10",
+      "aciklama": "Yaşam boyu öğrenme bilincini kavrar."
+    }
+  ],
+  "katki": {
+    "P01": 3,
+    "P02": 4,
+    "P03": 3,
+    "P04": 4,
+    "P05": 4,
+    "P06": 5,
+    "P07": 5,
+    "P08": 3,
+    "P09": 3,
+    "P10": 3
+  },
+  "degerlendirme": {
+    "Ara Sınav": 40,
+    "Yarıyıl Sonu Sınavı": 60
+  }
+}

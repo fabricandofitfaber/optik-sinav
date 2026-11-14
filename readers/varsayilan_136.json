@@ -1,0 +1,13 @@
+{
+  "ad": "varsayilan_136",
+  "aciklama": "136 karakterlik satır: ad 1-25, numara 26-34, cevaplar 37'den başlar. Başlık satırı, cevap anahtarı ve kitapçık alanı yok.",
+  "ad_baslangic": 1,
+  "ad_uzunluk": 25,
+  "no_baslangic": 26,
+  "no_uzunluk": 9,
+  "cevap_baslangic": 37,
+  "soru_sayisi": 15,
+  "kitapcik_baslangic": null,
+  "kitapcik_uzunluk": 1,
+  "satir_uzunlugu": 136
+}
