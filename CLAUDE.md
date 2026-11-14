@@ -80,4 +80,4 @@ Yerel macOS derlemesinde imza `com.apple.provenance` öznitelikleri yüzünden d
 - [ ] Gerçek A/B kitapçıklı bir `.dat` ile kitapçık alanının konumu (UTL4513 formunda 35-36. sütunlar boş; kitapçık alanı olabilir).
 - [ ] Karma sınav (optik + klasik bölüm).
 - [ ] Komut satırı (`cli.py`) klasik sınavı ve kitapçığı henüz desteklemiyor.
-- [ ] GitHub Actions'taki Intel macOS çalıştırıcı etiketi (`macos-15-intel`) ilk sürümde denetlenmeli.
+- [x] GitHub Actions Intel macOS çalıştırıcısı (`macos-15-intel`) v1.0.0 sürümünde çalıştı (14 Kasım 2026).
