@@ -187,7 +187,7 @@ def _not(ws, r, metin, sutun_sayisi=8):
 
 
 def madde_analizi_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, esikler: MaddeEsikleri | None = None,
-                      ara_agirlik: float = 40.0, arsiv: list | None = None) -> Path:
+                      ara_agirlik: float = 40.0, arsiv: list | None = None, donem=None) -> Path:
     """Grafikli istatistik raporu: özet ve yorum, puan dağılımı, madde analizi, çeldiriciler, beş grup, boş bırakma,
     kişi uyumu ve benzer yanlış örüntüsü."""
     from openpyxl.chart import BarChart, LineChart, Reference
@@ -405,6 +405,9 @@ def madde_analizi_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, 
               "Sınıf geneline göre olağandışı sayıda aynı yanlış şık işaretleyen öğrenci çifti bulunmadı.", 9)
 
     _ek_analizler_sayfasi(wb, sonuc, maddeler, genel, e, ara_agirlik, arsiv or [])
+    _yapi_sayfalari(wb, sonuc)
+    if donem is not None:
+        _donem_sayfasi(wb, donem)
 
     # --- Öğrenci Puanları (standart puanlar)
     ws = wb.create_sheet("Standart Puanlar")
@@ -571,6 +574,100 @@ def _ek_analizler_sayfasi(wb, sonuc, maddeler, genel, e, ara_agirlik, arsiv):
         _not(ws, r, "Öğrenme çıktısı sütunları sınıf başarı yüzdesidir. Kayıtlar 'Tüm raporları klasöre yaz' her kullanıldığında "
                     "bilgisayarınızdaki arşive eklenir.", 6)
     sutun_genislikleri(ws, {1: 50, 2: 28, 3: 14, 4: 16, 5: 14, 6: 14})
+
+
+def _yapi_sayfalari(wb, sonuc):
+    from ..core import ek_istatistik as E
+
+    if not sonuc.klasik:
+        ws = wb.create_sheet("Kavram Yanılgıları")
+        baslik_satiri(ws, 1, ["Soru", "Yanlış şık", "Birlikte seçilen soru", "Yanlış şık", "İkisini birden seçen", "1. şıkkı seçen",
+                              "1'i seçenlerde 2'yi seçme oranı", "Sınıfta 2'yi seçme oranı", "Phi", "p değeri"])
+        k = E.kavram_yanilgilari(sonuc)
+        for r, x in enumerate(k, start=2):
+            for j, v in enumerate([x.soru1, x.sik1, x.soru2, x.sik2, x.birlikte, x.secen1], start=1):
+                ws.cell(row=r, column=j, value=v)
+            _sayi(ws, r, 7, x.kosullu, "0%")
+            _sayi(ws, r, 8, x.taban, "0%")
+            _sayi(ws, r, 9, x.phi)
+            _sayi(ws, r, 10, x.p, "0.000")
+        _tablo_bitir(ws, 10, {1: 7, 2: 10, 3: 12, 4: 10, 5: 12, 6: 10, 7: 16, 8: 14, 9: 8, 10: 9})
+        _not(ws, len(k) + 3, "İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden "
+                             "yanıltıyor olabilir: o iki sorunun ortak konusunu sınıfla yeniden ele almak yararlı olur. Fisher kesin "
+                             "testinde p ≤ 0,01 olan çiftler listelenir." if k else
+              "Sınıf geneline göre belirgin biçimde birlikte seçilen yanlış şık çifti bulunmadı.", 10)
+    y = E.sinav_yapisi(sonuc)
+    if y is None:
+        return
+    ws = wb.create_sheet("Sınav Yapısı")
+    ws.cell(row=1, column=1, value="Yorum").font = KALIN
+    _not(ws, 2, y.yorum, 6)
+    satirlar = [("Birinci bileşenin açıkladığı varyans", y.ilk_pay, "0%"), ("Birinci / ikinci özdeğer", y.oran_1_2, "0.00"),
+                ("Sorular arası ortalama korelasyon", y.ortalama_korelasyon, "0.000")]
+    for r, (ad, v, b) in enumerate(satirlar, start=4):
+        ws.cell(row=r, column=1, value=ad).font = KALIN
+        _sayi(ws, r, 2, v, b)
+    r = 8
+    baslik_satiri(ws, r, ["Soru", "Ortak bileşene yükü", "Değerlendirme"])
+    for no in y.sorular:
+        r += 1
+        ws.cell(row=r, column=1, value=no)
+        _sayi(ws, r, 2, y.yukler[no])
+        if no in y.zayif_sorular:
+            c = ws.cell(row=r, column=3, value="sınavın geri kalanından farklı bir şey ölçüyor")
+            c.fill = dolgu(RENK["uyari"])
+    if y.cikti_uyumu:
+        r += 2
+        baslik_satiri(ws, r, ["Öğrenme çıktısı", "Kendi soruları arasında ortalama korelasyon", "Öteki sorularla ortalama korelasyon", "Soru sayısı"])
+        for kod, ic, dis, n in y.cikti_uyumu:
+            r += 1
+            ws.cell(row=r, column=1, value=kod)
+            _sayi(ws, r, 2, ic, "0.000")
+            _sayi(ws, r, 3, dis, "0.000")
+            ws.cell(row=r, column=4, value=n)
+        r += 1
+        _not(ws, r + 1, "Aynı öğrenme çıktısına bağlı sorular kendi aralarında ötekilerden daha çok ilişkiliyse, soru-çıktı eşlemesi "
+                        "verilerle uyumludur.", 6)
+    r += 3
+    ws.cell(row=r, column=1, value="Özdeğerler").font = KALIN
+    for j, v in enumerate(y.ozdegerler, start=2):
+        _sayi(ws, r, j, v)
+    sutun_genislikleri(ws, {1: 44, 2: 22, 3: 44, 4: 12})
+
+
+def _donem_sayfasi(wb, d):
+    ws = wb.create_sheet("Dönem Sonu Notu")
+    bas = ["Öğrenci No", "Ad Soyad", "Ara sınav", "Final", "Ham başarı notu"] + (["T puanı"] if d.uygulanan == "bagil" else []) + ["Harf", "Durum", "Açıklama", "Sınırda"]
+    baslik_satiri(ws, 1, bas)
+    for r, n in enumerate(d.notlar, start=2):
+        j = 1
+        ws.cell(row=r, column=j, value=n.no).number_format = "@"
+        ws.cell(row=r, column=j + 1, value=n.ad)
+        _sayi(ws, r, j + 2, n.ara)
+        _sayi(ws, r, j + 3, n.final)
+        _sayi(ws, r, j + 4, n.ham)
+        j += 5
+        if d.uygulanan == "bagil":
+            _sayi(ws, r, j, n.t)
+            j += 1
+        ws.cell(row=r, column=j, value=n.harf).font = KALIN
+        c = ws.cell(row=r, column=j + 1, value="" if n.gecti is None else ("Geçti" if n.gecti else "Kaldı"))
+        if n.gecti is not None:
+            c.fill = dolgu(RENK["D"] if n.gecti else RENK["Y"])
+        ws.cell(row=r, column=j + 2, value=n.aciklama)
+        if n.sinirda:
+            ws.cell(row=r, column=j + 3, value=n.sinirda).fill = dolgu(RENK["uyari"])
+    _tablo_bitir(ws, len(bas), {1: 13, 2: 28, len(bas) - 1: 24, len(bas): 18})
+    r = len(d.notlar) + 3
+    ws.cell(row=r, column=1, value="Harf dağılımı").font = KALIN
+    for j, (h, sayi) in enumerate(d.dagilim.items(), start=2):
+        ws.cell(row=r, column=j, value=h).font = KALIN
+        ws.cell(row=r + 1, column=j, value=sayi)
+    aciklama = (f"Uygulanan: {'bağıl (T-puanı)' if d.uygulanan == 'bagil' else 'mutlak'} değerlendirme."
+                + (f" Bağıl grup: {d.bagil_grup} öğrenci, ortalama {d.ortalama:.2f}, standart sapma {d.standart_sapma:.2f}.".replace(".", ",") if d.uygulanan == "bagil" else "")
+                + " " + " ".join(d.notlar_metin)
+                + " Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.")
+    _not(ws, r + 3, aciklama, 8)
 
 
 def ogrenme_ciktisi_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, aciklamalar: dict[str, str] | None = None) -> Path | None:
@@ -752,7 +849,7 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
                       akreditasyon_profili=None, not_giris_profili=None, sistem_sablonu: str | Path | None = None,
                       pdf: bool = True, kaynaklar: dict[str, str] | None = None,
                       cikti_aciklamalari: dict[str, str] | None = None, ara_agirlik: float = 40.0,
-                      arsiv_klasoru: str | Path | None = None) -> TopluCikti:
+                      arsiv_klasoru: str | Path | None = None, donem=None, karne: bool = True) -> TopluCikti:
     from .sablon_doldurucu import sablonu_doldur
     from .xlsx_yazici import aktarim_yaz, uzanti
 
@@ -780,7 +877,11 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
         _, genel = madde_analizi(sonuc, MaddeEsikleri(basari_esigi=esik, cikti_esigi=esik))
         E.arsive_yaz(Path(arsiv_klasoru), E.arsiv_kaydi_olustur(sonuc, sinav, genel, ogrenme_ciktisi_raporu(sonuc, esik)))
         arsiv = E.arsivi_oku(Path(arsiv_klasoru), sinav.ders_kodu)
-    t.dosyalar.append(madde_analizi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "istatistik"), ara_agirlik=ara_agirlik, arsiv=arsiv))
+    t.dosyalar.append(madde_analizi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "istatistik"), ara_agirlik=ara_agirlik, arsiv=arsiv, donem=donem))
+    if karne and sonuc.ogrenciler:
+        from .karne import karne_yaz
+
+        t.dosyalar.append(karne_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "karneler", ".html"), cikti_aciklamalari))
     oc = ogrenme_ciktisi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "ogrenme_ciktisi"), cikti_aciklamalari)
     if oc:
         t.dosyalar.append(oc)

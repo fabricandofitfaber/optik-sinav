@@ -128,7 +128,7 @@
   };
 
   // ------------------------------------------------------------------ istatistik dosyası
-  X.istatistik = async function (sonuc, sinav, araAgirlik, arsiv) {
+  X.istatistik = async function (sonuc, sinav, araAgirlik, arsiv, donem) {
     const esik = sonuc.ayarlar.basari_esigi;
     const [maddeler, g] = OS.maddeAnalizi(sonuc, { basari_esigi: esik, cikti_esigi: esik });
     const kl = sonuc.klasik;
@@ -256,6 +256,57 @@
       for (const x of arsiv) { [x.tarih, x.sinav_turu, x.ogrenci_sayisi].forEach((y, j) => metin(ws, r, j + 1, y)); sayi(ws, r, 4, x.ortalama); sayi(ws, r, 5, x.basari_orani, "0%"); sayi(ws, r, 6, x.guvenirlik); kodlar.forEach((k2, j) => sayi(ws, r, 7 + j, (x.cikti_basarilari || {})[k2])); r++; }
     }
     genislik(ws, { 1: 50, 2: 28, 3: 14, 4: 16, 5: 14, 6: 14 });
+
+    if (!kl) {
+      ws = wb.addWorksheet("Kavram Yanılgıları");
+      baslik(ws, 1, ["Soru", "Yanlış şık", "Birlikte seçilen soru", "Yanlış şık", "İkisini birden seçen", "1. şıkkı seçen", "1'i seçenlerde 2'yi seçme oranı", "Sınıfta 2'yi seçme oranı", "Phi", "p değeri"]);
+      const kv = OS.kavramYanilgilari(sonuc);
+      kv.forEach((x, i) => { [x.soru1, x.sik1, x.soru2, x.sik2, x.birlikte, x.secen1].forEach((y, j) => metin(ws, i + 2, j + 1, y)); sayi(ws, i + 2, 7, x.kosullu, "0%"); sayi(ws, i + 2, 8, x.taban, "0%"); sayi(ws, i + 2, 9, x.phi); sayi(ws, i + 2, 10, x.p, "0.000"); });
+      not(ws, kv.length + 3, kv.length ? "İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden yanıltıyor olabilir. Fisher kesin testinde p ≤ 0,01 olan çiftler listelenir." : "Belirgin biçimde birlikte seçilen yanlış şık çifti bulunmadı.", 10);
+      bitir(ws, 10, { 1: 7, 2: 10, 3: 12, 4: 10, 5: 12, 6: 10, 7: 16, 8: 14 });
+    }
+    const y = OS.sinavYapisi(sonuc);
+    if (y) {
+      ws = wb.addWorksheet("Sınav Yapısı");
+      metin(ws, 1, 1, "Yorum").font = { bold: true };
+      not(ws, 2, y.yorum, 6);
+      [["Birinci bileşenin açıkladığı varyans", y.ilk_pay, "0%"], ["Birinci / ikinci özdeğer", y.oran_1_2], ["Sorular arası ortalama korelasyon", y.ortalama_korelasyon, "0.000"]]
+        .forEach(([ad, x, f], i) => { metin(ws, 4 + i, 1, ad).font = { bold: true }; sayi(ws, 4 + i, 2, x, f || "0.00"); });
+      r = 8;
+      baslik(ws, r, ["Soru", "Ortak bileşene yükü", "Değerlendirme"]);
+      for (const no of y.sorular) { r++; metin(ws, r, 1, no); sayi(ws, r, 2, y.yukler.get(no)); if (y.zayif_sorular.includes(no)) metin(ws, r, 3, "sınavın geri kalanından farklı bir şey ölçüyor").fill = dolgu(RENK.uyari); }
+      if (y.cikti_uyumu.length) {
+        r += 2;
+        baslik(ws, r, ["Öğrenme çıktısı", "Kendi soruları arasında ortalama korelasyon", "Öteki sorularla ortalama korelasyon", "Soru sayısı"]);
+        for (const [kod, ic, dis, n] of y.cikti_uyumu) { r++; metin(ws, r, 1, kod); sayi(ws, r, 2, ic, "0.000"); sayi(ws, r, 3, dis, "0.000"); metin(ws, r, 4, n); }
+      }
+      r += 3;
+      metin(ws, r, 1, "Özdeğerler").font = { bold: true };
+      y.ozdegerler.forEach((d, j) => sayi(ws, r, j + 2, d));
+      genislik(ws, { 1: 44, 2: 22, 3: 44, 4: 12 });
+    }
+    if (donem) {
+      ws = wb.addWorksheet("Dönem Sonu Notu");
+      const bg = donem.uygulanan === "bagil";
+      const bb = ["Öğrenci No", "Ad Soyad", "Ara sınav", "Final", "Ham başarı notu", ...(bg ? ["T puanı"] : []), "Harf", "Durum", "Açıklama", "Sınırda"];
+      baslik(ws, 1, bb);
+      donem.notlar.forEach((n, i) => {
+        const rr = i + 2;
+        no(ws, rr, 1, n.no); metin(ws, rr, 2, n.ad); sayi(ws, rr, 3, n.ara); sayi(ws, rr, 4, n.final); sayi(ws, rr, 5, n.ham);
+        let j = 6;
+        if (bg) sayi(ws, rr, j++, n.t);
+        metin(ws, rr, j, n.harf).font = { bold: true };
+        const c = metin(ws, rr, j + 1, n.gecti === null ? "" : n.gecti ? "Geçti" : "Kaldı");
+        if (n.gecti !== null) c.fill = dolgu(n.gecti ? RENK.D : RENK.Y);
+        metin(ws, rr, j + 2, n.aciklama);
+        if (n.sinirda) metin(ws, rr, j + 3, n.sinirda).fill = dolgu(RENK.uyari);
+      });
+      bitir(ws, bb.length, { 1: 13, 2: 28, [bb.length - 1]: 24, [bb.length]: 18 });
+      r = donem.notlar.length + 3;
+      metin(ws, r, 1, "Harf dağılımı").font = { bold: true };
+      Object.entries(donem.dagilim).forEach(([h, n], j) => { metin(ws, r, j + 2, h).font = { bold: true }; metin(ws, r + 1, j + 2, n); });
+      not(ws, r + 3, `Uygulanan: ${bg ? "bağıl (T-puanı)" : "mutlak"} değerlendirme. ${donem.notlar_metin.join(" ")} Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.`, 8);
+    }
 
     ws = wb.addWorksheet("Standart Puanlar");
     baslik(ws, 1, ["Öğrenci No", "Ad Soyad", "Puan", "Sıra", "Yüzdelik sıra", "z puanı", "T puanı"]);

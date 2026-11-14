@@ -20,6 +20,7 @@ from optik_sinav.core.klasik import klasik_degerlendir  # noqa: E402
 from optik_sinav.core.madde_analizi import (  # noqa: E402
     MaddeEsikleri, cikti_dagilimi, cikti_denetimi, madde_analizi, ogrenme_ciktisi_raporu, tam_sayi_dagilim,
 )
+from optik_sinav.core.donem_sonu import HarfAyarlari, donem_sonu, karneler  # noqa: E402
 from optik_sinav.core.modeller import CevapAnahtari, PuanlamaAyarlari  # noqa: E402
 from optik_sinav.core.proje import SinavProjesi  # noqa: E402
 from optik_sinav.core.puanlama import anahtar_eksikleri  # noqa: E402
@@ -75,7 +76,20 @@ def ciktilar(proje: SinavProjesi, sonuc, ders_kodlari=None) -> dict:
         "tasarim": None if t is None else [t.sik_sayilari, t.en_uzun_seri, t.seri_harfi, t.sira_guclik_korelasyonu, t.notlar],
         "kitapcik": None if kk is None else [kk.ortalama1, kk.ortalama2, kk.t, kk.serbestlik, kk.p, kk.etki],
         "rasch": None if rs is None else [rs.soru_zorluklari, rs.en_iyi_olctugu, rs.en_iyi_puan, rs.disarida_kalan_ogrenci, rs.disarida_kalan_soru],
+        "kavram": [[k.soru1, k.sik1, k.soru2, k.sik2, k.birlikte, k.secen1, k.secen2, k.kosullu, k.taban, k.phi, k.p] for k in E.kavram_yanilgilari(sonuc)],
+        "yapi": None if (y := E.sinav_yapisi(sonuc)) is None else [y.sorular, y.ozdegerler, y.ilk_pay, y.oran_1_2, y.ortalama_korelasyon,
+                                                                    {str(k): v for k, v in y.yukler.items()}, y.zayif_sorular, [list(u) for u in y.cikti_uyumu], y.yorum],
+        "donem": {yon: _donem(sonuc, proje, yon) for yon in ("mutlak", "bagil")},
+        "karne": [[k.no, k.sira, k.yuzdelik, k.ciktilar, k.guclu, k.gelismeli] for k in karneler(sonuc, rapor)],
     }
+
+
+def _donem(sonuc, proje, yontem):
+    finaller = {o.no: (None if i % 7 == 3 else str((i * 37) % 101)) for i, o in enumerate(sonuc.ogrenciler)}
+    proje.final_puanlar = finaller
+    d = donem_sonu(sonuc, finaller, 40, 50, 50, HarfAyarlari(yontem=yontem, bagil_en_az=3))
+    return [d.uygulanan, d.ortalama, d.standart_sapma, d.dagilim, d.notlar_metin,
+            [[n.no, n.ham, n.t, n.harf, n.gecti, n.aciklama, n.sinirda] for n in d.notlar]]
 
 
 def optik_senaryo(ad: str, dat: Path, liste: Path | None, proje: SinavProjesi, duzelt=None, ders_kodlari=None) -> dict:

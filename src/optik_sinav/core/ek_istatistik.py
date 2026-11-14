@@ -371,3 +371,192 @@ def ara_agirligi(sinav, ders=None) -> float:
         if v and 0 < v < 100:
             return float(v)
     return 40.0
+
+
+# ---------------------------------------------------------------- ortak kavram yanılgıları
+@dataclass
+class KavramYanilgisi:
+    soru1: int
+    sik1: str
+    soru2: int
+    sik2: str
+    birlikte: int  # ikisini birden seçen öğrenci
+    secen1: int  # 1. yanlış şıkkı seçen
+    secen2: int
+    kosullu: float  # 1'i seçenlerin 2'yi de seçme oranı
+    taban: float  # sınıfta 2'yi seçme oranı
+    phi: float
+    p: float  # Fisher kesin testi (tek yönlü): bu kadar çok birlikte seçimin şansla olma olasılığı
+
+
+def _log_komb(n: int, k: int) -> float:
+    return math.lgamma(n + 1) - math.lgamma(k + 1) - math.lgamma(n - k + 1)
+
+
+def fisher_ust(n11: int, n1: int, n2: int, n: int) -> float:
+    """Hipergeometrik üst kuyruk: P(X >= n11), X ~ HG(n, n1, n2)."""
+    toplam = 0.0
+    for x in range(n11, min(n1, n2) + 1):
+        toplam += math.exp(_log_komb(n1, x) + _log_komb(n - n1, n2 - x) - _log_komb(n, n2))
+    return min(1.0, toplam)
+
+
+def kavram_yanilgilari(sonuc: SinavSonucu, en_fazla: int = 15) -> list[KavramYanilgisi]:
+    """Öğrencilerin birlikte seçtiği yanlış şıklar: iki farklı sorunun yanlış şıkları arasındaki phi ilişkisi.
+
+    Yalnızca ana kitapçık öğrencileri; her yanlış şık en az max(3, %5) öğrenci tarafından seçilmiş olmalı.
+    Listelenen çiftler: birlikte seçen ≥ max(3, %5), phi ≥ 0,30, koşullu oran tabandan en az 1,5 kat ve
+    Fisher kesin testinde p ≤ 0,01 (çok sayıda çift sınandığı için sıkı eşik).
+    """
+    if sonuc.klasik:
+        return []
+    ana = sonuc.anahtar.ana_kitapcik
+    ogr = [o for o in sonuc.ogrenciler if (o.kitapcik or ana) == ana]
+    n = len(ogr)
+    if n < 10:
+        return []
+    alt = max(3, math.ceil(0.05 * n))
+    gostergeler: list[tuple[int, str, list[int]]] = []
+    for i, s in enumerate(sonuc.anahtar.sorular):
+        if s.durum == SoruDurumu.IPTAL or not s.dogru_kume():
+            continue
+        for sik in SIKLAR:
+            if sik in s.dogru_kume():
+                continue
+            v = [1 if o.cevaplar[i] == sik else 0 for o in ogr]
+            if sum(v) >= alt:
+                gostergeler.append((i, sik, v))
+    sonuclar = []
+    for a in range(len(gostergeler)):
+        for b in range(a + 1, len(gostergeler)):
+            i1, s1, v1 = gostergeler[a]
+            i2, s2, v2 = gostergeler[b]
+            if i1 == i2:
+                continue
+            n11 = sum(1 for x, y in zip(v1, v2) if x and y)
+            if n11 < alt:
+                continue
+            n1, n2 = sum(v1), sum(v2)
+            payda = math.sqrt(n1 * (n - n1) * n2 * (n - n2))
+            if payda == 0:
+                continue
+            phi = (n * n11 - n1 * n2) / payda
+            kosullu = n11 / n1
+            taban = n2 / n
+            if phi >= 0.30 and kosullu >= 1.5 * taban:
+                p = fisher_ust(n11, n1, n2, n)
+                if p <= 0.01:
+                    sonuclar.append(KavramYanilgisi(i1 + 1, s1, i2 + 1, s2, n11, n1, n2, kosullu, taban, phi, p))
+    return sorted(sonuclar, key=lambda k: (-k.phi, -k.birlikte, k.soru1, k.soru2))[:en_fazla]
+
+
+# ---------------------------------------------------------------- sınav yapısı (boyutluluk)
+def _jacobi(a: list[list[float]], en_fazla: int = 500) -> tuple[list[float], list[list[float]]]:
+    """Simetrik matrisin özdeğer ve özvektörleri (Jacobi dönüşümleri). Büyükten küçüğe sıralı."""
+    n = len(a)
+    a = [row[:] for row in a]
+    v = [[1.0 if i == j else 0.0 for j in range(n)] for i in range(n)]
+    for _ in range(en_fazla):
+        enb, p, q = 0.0, 0, 1
+        for i in range(n):
+            for j in range(i + 1, n):
+                if abs(a[i][j]) > enb:
+                    enb, p, q = abs(a[i][j]), i, j
+        if enb < 1e-12:
+            break
+        theta = 0.5 * math.atan2(2 * a[p][q], a[q][q] - a[p][p])
+        c, s = math.cos(theta), math.sin(theta)
+        for k in range(n):
+            akp, akq = a[k][p], a[k][q]
+            a[k][p] = c * akp - s * akq
+            a[k][q] = s * akp + c * akq
+        for k in range(n):
+            apk, aqk = a[p][k], a[q][k]
+            a[p][k] = c * apk - s * aqk
+            a[q][k] = s * apk + c * aqk
+        for k in range(n):
+            vkp, vkq = v[k][p], v[k][q]
+            v[k][p] = c * vkp - s * vkq
+            v[k][q] = s * vkp + c * vkq
+    degerler = [a[i][i] for i in range(n)]
+    sira = sorted(range(n), key=lambda i: -degerler[i])
+    vektorler = []
+    for i in sira:
+        vec = [v[k][i] for k in range(n)]
+        if sum(vec) < 0:
+            vec = [-x for x in vec]
+        vektorler.append(vec)
+    return [degerler[i] for i in sira], vektorler
+
+
+@dataclass
+class SinavYapisi:
+    sorular: list[int]
+    ozdegerler: list[float]
+    ilk_pay: float  # ilk bileşenin açıkladığı varyans oranı
+    oran_1_2: float | None  # birinci / ikinci özdeğer
+    ortalama_korelasyon: float
+    yukler: dict[int, float]  # soru no -> ilk bileşen yükü
+    zayif_sorular: list[int]  # yükü 0,20'nin altında
+    cikti_uyumu: list[tuple[str, float, float, int]]  # (çıktı, kendi içi ortalama r, dışarıyla ortalama r, soru sayısı)
+    yorum: str
+
+
+def sinav_yapisi(sonuc: SinavSonucu) -> SinavYapisi | None:
+    """Soru puanları arasındaki korelasyon matrisinin temel bileşenleri.
+
+    Birinci özdeğer ikinciden en az 3 kat büyükse sınav büyük ölçüde tek bir beceriyi ölçüyor kabul edilir.
+    Öğrenme çıktısı uyumu: aynı çıktıya bağlı soruların kendi aralarındaki ortalama korelasyonu ile öteki
+    sorularla ortalama korelasyonu.
+    """
+    tam = [float(p) for p in sonuc.soru_puanlari]
+    sec = [i for i, s in enumerate(sonuc.anahtar.sorular)
+           if s.durum != SoruDurumu.IPTAL and (sonuc.klasik or s.dogru_kume()) and tam[i] > 0]
+    ogr = sonuc.ogrenciler
+    if len(ogr) < 10:
+        return None
+    sutun = {i: [float(o.sorular[i].puan) / tam[i] for o in ogr] for i in sec}
+    sec = [i for i in sec if statistics.pvariance(sutun[i]) > 0]
+    k = len(sec)
+    if k < 3:
+        return None
+
+    def r(x, y):
+        mx, my = statistics.fmean(x), statistics.fmean(y)
+        sxx = sum((a - mx) ** 2 for a in x)
+        syy = sum((b - my) ** 2 for b in y)
+        return sum((a - mx) * (b - my) for a, b in zip(x, y)) / math.sqrt(sxx * syy)
+
+    m = [[1.0 if a == b else r(sutun[sec[a]], sutun[sec[b]]) for b in range(k)] for a in range(k)]
+    degerler, vektorler = _jacobi(m)
+    yukler = {sec[j] + 1: vektorler[0][j] * math.sqrt(max(degerler[0], 0.0)) for j in range(k)}
+    ciftler = [m[a][b] for a in range(k) for b in range(a + 1, k)]
+    ort_r = statistics.fmean(ciftler)
+    oran = degerler[0] / degerler[1] if degerler[1] > 1e-12 else None
+    zayif = sorted(no for no, y in yukler.items() if y < 0.20)
+    uyum = []
+    kodlar: dict[str, list[int]] = {}
+    for j, i in enumerate(sec):
+        for kod in sonuc.anahtar.sorular[i].ogrenme_ciktilari:
+            kodlar.setdefault(kod, []).append(j)
+    for kod in sorted(kodlar, key=_dogal):
+        ic = kodlar[kod]
+        dis = [j for j in range(k) if j not in ic]
+        if len(ic) < 2 or not dis:
+            continue
+        ic_r = statistics.fmean(m[a][b] for x, a in enumerate(ic) for b in ic[x + 1:])
+        dis_r = statistics.fmean(m[a][b] for a in ic for b in dis)
+        uyum.append((kod, ic_r, dis_r, len(ic)))
+    if oran is not None and oran >= 3:
+        yorum = "Sınav büyük ölçüde tek bir beceriyi ölçüyor (birinci bileşen ikinciden en az 3 kat güçlü); toplam puan anlamlı bir özet."
+    elif oran is not None and oran >= 1.5:
+        yorum = "Sınavda baskın bir ortak beceri var ama sorular birkaç ayrı konuya da dağılıyor; öğrenme çıktısı bazında bakmak toplam puandan daha bilgilendirici olabilir."
+    else:
+        yorum = "Sorular büyük ölçüde birbirinden bağımsız davranıyor; sınav ortak bir beceriden çok ayrı ayrı konuları ölçüyor. Toplam puan bu durumda kaba bir özettir."
+    return SinavYapisi([i + 1 for i in sec], degerler, degerler[0] / k, oran, ort_r, yukler, zayif, uyum, yorum)
+
+
+def _dogal(s: str):
+    import re
+
+    return [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", s)]

@@ -111,6 +111,8 @@ Sayıların sade Türkçe yorumu, temel değerler (ortalama, ortanca, standart s
 - **Kişi uyumu:** kolay soruları kaçırıp zor soruları bilen öğrenciler (okuma hatası, dikkatsizlik ya da şans; kâğıda bakın).
 - **Benzer cevaplar:** sınıf geneline göre olağandışı sayıda aynı yanlış şıkkı işaretleyen öğrenci çiftleri. Yalnızca istatistiksel işarettir, kopya kanıtı değildir.
 
+Ayrıca: **Kavram yanılgıları** (iki sorunun yanlış şıklarını birlikte seçen öğrenciler; şansla açıklanamayanlar), **Sınav yapısı** (sınav tek bir beceriyi mi ölçüyor, hangi soru ayrışıyor, öğrenme çıktısı eşlemesi verilerle uyumlu mu) ve **Dönem sonu notu** (final puanlarını girin ya da Excel'den alın; mutlak ya da T-puanına dayalı bağıl değerlendirmeyle harf notu, geçen ve kalanlar, bir üst harfe 1 puandan az kalanlar; harf tabloları örnektir, yönetmeliğinizle karşılaştırın). 6. adımdaki **Öğrenci karneleri** her öğrenciye bir sayfa üretir: puan, sıra, öğrenme çıktısı başarısı ve soru soru sonuç.
+
 Bunlara ek olarak Excel raporunda çeldirici analizi (her yanlış şıkkın üst ve alt gruptaki seçilme oranı, işlemeyen çeldiriciler), soru sırasına göre boş bırakma (süre yetti mi), çarpıklık, basıklık, çeyrekler ve z ile T puanları bulunur.
 
 ### 6. Dışa aktar

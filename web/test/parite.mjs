@@ -13,6 +13,7 @@ require(join(KOK, "web/src/ciktilar.js"));
 const XLSX = require(join(KOK, "web/vendor/xlsx_0.18.5_dist_xlsx.full.min.js"));
 const OS = globalThis.OS;
 require(join(KOK, "web/src/dosya.js"));
+require(join(KOK, "web/src/donem.js"));
 
 const kesir = (k) => `${k.p}/${k.q}`;
 const mapObj = (m) => (m instanceof Map ? Object.fromEntries([...m].map(([k, v]) => [k, mapObj(v)])) : m);
@@ -51,6 +52,14 @@ function hesapla(sen, proje, sonuc) {
     tasarim: t === null ? null : [t.sik_sayilari, t.en_uzun_seri, t.seri_harfi, t.sira_guclik_korelasyonu, t.notlar],
     kitapcik: kk === null ? null : [kk.ortalama1, kk.ortalama2, kk.t, kk.serbestlik, kk.p, kk.etki],
     rasch: rs === null ? null : [mapObj(rs.soru_zorluklari), rs.en_iyi_olctugu, rs.en_iyi_puan, rs.disarida_kalan_ogrenci, rs.disarida_kalan_soru],
+    kavram: OS.kavramYanilgilari(sonuc).map((k) => [k.soru1, k.sik1, k.soru2, k.sik2, k.birlikte, k.secen1, k.secen2, k.kosullu, k.taban, k.phi, k.p]),
+    yapi: (() => { const y = OS.sinavYapisi(sonuc); return y === null ? null : [y.sorular, y.ozdegerler, y.ilk_pay, y.oran_1_2, y.ortalama_korelasyon, mapObj(y.yukler), y.zayif_sorular, y.cikti_uyumu, y.yorum]; })(),
+    donem: Object.fromEntries(["mutlak", "bagil"].map((yon) => {
+      const fin = Object.fromEntries(sonuc.ogrenciler.map((o, i) => [o.no, i % 7 === 3 ? null : String((i * 37) % 101)]));
+      const d = OS.donemSonu(sonuc, fin, 40, 50, 50, { yontem: yon, bagil_en_az: 3 });
+      return [yon, [d.uygulanan, d.ortalama, d.standart_sapma, d.dagilim, d.notlar_metin, d.notlar.map((n) => [n.no, n.ham, n.t, n.harf, n.gecti, n.aciklama, n.sinirda])]];
+    })),
+    karne: OS.karneler(sonuc, rapor).map((k) => [k.no, k.sira, k.yuzdelik, k.ciktilar.map((c) => [c[0], c[1], c[2], c[3]]), k.guclu, k.gelismeli]),
   };
 }
 

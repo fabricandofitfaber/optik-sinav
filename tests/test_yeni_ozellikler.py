@@ -271,3 +271,64 @@ def test_arsiv(tmp_path):
         E.arsive_yaz(tmp_path, k)
     kayitlar = E.arsivi_oku(tmp_path, "UYD1001")
     assert [k.tarih for k in kayitlar] == ["2025-11-10", "2026-11-10"] and kayitlar[0].cikti_basarilari["Ö02"] == 50.0
+
+
+# ------------------------------------------------------------------ dört yeni analiz
+def test_kavram_yanilgisi_ve_fisher():
+    from optik_sinav.core import ek_istatistik as E
+
+    assert math.isclose(E.fisher_ust(5, 11, 8, 61), 0.0032727941221379437, rel_tol=1e-9)
+    a = CevapAnahtari.metinden("AAAA")
+    cev = ["BCAA"] * 6 + ["AAAA"] * 10 + ["BAAA", "ACAA", "AAAB", "AAAA"]
+    s = sinavi_degerlendir([kayit(i, c) for i, c in enumerate(cev, 1)], a, PuanlamaAyarlari())
+    k = E.kavram_yanilgilari(s)
+    assert k and (k[0].soru1, k[0].sik1, k[0].soru2, k[0].sik2) == (1, "B", 2, "C") and k[0].birlikte == 6
+
+
+def test_sinav_yapisi_tek_boyut():
+    from optik_sinav.core import ek_istatistik as E
+
+    import random
+
+    rnd = random.Random(5)
+    a = CevapAnahtari.metinden("A" * 8)
+    for s_ in a.sorular:
+        s_.ogrenme_ciktilari = ["Ö01"] if s_.no <= 4 else ["Ö02"]
+    cev = []
+    for _ in range(80):
+        yetenek = rnd.random()
+        cev.append("".join("A" if rnd.random() < yetenek else "B" for _ in range(8)))
+    s = sinavi_degerlendir([kayit(i, c) for i, c in enumerate(cev, 1)], a, PuanlamaAyarlari())
+    y = E.sinav_yapisi(s)
+    assert y.oran_1_2 > 3 and abs(sum(y.ozdegerler) - 8) < 1e-9 and "tek bir beceriyi" in y.yorum
+    assert all(v > 0.2 for v in y.yukler.values()) and len(y.cikti_uyumu) == 2
+
+
+def test_donem_sonu_mutlak_bagil():
+    from optik_sinav.core.donem_sonu import HarfAyarlari, donem_sonu, tablodan_final_puanlari
+
+    a = CevapAnahtari.metinden("AB")
+    s = sinavi_degerlendir([kayit(1, "AB"), kayit(2, "AC"), kayit(3, "CC")], a, PuanlamaAyarlari())
+    f = {"101": "90", "102": "40", "103": None}
+    d = donem_sonu(s, f, 40, 50, 50, HarfAyarlari())
+    n = {x.no: x for x in d.notlar}
+    assert math.isclose(n["101"].ham, 94) and n["101"].harf == "AA" and n["101"].gecti
+    assert n["102"].harf == "FF" and not n["102"].gecti and "final" in n["102"].aciklama
+    assert n["103"].harf == "" and n["103"].aciklama == "final girilmedi"
+    d2 = donem_sonu(s, {"101": "90", "102": "60", "103": "70"}, 40, 50, 50, HarfAyarlari(yontem="bagil", bagil_en_az=3))
+    assert d2.uygulanan == "bagil" and all(x.t is not None for x in d2.notlar)
+    d3 = donem_sonu(s, {"101": "90", "102": "60", "103": "70"}, 40, 50, 50, HarfAyarlari(yontem="bagil", bagil_en_az=30))
+    assert d3.uygulanan == "mutlak" and d3.notlar_metin
+    p, _ = tablodan_final_puanlari([["Öğrenci No", "Ad", "Final"], ["990000001", "X", 75], [990000002.0, "Y", "62,5"]])
+    assert p == {"990000001": "75", "990000002": "62,5"}
+
+
+def test_karne():
+    from optik_sinav.core.donem_sonu import karneler
+
+    a = CevapAnahtari.metinden("ABCD")
+    for s_, c in zip(a.sorular, (["Ö01"], ["Ö01"], ["Ö02"], ["Ö02"])):
+        s_.ogrenme_ciktilari = c
+    s = sinavi_degerlendir([kayit(1, "ABCD"), kayit(2, "ABAA"), kayit(3, "CCCD")], a, PuanlamaAyarlari())
+    k = {x.no: x for x in karneler(s, ogrenme_ciktisi_raporu(s))}
+    assert k["101"].sira == 1 and k["102"].ciktilar[0][2] == 100.0 and "Ö01" in k["102"].guclu and "Ö02" in k["102"].gelismeli

@@ -149,6 +149,14 @@ class IstatistikAdimi(Adim):
         self.sekmeler.addTab(w, "Benzer cevaplar")
         from PySide6.QtWidgets import QTextBrowser
 
+        self.kavram = QTextBrowser()
+        self.sekmeler.addTab(self.kavram, "Kavram yanılgıları")
+        self.yapi = QTextBrowser()
+        self.sekmeler.addTab(self.yapi, "Sınav yapısı")
+        from .donem import DonemPaneli
+
+        self.donem = DonemPaneli(self.durum)
+        self.sekmeler.addTab(self.donem, "Dönem sonu notu")
         self.ek = QTextBrowser()
         self.sekmeler.addTab(self.ek, "Ek analizler")
         self.duzen.addWidget(self.sekmeler, 1)
@@ -241,6 +249,47 @@ class IstatistikAdimi(Adim):
         self.sekmeler.setTabText(3, f"Benzer cevaplar ({len(g.benzer_ciftler)})")
         self.sekmeler.setTabVisible(3, not s.klasik)
         self.ek.setHtml(self._ek_html(s, maddeler, g, esik))
+        self.kavram.setHtml(self._kavram_html(s))
+        self.yapi.setHtml(self._yapi_html(s))
+        i = self.sekmeler.indexOf(self.kavram)
+        self.sekmeler.setTabVisible(i, not s.klasik)
+        self.donem.yenile()
+
+    def _kavram_html(self, s) -> str:
+        from ...core import ek_istatistik as E
+
+        k = E.kavram_yanilgilari(s)
+        self.sekmeler.setTabText(self.sekmeler.indexOf(self.kavram), f"Kavram yanılgıları ({len(k)})")
+        if not k:
+            return "<p>Sınıf geneline göre belirgin biçimde birlikte seçilen yanlış şık çifti bulunmadı.</p>"
+        h = ["<p style='color:gray'>İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden "
+             "yanıltıyor olabilir; o iki sorunun ortak konusunu sınıfla yeniden ele almak yararlı olur. Yalnızca şansla açıklanamayacak "
+             "(Fisher kesin testi, p ≤ 0,01) çiftler listelenir.</p><ul>"]
+        for x in k:
+            h.append(f"<li><b>{x.soru1}. sorunun {x.sik1} şıkkını</b> seçen {x.secen1} öğrencinin <b>%{x.kosullu * 100:.0f}</b>'i "
+                     f"<b>{x.soru2}. sorunun {x.sik2} şıkkını</b> da seçmiş (sınıfın tamamında bu oran %{x.taban * 100:.0f}; p = {_v(x.p, 4)}).</li>")
+        return "".join(h) + "</ul>"
+
+    def _yapi_html(self, s) -> str:
+        from ...core import ek_istatistik as E
+
+        y = E.sinav_yapisi(s)
+        if y is None:
+            return "<p>Bu analiz için en az 10 öğrenci ve 3 analiz edilebilir soru gerekir.</p>"
+        h = [f"<p><b>{y.yorum}</b></p><p style='color:gray'>Birinci bileşenin açıkladığı pay %{y.ilk_pay * 100:.0f}, birinci / ikinci özdeğer "
+             f"{'-' if y.oran_1_2 is None else _v(y.oran_1_2)}, sorular arası ortalama korelasyon {_v(y.ortalama_korelasyon, 3)}. "
+             f"Özdeğerler: {', '.join(_v(d) for d in y.ozdegerler)}.</p>"]
+        if y.zayif_sorular:
+            h.append(f"<p>Sınavın geri kalanından farklı bir şey ölçen sorular (ortak bileşene yükü 0,20'nin altında): <b>{', '.join(map(str, y.zayif_sorular))}</b>. "
+                     "Bu sorular ya ayrı bir konuyu ölçüyor ya da öğrencileri ayırmıyor; madde analiziyle birlikte bakın.</p>")
+        if y.cikti_uyumu:
+            h.append("<h3>Öğrenme çıktısı eşlemesi verilerle uyumlu mu?</h3><table cellpadding=3><tr><th>Çıktı</th><th>Soru</th><th>Kendi soruları arasında</th>"
+                     "<th>Öteki sorularla</th><th>Değerlendirme</th></tr>")
+            for kod, ic, dis, n in y.cikti_uyumu:
+                h.append(f"<tr><td>{kod}</td><td align=center>{n}</td><td align=center>{_v(ic, 3)}</td><td align=center>{_v(dis, 3)}</td>"
+                         f"<td>{'uyumlu' if ic > dis + 0.05 else 'ayrışmıyor'}</td></tr>")
+            h.append("</table>")
+        return "".join(h)
 
     def _ek_html(self, s, maddeler, g, esik) -> str:
         from ...core import ek_istatistik as E

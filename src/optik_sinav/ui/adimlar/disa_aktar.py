@@ -95,7 +95,8 @@ class DisaAktarAdimi(Adim):
             ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş profiline göre dosya yazar."),
             ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
             ("Panoya kopyala…", self._panoya, "Seçili sütunları sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalar."),
-            ("Tüm raporları klasöre yaz…", self._hepsi, "Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı ve özet dosyaları."),
+            ("Öğrenci karneleri…", self._karneler, "Her öğrenciye bir sayfa: puan, sıra, öğrenme çıktıları ve soru soru sonuç. Tarayıcıda açılır, yazdırılır."),
+            ("Tüm raporları klasöre yaz…", self._hepsi, "Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları."),
         ):
             b = QPushButton(metin)
             b.setToolTip(ipucu)
@@ -257,6 +258,20 @@ class DisaAktarAdimi(Adim):
         satir = len(sira) if sira is not None else len(tablo_uret(p, s)[2])
         self.bilgi.setText(f"Panoya {satir} satır kopyalandı ({kaynak}). Sistemdeki tablonun ilk hücresine yapıştırın.")
 
+    def _karneler(self):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+
+        from ...export.karne import karne_yaz
+
+        oneri = cikti_adi(self.durum.proje.sinav, "karneler", ".html")
+        yol, _ = QFileDialog.getSaveFileName(self, "Öğrenci karneleri", str(self._klasor() / oneri), "Web sayfası (*.html)")
+        if not yol:
+            return
+        karne_yaz(self.durum.sonuc, self.durum.proje.sinav, yol, self.durum.cikti_aciklamalari())
+        QDesktopServices.openUrl(QUrl.fromLocalFile(yol))
+        self.bilgi.setText(f"Karneler yazıldı ve tarayıcıda açıldı: {yol}. Yazdırmak için tarayıcıda Cmd+P (Windows'ta Ctrl+P).")
+
     def _klasor(self) -> Path:
         pr = self.durum.proje
         p = self.durum.proje_yolu or (Path(pr.dat_yolu) if pr.dat_yolu else (Path(pr.liste_yolu) if pr.liste_yolu else None))
@@ -275,7 +290,8 @@ class DisaAktarAdimi(Adim):
                                              "Öğrenci listesi": Path(p.liste_yolu).name if p.liste_yolu else ""},
                                   cikti_aciklamalari=self.durum.cikti_aciklamalari(),
                                   ara_agirlik=ara_agirligi(p.sinav, self.durum.ders),
-                                  arsiv_klasoru=kullanici_klasoru() / "arsiv")
+                                  arsiv_klasoru=kullanici_klasoru() / "arsiv",
+                                  donem=self.window().adimlar[4].donem.donem() if hasattr(self.window(), "adimlar") else None)
         except Exception as e:  # noqa: BLE001
             QMessageBox.warning(self, "Raporlar yazılamadı", str(e))
             return

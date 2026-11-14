@@ -23,7 +23,7 @@ KITAPLIKLAR = [
     "pdfjs-dist_3.11.174_legacy_build_pdf.min.js",
 ]
 ISCI = "pdfjs-dist_3.11.174_legacy_build_pdf.worker.min.js"
-PROGRAM = ["cekirdek.js", "istatistik.js", "ciktilar.js", "dosya.js", "arayuz.js", "excel.js", "arayuz2.js"]
+PROGRAM = ["cekirdek.js", "istatistik.js", "ciktilar.js", "dosya.js", "donem.js", "arayuz.js", "excel.js", "arayuz2.js"]
 
 CSP = ("default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:; style-src 'unsafe-inline'; "
        "img-src data: blob:; font-src data:; connect-src blob: data:; form-action 'none'; base-uri 'none'")

@@ -200,7 +200,7 @@
       ayarlar: yeniAyarlar(), okuyucu: yeniOkuyucu(), dat_yolu: "", liste_yolu: "",
       liste_esleme: { sayfa: null, baslik_satiri: null, no_sutun: null, ad_sutun: null, soyad_sutun: null },
       duzeltmeler: [], profil_akreditasyon: "akreditasyon_soru_bazli_varsayilan", profil_not_giris: "not_giris_varsayilan",
-      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {},
+      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, final_puanlar: {}, harf_ayarlari: {},
     };
   }
   /** Masaüstü programın kaydettiği .osd dosyasını eksik alanları tamamlayarak yükler. */
@@ -213,6 +213,8 @@
     p.anahtar = Object.assign({ sorular: [], kitapcik_eslemesi: {}, ana_kitapcik: "A", kitapcik_anahtarlari: {} }, d.anahtar || {});
     p.anahtar.sorular = (p.anahtar.sorular || []).map((s) => Object.assign(yeniSoru(s.no), s));
     p.klasik_puanlar = d.klasik_puanlar || {};
+    p.final_puanlar = d.final_puanlar || {};
+    p.harf_ayarlari = d.harf_ayarlari || {};
     return p;
   }
 

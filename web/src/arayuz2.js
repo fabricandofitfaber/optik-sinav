@@ -285,6 +285,99 @@
       : `<p class="soluk">Bu ders için bu tarayıcıda arşiv kaydı yok. 6. adımda "Bütün Excel dosyalarını indir" her kullanıldığında sınavın özeti burada saklanır; sonraki dönemlerde karşılaştırma görünür.</p>`);
     return h.join("");
   }
+  function kavramHtml(k) {
+    if (!k.length) return `<p class="soluk">Sınıf geneline göre belirgin biçimde birlikte seçilen yanlış şık çifti bulunmadı.</p>`;
+    return `<p class="soluk">İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden yanıltıyor olabilir; o iki sorunun ortak konusunu sınıfla yeniden ele almak yararlı olur. Yalnızca şansla açıklanamayacak (Fisher kesin testi, p ≤ 0,01) çiftler listelenir.</p>
+      <ul class="yorum">${k.map((x) => `<li><b>${x.soru1}. sorunun ${x.sik1} şıkkını</b> seçen ${x.secen1} öğrencinin <b>${pct(x.kosullu)}</b>'i <b>${x.soru2}. sorunun ${x.sik2} şıkkını</b> da seçmiş (sınıfın tamamında bu oran ${pct(x.taban)}).</li>`).join("")}</ul>` +
+      basitTablo(["Soru", "Yanlış şık", "Birlikte seçilen soru", "Yanlış şık", "Birlikte seçen", "Phi", "p değeri"], k.map((x) => [x.soru1, x.sik1, x.soru2, x.sik2, x.birlikte, sayi(x.phi), v(x.p, 4)]));
+  }
+  function yapiHtml(s) {
+    const y = OS.sinavYapisi(s);
+    if (!y) return `<p class="soluk">Bu analiz için en az 10 öğrenci ve 3 analiz edilebilir soru gerekir.</p>`;
+    const W = 420, H = 140, sol = 26, alt = 20;
+    const enb = Math.max(...y.ozdegerler, 1);
+    const g2 = (W - sol - 10) / y.ozdegerler.length;
+    const cubuk = y.ozdegerler.map((d, i) => { const h = Math.max(0, (H - alt - 10) * (d / enb)); return `<rect x="${sol + i * g2 + 2}" y="${H - alt - h}" width="${g2 - 4}" height="${h}" fill="${i === 0 ? "var(--vurgu)" : "var(--soluk)"}"><title>${i + 1}. bileşen: ${v(d, 2)}</title></rect>`; }).join("");
+    const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:520px"><line x1="${sol}" y1="${H - alt}" x2="${W - 10}" y2="${H - alt}" stroke="var(--cizgi)"/><line x1="${sol}" y1="${H - alt - (H - alt - 10) / enb}" x2="${W - 10}" y2="${H - alt - (H - alt - 10) / enb}" stroke="var(--hata)" stroke-dasharray="3 3"/>${cubuk}<text x="${sol}" y="${H - 4}">bileşenler (büyükten küçüğe); kesikli çizgi: 1</text></svg>`;
+    return `<div class="kutu"><b>${e(y.yorum)}</b><p class="soluk">Birinci bileşenin açıkladığı pay ${pct(y.ilk_pay)}, birinci / ikinci özdeğer ${y.oran_1_2 === null ? "-" : v(y.oran_1_2, 2)}, sorular arası ortalama korelasyon ${v(y.ortalama_korelasyon, 3)}.</p>${svg}</div>
+      ${y.zayif_sorular.length ? `<p>Sınavın geri kalanından farklı bir şey ölçen sorular (ortak bileşene yükü 0,20'nin altında): <b>${y.zayif_sorular.join(", ")}</b>. Bu sorular ya ayrı bir konuyu ölçüyor ya da öğrencileri ayırmıyor; madde analiziyle birlikte bakın.</p>` : ""}
+      ${y.cikti_uyumu.length ? `<h3>Öğrenme çıktısı eşlemesi verilerle uyumlu mu?</h3><p class="soluk">Aynı çıktıya bağlı soruların kendi aralarındaki ilişkisi ötekilerle ilişkisinden yüksekse eşleme verilerle uyumludur.</p>` +
+        basitTablo(["Çıktı", "Soru sayısı", "Kendi soruları arasında", "Öteki sorularla", "Değerlendirme"], y.cikti_uyumu.map(([kod, ic, dis, n]) => [e(kod), n, v(ic, 3), v(dis, 3), ic > dis + 0.05 ? '<span class="yesil">uyumlu</span>' : '<span class="soluk">ayrışmıyor</span>'])) : ""}
+      <details><summary>Soruların ortak bileşene yükleri</summary>${basitTablo(["Soru", "Yük"], y.sorular.map((no) => [no, sayi(y.yukler.get(no))]))}</details>`;
+  }
+  function donemHtml(s) {
+    const p = D.proje, a = p.ayarlar;
+    const h = OS.harfAyarlari(p.harf_ayarlari);
+    const ara = OS.araAgirligi(p.sinav, D.ders);
+    const fin = p.final_puanlar || {};
+    const girilen = s.ogrenciler.filter((o) => fin[o.no] !== undefined && fin[o.no] !== null && fin[o.no] !== "").length;
+    let sonucHtml = "";
+    if (girilen) {
+      try {
+        const d = OS.donemSonu(s, fin, ara, a.final_alt_siniri, a.gecme_ortalamasi, h);
+        const toplam = Object.values(d.dagilim).reduce((x, y) => x + y, 0) || 1;
+        sonucHtml = `<div class="kutu"><b>Uygulanan: ${d.uygulanan === "bagil" ? "bağıl (T-puanı)" : "mutlak"} değerlendirme.</b>
+          ${d.uygulanan === "bagil" ? ` Bağıl grup ${d.bagil_grup} öğrenci, ham not ortalaması ${v(d.ortalama, 2)}, standart sapma ${v(d.standart_sapma, 2)}.` : ""} ${d.notlar_metin.map(e).join(" ")}
+          <div class="satir" style="align-items:flex-end;gap:6px;margin-top:10px">${Object.entries(d.dagilim).map(([hr, n]) => `<div style="text-align:center"><div style="height:${8 + 90 * (n / toplam)}px;width:34px;background:${["FF", "FD"].includes(hr) ? "var(--hata)" : "var(--vurgu)"};border-radius:3px"></div><b>${hr}</b><br>${n}</div>`).join("")}</div>
+          <p>Geçen: <b>${d.notlar.filter((n) => n.gecti).length}</b>, kalan: <b>${d.notlar.filter((n) => n.gecti === false).length}</b>, finali girilmeyen: <b>${d.notlar.filter((n) => n.gecti === null).length}</b>. Bir üst harfe 1 puandan az kalan: <b>${d.notlar.filter((n) => n.sinirda).length}</b>.</p></div>`;
+        var tablo = d.notlar;
+        var uyg = d.uygulanan;
+      } catch (hata) { sonucHtml = `<p class="kirmizi">${e(hata.message)}</p>`; }
+    }
+    const notMap = new Map((typeof tablo !== "undefined" ? tablo : []).map((n) => [n.no, n]));
+    const satirlar = s.ogrenciler.map((o) => {
+      const n = notMap.get(o.no);
+      return `<tr data-no="${e(o.no)}"><td>${e(o.no)}</td><td class="sol">${e(o.ad)}</td><td>${OS.sayiYaz(o.puan, 2)}</td><td><input class="hucre final" value="${e(fin[o.no] ?? "")}" inputmode="decimal"></td>
+        <td>${n && n.ham !== null ? v(n.ham, 2) : ""}</td>${uyg === "bagil" ? `<td>${n && n.t !== null ? v(n.t, 1) : ""}</td>` : ""}<td class="kalin">${n ? e(n.harf) : ""}</td>
+        <td class="${n && n.gecti === true ? "D" : n && n.gecti === false ? "Y" : ""}">${n && n.gecti !== null ? (n.gecti ? "Geçti" : "Kaldı") : ""}</td><td class="sol">${n ? e(n.aciklama) : ""}</td><td class="${n && n.sinirda ? "uy" : ""}">${n ? e(n.sinirda) : ""}</td></tr>`;
+    }).join("");
+    return `<p class="soluk">Final puanlarını girin ya da Excel'den alın; ara sınav bu sınavdan gelir. Ağırlıklar: ara sınav %${ara}, final %${100 - ara} (1. adımdaki etki oranı). Final alt sınırı ${a.final_alt_siniri}, geçme ortalaması ${a.gecme_ortalamasi} (3. adımda değiştirilir). <b>Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.</b></p>
+      <div class="kutu"><div class="satir"><label>Değerlendirme</label><label><input type="radio" name="hy" value="mutlak" ${h.yontem !== "bagil" ? "checked" : ""}> Mutlak</label><label><input type="radio" name="hy" value="bagil" ${h.yontem === "bagil" ? "checked" : ""}> Bağıl (T-puanı)</label>
+        <label>Bağıl için en az öğrenci</label><input type="number" id="bagilEnAz" min="2" style="width:70px" value="${h.bagil_en_az}"></div>
+        <div class="satir"><label>Mutlak tablo (ham not)</label><input type="text" id="tabloMutlak" style="flex:1" value="${e(h.mutlak)}"></div>
+        <div class="satir"><label>Bağıl tablo (T-puanı)</label><input type="text" id="tabloBagil" style="flex:1" value="${e(h.bagil)}"></div>
+        <div class="satir"><label>Geçer harfler</label><input type="text" id="gecenHarf" style="flex:1" value="${e(h.gecen)}"><button id="harfUygula">Uygula</button></div>
+        <div class="satir"><button id="finalExcel">Final puanlarını Excel'den al…</button><span class="soluk">Numara ve "Final" ya da "Puan" sütunu olan bir dosya; Akademik Bilgi Sistemi'nden indirdiğiniz liste de olur.</span></div></div>
+      ${sonucHtml}
+      <div class="tablo-kap"><table class="veri" id="donemTablo"><thead><tr><th>Öğrenci No</th><th class="sol">Ad Soyad</th><th>Ara sınav</th><th>Final</th><th>Ham not</th>${uyg === "bagil" ? "<th>T puanı</th>" : ""}<th>Harf</th><th>Durum</th><th class="sol">Açıklama</th><th>Sınırda</th></tr></thead><tbody>${satirlar}</tbody></table></div>`;
+  }
+  function donemOlaylari(k, s) {
+    const p = D.proje;
+    const yeniden = () => { const y = $("#icerik").scrollTop; UI.ciz(); $("#icerik").scrollTop = y; };
+    const ayar = () => {
+      p.harf_ayarlari = { yontem: ($("input[name=hy]:checked", k) || {}).value || "mutlak", mutlak: $("#tabloMutlak", k).value, bagil: $("#tabloBagil", k).value,
+        bagil_en_az: parseInt($("#bagilEnAz", k).value, 10) || 30, gecen: $("#gecenHarf", k).value };
+      yeniden();
+    };
+    $$("input[name=hy]", k).forEach((r) => (r.onchange = ayar));
+    $("#harfUygula", k).onclick = ayar;
+    $$("#donemTablo input.final", k).forEach((i) => {
+      i.onchange = () => { const no = i.closest("tr").dataset.no; const x = i.value.trim(); if (x) p.final_puanlar[no] = x; else delete p.final_puanlar[no]; yeniden(); };
+      i.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === "ArrowDown") { const tr = i.closest("tr").nextElementSibling; if (tr) { ev.preventDefault(); const no = i.closest("tr").dataset.no; const x = i.value.trim(); if (x) p.final_puanlar[no] = x; else delete p.final_puanlar[no]; const sonraki = tr.dataset.no; yeniden(); const h = document.querySelector(`#donemTablo tr[data-no="${CSS.escape(sonraki)}"] input.final`); if (h) { h.focus(); h.select(); } } } };
+      i.onpaste = (ev) => {
+        const m = (ev.clipboardData || window.clipboardData).getData("text");
+        if (!/\n/.test(m.trim())) return;
+        ev.preventDefault();
+        let tr = i.closest("tr");
+        for (const x of m.replace(/\r/g, "").trim().split("\n")) { if (!tr) break; const d = x.split("\t")[0].trim(); if (d) p.final_puanlar[tr.dataset.no] = d; tr = tr.nextElementSibling; }
+        yeniden();
+      };
+    });
+    $("#finalExcel", k).onclick = async () => {
+      const f = await dosyaSec(".xlsx,.xls,.csv");
+      if (!f) return;
+      try {
+        const sayfalar = OS.sayfalariOku(window.XLSX, await baytOku(f), f.name);
+        const [fin, notlar] = OS.tablodanFinalPuanlari(sayfalar[OS.sayfaSec(sayfalar)]);
+        const var_ = new Set(s.ogrenciler.map((o) => o.no));
+        let n = 0;
+        for (const [no, x] of Object.entries(fin)) if (var_.has(no)) { if (x === null) delete p.final_puanlar[no]; else { p.final_puanlar[no] = x; n++; } }
+        yeniden();
+        bilgi("Final puanları", `${n} öğrencinin final puanı alındı.${notlar.length ? "\n" + notlar.join("\n") : ""}`);
+      } catch (h) { bilgi("Okunamadı", h.message || String(h)); }
+    };
+  }
+
   const adim5 = {
     girildi() { if (!D.sonuc) UI.degerlendir(); },
     eksikler: () => [],
@@ -298,7 +391,9 @@
       try { ust = OS.Kesir.ondaliktan(s.ayarlar.toplam_puan).sayi(); } catch (_) { ust = 100; }
       const kart = (d, b) => `<div class="k"><b>${d}</b><span>${b}</span></div>`;
       const rapor = OS.ogrenmeCiktisiRaporu(s, esik, UI.aciklamalar()).filter((c) => c.tur.startsWith("Öğrenme"));
-      const sek = [["madde", "Madde analizi"], ["cikti", "Öğrenme çıktıları"], ...(kl ? [] : [["uyum", `Kişi uyumu (${g.kisi_uyumu.length})`], ["benzer", `Benzer cevaplar (${g.benzer_ciftler.length})`]]), ["ek", "Ek analizler"]];
+      const kavram = kl ? [] : OS.kavramYanilgilari(s);
+      const sek = [["madde", "Madde analizi"], ["cikti", "Öğrenme çıktıları"], ...(kl ? [] : [["uyum", `Kişi uyumu (${g.kisi_uyumu.length})`], ["benzer", `Benzer cevaplar (${g.benzer_ciftler.length})`],
+        ["kavram", `Kavram yanılgıları (${kavram.length})`]]), ["yapi", "Sınav yapısı"], ["donem", "Dönem sonu notu"], ["ek", "Ek analizler"]];
       if (!sek.some(([id]) => id === I.sekme)) I.sekme = "madde";
       let icerik = "";
       const renk = (d) => (d === null ? "" : d >= 0.3 ? "D" : d >= 0.2 ? "B" : "Y");
@@ -315,6 +410,9 @@
         basitTablo(["Öğrenci No", "Ad Soyad", "Puan", "Uyum indeksi", "Beklenmedik sorular"], g.kisi_uyumu.map((x) => [e(x.no), e(x.ad), sayi(x.puan), sayi(x.indeks), x.beklenmedik.join(", ")]));
       else if (I.sekme === "benzer") icerik = `<p class="soluk">Aynı kitapçıktaki öğrenci çiftlerinden sınıf geneline göre olağandışı sayıda aynı yanlış şıkkı işaretleyenler. Bu yalnızca istatistiksel bir işarettir, kopya kanıtı değildir; oturma düzeni ve kâğıtlarla birlikte değerlendirin.</p>` +
         basitTablo(["1. öğrenci", "2. öğrenci", "Aynı yanlış şık", "İkisinin de yanlışı", "Uzaklık (standart sapma)", "Sorular"], g.benzer_ciftler.map((c) => [`${e(c.no1)} ${e(c.ad1)}`, `${e(c.no2)} ${e(c.ad2)}`, c.ayni_yanlis, c.ikisi_yanlis, v(c.z, 1), c.sorular.join(", ")]));
+      else if (I.sekme === "kavram") icerik = kavramHtml(kavram);
+      else if (I.sekme === "yapi") icerik = yapiHtml(s);
+      else if (I.sekme === "donem") icerik = donemHtml(s);
       else icerik = ekAnalizHtml(s, m, g, esik);
       k.innerHTML = `<h2>5. İstatistikler</h2>
         <div class="kutu"><b>Kısaca:</b><ul class="yorum">${g.yorumlar.map((y) => `<li>${e(y)}</li>`).join("")}</ul></div>
@@ -325,6 +423,7 @@
         <div>${icerik}</div>
         <p class="soluk">Tablolar 6. adımdaki istatistik Excel dosyasına, grafikler yazdırılabilir rapora girer.</p>`;
       $$("[data-ist]", k).forEach((b) => (b.onclick = () => { I.sekme = b.dataset.ist; UI.ciz(); }));
+      if (I.sekme === "donem") donemOlaylari(k, s);
     },
   };
 
@@ -342,6 +441,12 @@
     yerel.koy("os_arsiv", t);
     return l;
   }
+  function donemVerisi(s) {
+    const p = D.proje;
+    if (!Object.values(p.final_puanlar || {}).some((x) => x !== null && x !== "")) return null;
+    try { return OS.donemSonu(s, p.final_puanlar, OS.araAgirligi(p.sinav, D.ders), p.ayarlar.final_alt_siniri, p.ayarlar.gecme_ortalamasi, OS.harfAyarlari(p.harf_ayarlari)); }
+    catch (_) { return null; }
+  }
   const adim6 = {
     girildi() { if (!D.sonuc) UI.degerlendir(); },
     eksikler: () => [],
@@ -355,7 +460,7 @@
       if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara aktarım dosyalarına yazılmaz.`);
       k.innerHTML = `<h2>6. Dışa aktar</h2>
         <div class="kutu"><h3>Dosyalar</h3>
-          <div class="satir"><button class="ana" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button></div>
+          <div class="satir"><button class="ana" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri (her öğrenciye bir sayfa)</button></div>
           <div class="satir"><button data-dosya="sonuc">Sonuç</button><button data-dosya="istatistik">İstatistik</button><button data-dosya="cikti">Öğrenme çıktısı</button>
             <button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button><button data-dosya="not">Not girişi</button></div>
           <p class="soluk">Sonuç: soru bazlı puanlar, cevaplar, uyarılar, düzeltme kaydı. İstatistik: özet ve yorum, madde analizi, çeldiriciler, beş grup, boş bırakma, kişi uyumu, benzer cevaplar, ek analizler, standart puanlar. Öğrenme çıktısı: soru-çıktı eşlemesi, sisteme aktarım tablosu, sınav dağılımı, sınıf ve öğrenci başarısı.</p>
@@ -380,7 +485,7 @@
       const dosya = async (tur) => {
         const sn = D.proje.sinav;
         if (tur === "sonuc") return [await UI.excel.sonuc(s, sn, D.proje.duzeltmeler, { "Sınav biçimi": s.klasik ? "Klasik" : "Optik", "Optik dosya": D.proje.dat_yolu, "Öğrenci listesi": D.proje.liste_yolu }), OS.ciktiAdi(sn, "sonuc")];
-        if (tur === "istatistik") return [await UI.excel.istatistik(s, sn, OS.araAgirligi(sn, D.ders), (yerel.al("os_arsiv", {}) || {})[sn.ders_kodu] || []), OS.ciktiAdi(sn, "istatistik")];
+        if (tur === "istatistik") return [await UI.excel.istatistik(s, sn, OS.araAgirligi(sn, D.ders), (yerel.al("os_arsiv", {}) || {})[sn.ders_kodu] || [], donemVerisi(s)), OS.ciktiAdi(sn, "istatistik")];
         if (tur === "cikti") { const b = await UI.excel.cikti(s, UI.aciklamalar(), UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null); return b ? [b, OS.ciktiAdi(sn, "ogrenme_ciktisi")] : null; }
         if (tur === "akreditasyon") return [await UI.excel.profil(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, s), OS.ciktiAdi(sn, "akreditasyon")];
         if (tur === "not") return [await UI.excel.profil(OS.PROFILLER.not_giris_varsayilan, s), OS.ciktiAdi(sn, "not_giris")];
@@ -403,6 +508,12 @@
         bilgi("Dosyalar indirildi", adlar.join("\n") + "\n\nDosyalar tarayıcının İndirilenler klasörüne kaydedildi. Sınavın özeti bu tarayıcıdaki arşive eklendi.");
       };
       $("#rapor", k).onclick = () => UI.yazdirilabilirRapor(s);
+      $("#karne", k).onclick = () => {
+        const html = OS.karneHtml(s, D.proje.sinav, UI.aciklamalar()).replace("</body>", "<script>setTimeout(function(){window.print()},400)<\/script></body>");
+        const w = window.open("", "_blank");
+        if (!w) { indir(html, OS.ciktiAdi(D.proje.sinav, "karneler", ".html"), "text/html"); bildir("Karneler indirildi; açıp yazdırın."); return; }
+        w.document.open(); w.document.write(html); w.document.close();
+      };
     },
   };
 

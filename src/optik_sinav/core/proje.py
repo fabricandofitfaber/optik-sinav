@@ -33,6 +33,8 @@ class SinavProjesi:
     bicim: str = "optik"  # "optik" (test, optik okuyucu) ya da "klasik" (yazılı, puanlar elle ya da Excel'den)
     klasik_soru_sayisi: int = 5
     klasik_puanlar: dict[str, list[str | None]] = field(default_factory=dict)  # öğrenci no -> soru puanları
+    final_puanlar: dict[str, str | None] = field(default_factory=dict)  # dönem sonu notu için: öğrenci no -> final puanı
+    harf_ayarlari: dict = field(default_factory=dict)  # core.donem_sonu.HarfAyarlari.to_dict()
 
     @property
     def klasik(self) -> bool:
@@ -56,6 +58,8 @@ class SinavProjesi:
             "bicim": self.bicim,
             "klasik_soru_sayisi": self.klasik_soru_sayisi,
             "klasik_puanlar": self.klasik_puanlar,
+            "final_puanlar": self.final_puanlar,
+            "harf_ayarlari": self.harf_ayarlari,
         }
 
     @classmethod
@@ -75,6 +79,8 @@ class SinavProjesi:
             bicim=d.get("bicim", "optik"),
             klasik_soru_sayisi=int(d.get("klasik_soru_sayisi", 5)),
             klasik_puanlar={str(k): list(v) for k, v in d.get("klasik_puanlar", {}).items()},
+            final_puanlar={str(k): (None if v in (None, "") else str(v)) for k, v in d.get("final_puanlar", {}).items()},
+            harf_ayarlari=dict(d.get("harf_ayarlari", {})),
         )
 
     def kaydet(self, yol: str | Path) -> None:

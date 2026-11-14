@@ -160,3 +160,24 @@ def test_klasik_sinav_arayuzu(pencere, fix, tmp_path):
     p2.proje_ac(str(tmp_path / "k.osd"))
     assert p2.durum.proje.klasik and p2.durum.proje.klasik_puanlar[d.liste.ogrenciler[0].no][:2] == ["10", "12,5"]
     p2.close()
+
+
+def test_istatistik_yeni_sekmeler(pencere, fix):
+    d = pencere.durum
+    pencere.adimlar[0].ders_kodu.setText("UYD1001")
+    pencere.adimlar[0]._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    pencere.adimlar[0]._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.sonraki.click()
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    for _ in range(3):
+        pencere.sonraki.click()
+    ist = pencere.adimlar[4]
+    assert "Sınav" in ist.yapi.toPlainText() or "en az 10" in ist.yapi.toPlainText()
+    d.proje.final_puanlar = {o.no: "70" for o in d.sonuc.ogrenciler}
+    ist.donem.yenile()
+    assert ist.donem.tablo.rowCount() == len(d.sonuc.ogrenciler) and "Uygulanan" in ist.donem.ozet.text()
+    ist.donem.tablo.item(0, 3).setText("20")
+    assert d.proje.final_puanlar[ist.donem.tablo.item(0, 0).text()] == "20"
+    assert ist.donem.donem() is not None
