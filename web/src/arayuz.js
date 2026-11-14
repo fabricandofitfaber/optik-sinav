@@ -114,6 +114,10 @@
     const s = D.proje.anahtar.sorular;
     while (s.length < n) s.push(OS.yeniSoru(s.length + 1));
     if (s.length > n) s.splice(n);
+    // Klasik sınavda hiç soru puanı yoksa toplam eşit dağıtılır (2. adım atlanırsa da puan girişi hemen açılsın)
+    if (D.proje.bicim === "klasik" && s.length && s.every((x) => x.puan === null || x.puan === undefined || x.puan === "")) {
+      try { OS.esitSoruPuanlari(D.proje.ayarlar.toplam_puan, s.length).forEach((x, i) => (s[i].puan = x)); } catch (_) { /* toplam puan geçersiz */ }
+    }
   };
   UI.datYukle = function (bayt, ad, sablonuOner = true) {
     D.datBayt = bayt;
@@ -189,7 +193,10 @@
     const eksik = [];
     if (g.dat) { D.datBayt = b64.oku(g.dat); D.hamSatirlar = OS.metinDosyasiOku(D.datBayt).satirlar; UI.datYenidenOku(); }
     else if (D.proje.dat_yolu && D.proje.bicim !== "klasik") eksik.push(D.proje.dat_yolu);
-    if (g.liste) UI.listeYukle(b64.oku(g.liste), D.proje.liste_yolu, D.proje.liste_esleme && D.proje.liste_esleme.no_sutun ? D.proje.liste_esleme : null);
+    if (g.liste && /\.pdf$/i.test(D.proje.liste_yolu || "")) {
+      // masaüstünde PDF listesiyle kaydedilmiş sınav: PDF okuması zaman uyumsuz, bitince sayfa yenilenir
+      UI.pdfListeYukle(b64.oku(g.liste), D.proje.liste_yolu).then(() => UI.ciz()).catch((h) => bilgi("Liste okunamadı", String(h.message || h)));
+    } else if (g.liste) UI.listeYukle(b64.oku(g.liste), D.proje.liste_yolu, D.proje.liste_esleme && D.proje.liste_esleme.no_sutun ? D.proje.liste_esleme : null);
     else if (D.proje.liste_yolu) eksik.push(D.proje.liste_yolu);
     UI.anahtariBoyutla();
     UI.dersiYukle();
@@ -198,14 +205,18 @@
   UI.otomatikKaydet = function () { yerel.koy("os_son_proje", UI.projeVerisi(true)); };
 
   // ------------------------------------------------------------------ ders bilgi paketi PDF'i
-  UI.pdfMetni = async function (bayt) {
+  /** PDF belgesini açar. Baytların kopyası verilir: pdf.js veriyi işçiye devreder, aynı dosya ikinci kez okunabilsin. */
+  UI.pdfBelgesi = async function (bayt) {
     const lib = window.pdfjsLib;
     if (!lib) throw new Error("PDF okuyucu yüklenemedi.");
     if (!lib.GlobalWorkerOptions.workerSrc) {
       if (!UI.pdfIsciKaynagi) throw new Error("PDF okuyucunun işçisi bulunamadı.");
       lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([UI.pdfIsciKaynagi], { type: "text/javascript" }));
     }
-    const pdf = await lib.getDocument({ data: bayt, isEvalSupported: false }).promise;
+    return lib.getDocument({ data: new Uint8Array(bayt).slice(), isEvalSupported: false }).promise;
+  };
+  UI.pdfMetni = async function (bayt) {
+    const pdf = await UI.pdfBelgesi(bayt);
     const satirlar = [];
     for (let s = 1; s <= pdf.numPages; s++) {
       const sayfa = await pdf.getPage(s);
@@ -234,6 +245,42 @@
       son = x + w;
     }
     return m.replace(/\s+/g, " ").trim();
+  };
+  /** PDF'in her satırını hücrelere böler: aynı satırdaki parçalar arasında yazı boyunun 0,6 katından geniş boşluk sütun ayırır. */
+  UI.pdfHucreleri = async function (bayt) {
+    const pdf = await UI.pdfBelgesi(bayt);
+    const satirlar = [];
+    for (let s = 1; s <= pdf.numPages; s++) {
+      const ic = await (await pdf.getPage(s)).getTextContent();
+      const gruplar = [];
+      for (const it of ic.items) {
+        if (!it.str || !it.str.trim()) continue;
+        const y = it.transform[5];
+        let g = gruplar.find((q) => Math.abs(q.y - y) < 2.5);
+        if (!g) { g = { y, parca: [] }; gruplar.push(g); }
+        g.parca.push([it.transform[4], it.str, it.width || 0, Math.abs(it.transform[3]) || 10]);
+      }
+      gruplar.sort((a, b) => b.y - a.y);
+      for (const g of gruplar) {
+        g.parca.sort((a, b) => a[0] - b[0]);
+        const hucreler = [];
+        let son = null;
+        for (const [x, str, w, h] of g.parca) {
+          if (son === null || x - son > 0.6 * h) hucreler.push(str);
+          else hucreler[hucreler.length - 1] += (x - son > 0.15 * h ? " " : "") + str;
+          son = x + w;
+        }
+        satirlar.push(hucreler);
+      }
+    }
+    return satirlar;
+  };
+  /** Öğrenci listesi PDF'ini tabloya çevirip sekmeyle ayrılmış metin olarak yükler (sınav dosyasına da öyle gömülür). */
+  UI.pdfListeYukle = async function (bayt, ad) {
+    const tablo = OS.pdfHucrelerindenTablo(await UI.pdfHucreleri(bayt));
+    if (tablo.length < 2) throw new Error("Bu PDF'te öğrenci numarası bulunamadı. Taranmış (resim) PDF ise okunamaz; sistemden listeyi Excel olarak indirmeyi deneyin.");
+    const metin = tablo.map((r) => r.join("\t")).join("\r\n") + "\r\n";
+    UI.listeYukle(new TextEncoder().encode(metin), ad.replace(/\.pdf$/i, "") + " (PDF).txt");
   };
   UI.dersPdfYukle = async function (bayt) {
     const metin = await UI.pdfMetni(bayt);
@@ -345,9 +392,17 @@
         UI.ciz();
         if (eksik.length) bilgi("Eksik dosya", "Bu sınav dosyası masaüstü programda kaydedilmiş; içinde şu dosyalar yok, 1. adımda yeniden seçin:\n" + eksik.join("\n"));
       } else if (uz === "pdf") {
-        const d = await UI.dersPdfYukle(bayt);
-        UI.ciz();
-        bildir(`${d.kod} ${d.ad}: ${d.ogrenme_ciktilari.length} öğrenme çıktısı okundu ve bu tarayıcıda saklandı.`, 5000);
+        // PDF ders bilgi paketi mi, öğrenci listesi mi? Önce ders paketi denenir, olmazsa liste.
+        let d = null;
+        try { d = await UI.dersPdfYukle(bayt); } catch (_) { d = null; }
+        if (d) {
+          UI.ciz();
+          bildir(`${d.kod} ${d.ad}: ${d.ogrenme_ciktilari.length} öğrenme çıktısı okundu ve bu tarayıcıda saklandı.`, 5000);
+        } else {
+          await UI.pdfListeYukle(bayt, f.name);
+          UI.ciz();
+          bildir(`Öğrenci listesi PDF'ten okundu: ${D.liste.ogrenciler.length} öğrenci. Numara ve ad sütunlarını aşağıdaki listeden kontrol edin.`, 6000);
+        }
       } else if (["xlsx", "xls", "csv", "xlsm"].includes(uz)) {
         UI.listeYukle(bayt, f.name);
         UI.ciz();
@@ -441,8 +496,9 @@
         </div>
         <div class="ikili">
           ${!kl ? birakAlani("birakDat", "Optik okuyucu dosyası", ".dat ya da .txt; puanlama için gerekli", datBilgi, o ? "tamam" : "zorunlu") : ""}
-          ${birakAlani("birakListe", "Öğrenci listesi", kl ? "Excel ya da CSV; klasik sınavda gerekli" : "Excel ya da CSV; isteğe bağlı ama önerilir (sınava girmeyenler ve doğru adlar için)", listeBilgi, l ? "tamam" : kl ? "zorunlu" : "")}
+          ${birakAlani("birakListe", "Öğrenci listesi", kl ? "Excel, CSV ya da PDF; klasik sınavda gerekli" : "Excel, CSV ya da PDF; isteğe bağlı ama önerilir (sınava girmeyenler ve doğru adlar için)", listeBilgi, l ? "tamam" : kl ? "zorunlu" : "")}
         </div>
+        ${kl && l && UI.soruSayisi() > 0 ? `<p><button class="zorunlu-dugme" id="giriseGec" title="4. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan bu tarayıcıda kendiliğinden saklanır.">Puan girişine geç: öğrenci listesi ve soru matrisi →</button></p>` : ""}
         <details class="kutu" id="gelismis" ${gelismisAcik ? "open" : ""}><summary>Gelişmiş ayarlar: okuyucu şablonu ve liste sütunları</summary>
           <p class="soluk">Okuyucu şablonu, optik dosyanın her satırında adın, numaranın ve cevapların hangi karakterlerde olduğunu söyler. Program bunu kendisi bulur; yalnızca farklı düzende bir optik formda değiştirmeniz gerekir.</p>
           ${!kl ? `<div class="satir">${alanlar.map(([a, t]) => `<label>${t}</label><input type="number" data-okuyucu="${a}" min="0" max="400" style="width:70px" value="${r[a] || 0}">`).join("")}</div>
@@ -472,7 +528,8 @@
         b.ondragleave = () => b.classList.remove("uzerinde");
       };
       birak("birakDat", ".dat,.txt,.DAT,.TXT");
-      birak("birakListe", ".xlsx,.xls,.csv");
+      birak("birakListe", ".xlsx,.xls,.csv,.pdf");
+      if ($("#giriseGec", k)) $("#giriseGec", k).onclick = () => UI.git(3);
       if ($("#listeKaldir", k)) $("#listeKaldir", k).onclick = () => { UI.listeYukle(null); UI.ciz(); };
       $$("[data-okuyucu]", k).forEach((x) => (x.onchange = () => {
         const a = x.dataset.okuyucu, v2 = parseInt(x.value, 10) || 0;

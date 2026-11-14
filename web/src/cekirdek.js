@@ -482,6 +482,54 @@
   const AD_B = new Set(["adi", "ad", "ogrenciadi"]);
   const SOYAD_B = new Set(["soyadi", "soyad"]);
   const numaraGibi = (d) => { const s = numaraNormalle(d); return rakamMi(s) && s.length >= 6 && s.length <= 12; };
+  // PDF listesi: satırların hücrelerinden ["Öğrenci No", "Adı Soyadı"] tablosu (Python: pdf_hucrelerinden_tablo)
+  const NUMARA = /^\d{6,12}$/;
+  const harfli = (h) => !!h && /\p{L}/u.test(h) && !/\d/.test(h);
+  function pdfHucrelerindenTablo(satirlar) {
+    let adKaydir = null, soyadKaydir = null;
+    const tablo = [["Öğrenci No", "Adı Soyadı"]];
+    const gorulen = new Set();
+    for (const ham of satirlar) {
+      const hucreler = ham.filter((h) => h !== null && h !== undefined && String(h).trim()).map((h) => String(h).replace(/\s+/g, " ").trim());
+      if (!hucreler.length) continue;
+      const numarali = hucreler.map((h, i) => (NUMARA.test(h) ? i : -1)).filter((i) => i >= 0);
+      let no, ad;
+      if (!numarali.length) {
+        const sadeler = hucreler.map(sade);
+        let ni = sadeler.findIndex((h) => NO_B.has(h) && h !== "no");
+        if (ni < 0) ni = sadeler.findIndex((h) => h === "no");
+        if (ni >= 0) {
+          const as = sadeler.findIndex((h) => ADSOYAD_B.has(h));
+          const a = sadeler.findIndex((h) => AD_B.has(h));
+          const so = sadeler.findIndex((h) => SOYAD_B.has(h));
+          if (as >= 0) { adKaydir = as - ni; soyadKaydir = null; }
+          else if (a >= 0) { adKaydir = a - ni; soyadKaydir = so >= 0 ? so - ni : null; }
+          continue;
+        }
+        const kelimeler = hucreler.join(" ").split(" ").filter(Boolean);
+        const j = kelimeler.findIndex((k) => NUMARA.test(k));
+        if (j < 0) continue;
+        no = kelimeler[j];
+        const parca = [];
+        for (const k of kelimeler.slice(j + 1)) { if (!harfli(k)) break; parca.push(k); }
+        if (!parca.length) for (const k of kelimeler.slice(0, j).reverse()) { if (!harfli(k)) break; parca.unshift(k); }
+        ad = parca.join(" ");
+      } else {
+        const i = numarali[0];
+        no = hucreler[i];
+        const al = (kaydir) => {
+          if (kaydir === null) return "";
+          const k = i + kaydir;
+          return k >= 0 && k < hucreler.length && harfli(hucreler[k]) ? hucreler[k] : "";
+        };
+        ad = adKaydir !== null ? [al(adKaydir), al(soyadKaydir)].filter(Boolean).join(" ") : (al(1) || al(-1));
+      }
+      if (gorulen.has(no)) continue;
+      gorulen.add(no);
+      tablo.push([no, ad]);
+    }
+    return tablo;
+  }
   function eslemeTahminEt(tablo, sayfa = null) {
     const e = { sayfa, baslik_satiri: null, no_sutun: null, ad_sutun: null, soyad_sutun: null };
     for (let r = 0; r < Math.min(15, tablo.length); r++) {
@@ -811,7 +859,7 @@
     esitYuzdeler, dogruKume, ciktiDagilimi, kitapciklar, esleme, eslemeSorunlari, kitapcikIcin, anahtarMetinden, anahtarMetne,
     soruPuanlari, esitSoruPuanlari, soruDegerlendir, ogrenciPuanla, net, anahtarEksikleri,
     baytlariCoz, metinDosyasiOku, satirlaraBol, alanlar, satiriCoz, satirlariOku, soruSayisiOner, sablonOner,
-    sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe,
+    sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe, pdfHucrelerindenTablo,
     duzeltilmisDegerler, duzeltilmisKitapcik, duzeltmeOlustur, numaraOnerileri, sinaviDegerlendir,
     puanCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, dersPaketiCoz, dogalKarsilastir,
   });

@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt, QTime, QTimer
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication, QFileDialog, QFrame, QScrollArea, QHBoxLayout, QLabel, QListWidget, QMainWindow, QMessageBox, QPushButton, QStackedWidget,
@@ -20,7 +20,39 @@ from .adimlar.dosyalar import DosyalarAdimi
 from .adimlar.istatistik import IstatistikAdimi
 from .adimlar.kontrol import KontrolAdimi
 from .adimlar.puanlama import PuanlamaAdimi
-from .durum import Durum, son_acilanlar
+from .durum import Durum, kurtarma_ozeti, kurtarmayi_yedekle, son_acilanlar
+
+
+class KaydirmaAlani(QScrollArea):
+    """Adım sayfası için kaydırma alanı. Satıra kayan yazıların o anki genişlikte gerçekten istediği yüksekliği
+    sayfaya en az yükseklik olarak verir: yazı sığmazsa kesilmez, sayfa aşağı kayar."""
+
+    def __init__(self):
+        super().__init__()
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.NoFrame)
+
+    def setWidget(self, w):
+        super().setWidget(w)
+        w.installEventFilter(self)
+
+    def eventFilter(self, nesne, olay):
+        if nesne is self.widget() and olay.type() == QEvent.Type.LayoutRequest:
+            self._yukseklik()
+        return super().eventFilter(nesne, olay)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        self._yukseklik()
+
+    def _yukseklik(self):
+        w = self.widget()
+        duzen = w.layout() if w else None
+        if duzen is None or not duzen.hasHeightForWidth():
+            return
+        gerekli = max(duzen.totalHeightForWidth(self.viewport().width()), duzen.totalMinimumSize().height())
+        if w.minimumHeight() != gerekli:
+            w.setMinimumHeight(gerekli)
 
 
 class AnaPencere(QMainWindow):
@@ -49,9 +81,7 @@ class AnaPencere(QMainWindow):
         self.adimlar = [DosyalarAdimi(self.durum), AnahtarAdimi(self.durum), PuanlamaAdimi(self.durum),
                         KontrolAdimi(self.durum), IstatistikAdimi(self.durum), DisaAktarAdimi(self.durum)]
         for a in self.adimlar:
-            kaydirma = QScrollArea()
-            kaydirma.setWidgetResizable(True)
-            kaydirma.setFrameShape(QFrame.NoFrame)
+            kaydirma = KaydirmaAlani()
             kaydirma.setWidget(a)
             self.yigin.addWidget(kaydirma)
             a.tamamlik_degisti.connect(self._dugmeleri_guncelle)
@@ -77,6 +107,50 @@ class AnaPencere(QMainWindow):
         self.durum.degisti.connect(self._dugmeleri_guncelle)
         self.durum.sonuc_degisti.connect(self._dugmeleri_guncelle)
         self._dugmeleri_guncelle()
+        # Otomatik kayıt: iki saniyede bir, yalnızca değişiklik varsa yazar (puan girişi dahil her şey)
+        self.kayit_zamanlayici = QTimer(self)
+        self.kayit_zamanlayici.setInterval(2000)
+        self.kayit_zamanlayici.timeout.connect(self.otomatik_kaydet)
+        self.kayit_zamanlayici.start()
+
+    def otomatik_kaydet(self):
+        try:
+            if self.durum.otomatik_kaydet():
+                self.statusBar().showMessage(f"Otomatik kaydedildi ({QTime.currentTime().toString('HH:mm:ss')})", 3000)
+        except OSError as e:
+            self.statusBar().showMessage(f"Otomatik kayıt yapılamadı: {e}", 8000)
+
+    def closeEvent(self, e):
+        self.otomatik_kaydet()
+        super().closeEvent(e)
+
+    def kurtarmayi_sor(self) -> bool:
+        """Yarım kalan çalışma varsa devam edilip edilmeyeceğini sorar. Açtıysa True."""
+        o = kurtarma_ozeti()
+        if not o:
+            return False
+        ayrinti = f"{o['ad']}" + (f", {o['puanli']} öğrencinin puanı girilmiş" if o["klasik"] else "")
+        if o["zaman"]:
+            ayrinti += f" (son kayıt {o['zaman']})"
+        k = QMessageBox.question(self, "Kaldığınız yerden devam",
+                                 f"Son çalışmanız otomatik kaydedilmiş:\n{ayrinti}\n\nKaldığınız yerden devam edilsin mi?\n"
+                                 "Hayır derseniz o çalışma silinmez, yedek klasörüne alınır.")
+        if k != QMessageBox.StandardButton.Yes:
+            kurtarmayi_yedekle()
+            return False
+        try:
+            eksik = self.durum.kurtarmadan_ac()
+        except Exception as hata:  # noqa: BLE001
+            QMessageBox.warning(self, "Açılamadı", str(hata))
+            return False
+        for a in self.adimlar:
+            a.durumdan_yukle()
+        if eksik:
+            QMessageBox.warning(self, "Eksik dosya", "Şu kaynak dosyalar bulunamadı; 1. adımda yeniden seçin:\n" + "\n".join(eksik))
+        self.durum._son_ozet = None
+        self.adim_listesi.setCurrentRow(3 if self.durum.proje.klasik and self.durum.liste is not None else 0)
+        self._dugmeleri_guncelle()
+        return True
 
     # ---------------------------------------------------------------- menüler
     def _menuler(self):
@@ -149,8 +223,12 @@ class AnaPencere(QMainWindow):
 
     # ---------------------------------------------------------------- proje dosyası
     def yeni(self):
-        if QMessageBox.question(self, "Yeni sınav", "Kaydedilmemiş değişiklikler kaybolur. Devam edilsin mi?") != QMessageBox.StandardButton.Yes:
+        metin = ("Açık sınav kapatılıp yeni sınav başlatılsın mı? Şimdiki çalışma "
+                 + (f"{self.durum.proje_yolu.name} dosyasında ve " if self.durum.proje_yolu else "") + "yedek klasöründe saklanır.")
+        if QMessageBox.question(self, "Yeni sınav", metin) != QMessageBox.StandardButton.Yes:
             return
+        self.otomatik_kaydet()
+        kurtarmayi_yedekle()
         self.durum.yeni()
         for a in self.adimlar:
             a.durumdan_yukle()
@@ -215,9 +293,11 @@ def calistir(argv: list[str] | None = None) -> int:
         app.installTranslator(ceviri)
     p = AnaPencere()
     p.show()
-    for a in argv:
-        if a.lower().endswith(".osd") and Path(a).exists():
-            p.proje_ac(a)
+    acilacak = [a for a in argv if a.lower().endswith(".osd") and Path(a).exists()]
+    for a in acilacak:
+        p.proje_ac(a)
+    if not acilacak:
+        p.kurtarmayi_sor()
     return app.exec()
 
 

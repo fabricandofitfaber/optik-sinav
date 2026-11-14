@@ -30,8 +30,9 @@ class DosyalarAdimi(Adim):
         self._yukleniyor = False
 
         # --- Sınav bilgileri
-        g = QGroupBox("Sınav bilgileri (isteğe bağlı; raporlarda ve dosya adlarında görünür)")
+        g = QGroupBox("Sınav")
         f = QFormLayout(g)
+        self.bilgi_formu = f
         s = QHBoxLayout()
         self.bicim_optik = QRadioButton("Optik (test, optik okuyucu dosyası)")
         self.bicim_klasik = QRadioButton("Klasik (yazılı; puanları siz girersiniz)")
@@ -40,12 +41,14 @@ class DosyalarAdimi(Adim):
         bg.addButton(self.bicim_klasik)
         s.addWidget(self.bicim_optik)
         s.addWidget(self.bicim_klasik)
-        self.klasik_sayi_etiket = QLabel("Soru sayısı")
-        self.klasik_sayi = QSpinBox(minimum=1, maximum=100)
-        s.addWidget(self.klasik_sayi_etiket)
-        s.addWidget(self.klasik_sayi)
         s.addStretch(1)
         f.addRow("Sınav biçimi", s)
+        self.klasik_sayi_etiket = QLabel("Soru sayısı")
+        self.klasik_sayi = QSpinBox(minimum=1, maximum=100)
+        f.addRow(self.klasik_sayi_etiket, self.klasik_sayi)
+        e = QLabel("Aşağıdakiler isteğe bağlıdır; raporlarda ve dosya adlarında görünür.")
+        e.setStyleSheet("color: gray")
+        f.addRow(e)
         self.bicim_optik.toggled.connect(self._bicim_degisti)
         self.klasik_sayi.valueChanged.connect(self._klasik_sayi_degisti)
         self.ders_kodu = QLineEdit(placeholderText="örnek: UTL4513")
@@ -86,8 +89,7 @@ class DosyalarAdimi(Adim):
         g = QGroupBox("Dosyalar (sürükleyip bırakabilirsiniz)")
         f = QFormLayout(g)
         self.dosya_formu = f
-        self.dat_etiket = QLabel("Seçilmedi")
-        self.dat_etiket.setWordWrap(True)
+        self.dat_etiket = QLabel("Seçilmedi")  # kısa tutulur (yalnızca dosya adı): satıra kayan yazı formda kesiliyordu
         self.dat_etiket.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         b = QPushButton("Optik dosyayı seç…")
         b.clicked.connect(self._dat_sec)
@@ -97,7 +99,7 @@ class DosyalarAdimi(Adim):
         s.addWidget(self.dat_etiket, 1)
         f.addRow("Optik okuyucu dosyası", s)
         self.dat_satiri = s
-        self.liste_etiket = QLabel("Seçilmedi (isteğe bağlı)")
+        self.liste_etiket = QLabel("İsteğe bağlı (Excel, CSV ya da PDF)")
         b2 = QPushButton("Öğrenci listesini seç…")
         b2.clicked.connect(self._liste_sec)
         self.liste_dugmesi = b2
@@ -117,9 +119,9 @@ class DosyalarAdimi(Adim):
         s = QGridLayout()
         for sira, (etiket, w) in enumerate((("Sayfa", self.liste_sayfa), ("Başlık satırı", self.liste_baslik),
                                             ("Numara", self.liste_no), ("Ad (soyad)", self.liste_ad), ("Soyad", self.liste_soyad))):
-            s.addWidget(QLabel(etiket), sira // 3, 2 * (sira % 3))
-            s.addWidget(w, sira // 3, 2 * (sira % 3) + 1)
-        for k in (1, 3, 5):
+            s.addWidget(QLabel(etiket), sira // 2, 2 * (sira % 2))
+            s.addWidget(w, sira // 2, 2 * (sira % 2) + 1)
+        for k in (1, 3):
             s.setColumnStretch(k, 1)
         self.esleme_kutusu = QWidget()
         self.esleme_kutusu.setLayout(s)
@@ -127,8 +129,18 @@ class DosyalarAdimi(Adim):
         f.addRow("Sütun eşlemesi", self.esleme_kutusu)
         for w in (self.liste_sayfa, self.liste_no, self.liste_ad, self.liste_soyad):
             w.currentIndexChanged.connect(self._esleme_degisti)
+            # uzun sütun adları kutuyu (ve pencereyi) genişletmesin
+            w.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            w.setMinimumContentsLength(10)
         self.liste_baslik.valueChanged.connect(self._esleme_degisti)
         self.duzen.addWidget(g)
+        self.giris_dugmesi = QPushButton("Puan girişine geç: öğrenci listesi ve soru matrisi  →")
+        self.giris_dugmesi.setStyleSheet(VURGULU_DUGME)
+        self.giris_dugmesi.setMinimumHeight(38)
+        self.giris_dugmesi.setToolTip("4. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan kendiliğinden kaydedilir.")
+        self.giris_dugmesi.clicked.connect(lambda: self.window().adim_listesi.setCurrentRow(3))
+        self.giris_dugmesi.setVisible(False)
+        self.duzen.addWidget(self.giris_dugmesi, 0, Qt.AlignmentFlag.AlignLeft)
 
         # --- Okuyucu şablonu
         g = QGroupBox("Okuyucu şablonu (konumlar 1'den sayılır)")
@@ -177,7 +189,7 @@ class DosyalarAdimi(Adim):
             if uz in (".xlsx", ".xls", ".csv"):
                 self._liste_ac(yol)
             elif uz == ".pdf":
-                self._ders_pdf_ac(yol)
+                self._pdf_ac(yol)
             elif uz == ".osd":
                 self.window().proje_ac(yol)
             else:
@@ -222,6 +234,17 @@ class DosyalarAdimi(Adim):
         if yol:
             self._ders_pdf_ac(yol)
 
+    def _pdf_ac(self, yol):
+        """Bırakılan PDF ders bilgi paketi mi, öğrenci listesi mi? Önce ders paketi denenir, olmazsa liste."""
+        from ...io.ders_paketi import pdf_oku
+
+        try:
+            pdf_oku(yol)
+        except Exception:  # noqa: BLE001
+            self._liste_ac(yol)
+            return
+        self._ders_pdf_ac(yol)
+
     def _ders_pdf_ac(self, yol):
         try:
             d = self.durum.ders_pdf_yukle(yol)
@@ -252,7 +275,7 @@ class DosyalarAdimi(Adim):
             QMessageBox.warning(self, "Dosya okunamadı", str(e))
 
     def _liste_sec(self):
-        yol, _ = QFileDialog.getOpenFileName(self, "Öğrenci listesi", "", "Listeler (*.xlsx *.xls *.csv *.txt);;Bütün dosyalar (*)")
+        yol, _ = QFileDialog.getOpenFileName(self, "Öğrenci listesi", "", "Listeler (*.xlsx *.xls *.csv *.txt *.pdf);;Bütün dosyalar (*)")
         if yol:
             self._liste_ac(yol)
 
@@ -309,13 +332,13 @@ class DosyalarAdimi(Adim):
             klasik = p.klasik
             (self.bicim_klasik if klasik else self.bicim_optik).setChecked(True)
             self.klasik_sayi.setValue(p.klasik_soru_sayisi)
-            for w in (self.klasik_sayi, self.klasik_sayi_etiket):
-                w.setVisible(klasik)
+            self.bilgi_formu.setRowVisible(self.klasik_sayi, klasik)
             self.dosya_formu.setRowVisible(self.dat_satiri, not klasik)
             self.okuma_ozeti.setVisible(not klasik)
             self.gelismis.setVisible(not klasik)
             self._gelismis_goster()
-            self.liste_etiket.setText(p.liste_yolu or ("Seçilmedi (klasik sınavda gerekli)" if klasik else "Seçilmedi (isteğe bağlı)"))
+            self.liste_etiket.setText(Path(p.liste_yolu).name if p.liste_yolu else ("Gerekli (Excel, CSV ya da PDF)" if klasik else "İsteğe bağlı (Excel, CSV ya da PDF)"))
+            self.liste_etiket.setToolTip(p.liste_yolu)
             self._ders_etiketi()
             for ad, sp in self.alanlar.items():
                 sp.setValue(getattr(p.okuyucu, ad) or 0)
@@ -336,10 +359,12 @@ class DosyalarAdimi(Adim):
             dugme.setStyleSheet(VURGULU_DUGME if eksik else "")
             dugme.setMinimumHeight(38 if eksik else 0)
         if dat_eksik:
-            self.dat_etiket.setText("Gerekli. Dosyayı bu pencereye sürükleyip de bırakabilirsiniz.")
+            self.dat_etiket.setText("Gerekli.")
         elif not p.klasik:
-            self.dat_etiket.setText("✓ " + p.dat_yolu)
+            self.dat_etiket.setText("✓ " + Path(p.dat_yolu).name)
+            self.dat_etiket.setToolTip(p.dat_yolu)
         self.dat_etiket.setStyleSheet("color: #b45309" if dat_eksik else "color: #1e7b34")
+        self.giris_dugmesi.setVisible(p.klasik and self.durum.liste is not None and self.durum.soru_sayisi > 0)
 
     def _esleme_doldur(self):
         d = self.durum
@@ -366,8 +391,10 @@ class DosyalarAdimi(Adim):
             i = w.findData(v)
             w.setCurrentIndex(max(i, 0))
         ilk = d.liste.ogrenciler[0] if d.liste.ogrenciler else None
-        self.liste_etiket.setText(f"{d.proje.liste_yolu}  ({len(d.liste.ogrenciler)} öğrenci"
-                                  + (f"; ilk: {ilk.no} {ilk.ad}" if ilk else "") + ")")
+        self.liste_etiket.setToolTip(d.proje.liste_yolu)
+        self.liste_etiket.setText(f"✓ {Path(d.proje.liste_yolu).name}  ({len(d.liste.ogrenciler)} öğrenci)")
+        if ilk:
+            self.liste_etiket.setToolTip(f"{d.proje.liste_yolu}\nİlk öğrenci: {ilk.no} {ilk.ad}")
 
     def _gelismis_goster(self):
         acik = self.gelismis.isChecked() and not self.durum.proje.klasik

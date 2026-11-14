@@ -100,7 +100,32 @@ def main() -> None:
 
     # Başlıksız csv liste
     (F / "uydurma_liste.csv").write_bytes(("\r\n".join(f"{no};{ad}" for no, ad in LISTE) + "\r\n").encode("cp1254"))
+    liste_pdf_uret(F / "uydurma_liste.pdf")
     print("Üretildi:", *sorted(p.name for p in F.iterdir()))
+
+
+def liste_pdf_uret(hedef: Path) -> None:
+    """Sınav yoklama listesine benzeyen uydurma PDF: sıra, numara, ad soyad, program ve imza sütunları."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    matplotlib.rcParams["pdf.fonttype"] = 42  # metin seçilebilir ve okunabilir kalsın
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure(figsize=(8.27, 11.69))
+    fig.text(0.06, 0.95, "UYDURMA ÜNİVERSİTESİ - SINAV YOKLAMA LİSTESİ", fontsize=12, weight="bold")
+    fig.text(0.06, 0.925, "Ders: UYD1001 Uydurma Ders    Sınav: Ara Sınav", fontsize=9)
+    sutunlar = [(0.06, "Sıra"), (0.13, "Öğrenci No"), (0.32, "Adı Soyadı"), (0.62, "Program"), (0.85, "İmza")]
+    y = 0.89
+    for x, t in sutunlar:
+        fig.text(x, y, t, fontsize=9, weight="bold")
+    for i, (no, ad) in enumerate(LISTE, start=1):
+        y -= 0.025
+        for x, t in zip((c[0] for c in sutunlar), (str(i), no, ad, "İŞLETME (İÖ)")):
+            fig.text(x, y, t, fontsize=9)
+    fig.text(0.06, y - 0.05, f"Toplam öğrenci: {len(LISTE)}", fontsize=9)
+    fig.savefig(hedef, format="pdf", metadata={"CreationDate": None, "Creator": None, "Producer": None})
+    plt.close(fig)
 
 
 if __name__ == "__main__":

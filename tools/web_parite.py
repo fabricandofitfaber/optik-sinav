@@ -166,6 +166,18 @@ def main():
     senaryolar.append({"ad": "klasik", "dat": None, "liste": str(liste.relative_to(KOK)), "proje": p.to_dict(), "ders_kodlari": None,
                        "beklenen": ciktilar(p, sonuc)})
 
+    # PDF öğrenci listesi: hücre satırlarından tabloya (uydurma PDF ve elle yazılmış zor satırlar)
+    from optik_sinav.io.liste_okuyucu import pdf_hucrelerinden_tablo, pdf_satirlari
+
+    pdf_ornekleri = [
+        pdf_satirlari(F / "uydurma_liste.pdf"),
+        [["No", "Öğrenci No", "Adı", "Soyadı", "Bölüm"], ["1", "220101001", "Ayşe", "Yılmaz", "İşletme"],
+         ["2", "220101002", "Mehmet Ali", "Kaya", "İktisat"], ["3", "220101001", "Ayşe", "Yılmaz", "İşletme"]],
+        [["1 230202003 ÖMER FARUK ŞEN İŞLETME 2"], ["ZEHRA ÇELİK 230202004"], ["Sayfa 1 / 2"], ["4", "230202005", "İLKNUR KIZIL"]],
+    ]
+    (cikis / "liste_pdf.json").write_text(json.dumps([{"girdi": g, "beklenen": pdf_hucrelerinden_tablo(g)} for g in pdf_ornekleri],
+                                                     ensure_ascii=False, indent=1), encoding="utf-8")
+
     for s in senaryolar:
         (cikis / f"parite_{s['ad']}.json").write_text(json.dumps(s, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     print("Yazıldı:", ", ".join(s["ad"] for s in senaryolar))

@@ -103,4 +103,11 @@ for (const f of dosyalar) {
   if (farklar.length) { hata++; console.log(`✗ ${sen.ad}: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }
   else console.log(`✓ ${sen.ad}: ${sonuc.ogrenciler.length} öğrenci, bütün değerler aynı`);
 }
+const pdfOrnek = join(KOK, "tests/web/liste_pdf.json");
+if (existsSync(pdfOrnek)) {
+  const farklar = [];
+  JSON.parse(readFileSync(pdfOrnek, "utf8")).forEach((o, i) => karsilastir(o.beklenen, OS.pdfHucrelerindenTablo(o.girdi), `liste_pdf[${i}]`, farklar));
+  if (farklar.length) { hata++; console.log(`✗ PDF listesi: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }
+  else console.log("✓ PDF listesi: bütün örnekler aynı");
+}
 process.exit(hata ? 1 : 0);

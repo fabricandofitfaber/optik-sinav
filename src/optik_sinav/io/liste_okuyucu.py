@@ -1,4 +1,4 @@
-"""Öğrenci listesini Excel (xlsx, xls) ya da metin (csv, txt) dosyasından okur.
+"""Öğrenci listesini Excel (xlsx, xls), metin (csv, txt) ya da PDF (sınav yoklama listesi) dosyasından okur.
 
 Sütun eşlemesi (hangi sütun numara, hangisi ad) tahmin edilir; kullanıcı değiştirebilir.
 """
@@ -71,6 +71,12 @@ def sayfalari_oku(yol: str | Path) -> dict[str, Tablo]:
                 satirlar.append(satir)
             sonuc[sh.name] = satirlar
         return sonuc
+    if uzanti == ".pdf":
+        tablo = pdf_hucrelerinden_tablo(pdf_satirlari(yol))
+        if len(tablo) < 2:
+            raise ValueError("Bu PDF'te öğrenci numarası bulunamadı. Taranmış (resim) PDF ise okunamaz; "
+                             "sistemden listeyi Excel olarak indirmeyi deneyin.")
+        return {"PDF listesi": tablo}
     # csv / txt
     metin, _ = baytlari_coz(yol.read_bytes())
     ornek = metin[:4096]
@@ -169,6 +175,94 @@ def tablodan_liste(tablo: Tablo, esleme: ListeEslemesi) -> OgrenciListesi:
         ad = re.sub(r"\s+", " ", ad)
         ogrenciler.append(Ogrenci(no=no, ad=ad, kaynak_satir=r + 1))
     return OgrenciListesi(ogrenciler=ogrenciler, esleme=esleme, basliklar=basliklar)
+
+
+# ---------------------------------------------------------------- PDF listesi
+_NUMARA = re.compile(r"\d{6,12}")
+
+
+def _harfli(h: str) -> bool:
+    return bool(h) and any(c.isalpha() for c in h) and not any(c.isdigit() for c in h)
+
+
+def pdf_satirlari(yol: str | Path) -> list[list[str]]:
+    """PDF'in her satırını hücrelere böler: sayfa düzeni korunarak çıkarılan metinde iki ve daha çok boşluk sütun ayıracıdır."""
+    from pypdf import PdfReader
+
+    satirlar = []
+    for sayfa in PdfReader(str(yol)).pages:
+        try:
+            metin = sayfa.extract_text(extraction_mode="layout") or ""
+        except TypeError:  # çok eski pypdf
+            metin = sayfa.extract_text() or ""
+        for s in metin.splitlines():
+            if s.strip():
+                satirlar.append(re.split(r"\s{2,}", s.strip()))
+    return satirlar
+
+
+def pdf_hucrelerinden_tablo(satirlar: list[list[str]]) -> Tablo:
+    """PDF satırlarından (hücre listeleri) ["Öğrenci No", "Adı Soyadı"] tablosu kurar.
+
+    Numara: 6-12 haneli ilk hücre. Ad: başlık satırı bulunduysa ad (ve soyad) sütununun numara sütununa göre
+    konumundan; bulunmadıysa numaranın sağındaki (yoksa solundaki) harfli hücre. Hücrelere bölünemeyen satırda
+    kelimelere bakılır. Aynı numara bir kez alınır. Tarayıcı sürümündeki `pdfHucrelerindenTablo` ile aynıdır.
+    """
+    ad_kaydir = soyad_kaydir = None
+    tablo: Tablo = [["Öğrenci No", "Adı Soyadı"]]
+    gorulen: set[str] = set()
+    for ham in satirlar:
+        hucreler = [re.sub(r"\s+", " ", str(h)).strip() for h in ham if h is not None and str(h).strip()]
+        if not hucreler:
+            continue
+        numarali = [i for i, h in enumerate(hucreler) if _NUMARA.fullmatch(h)]
+        if not numarali:
+            sadeler = [_sade(h) for h in hucreler]
+            no_i = next((i for i, h in enumerate(sadeler) if h in _NO_BASLIK and h != "no"), None)
+            if no_i is None:
+                no_i = next((i for i, h in enumerate(sadeler) if h == "no"), None)
+            if no_i is not None:  # başlık satırı
+                ad_soyad = next((i for i, h in enumerate(sadeler) if h in _AD_SOYAD_BASLIK), None)
+                ad = next((i for i, h in enumerate(sadeler) if h in _AD_BASLIK), None)
+                soyad = next((i for i, h in enumerate(sadeler) if h in _SOYAD_BASLIK), None)
+                if ad_soyad is not None:
+                    ad_kaydir, soyad_kaydir = ad_soyad - no_i, None
+                elif ad is not None:
+                    ad_kaydir, soyad_kaydir = ad - no_i, (soyad - no_i if soyad is not None else None)
+                continue
+            kelimeler = " ".join(hucreler).split()
+            j = next((j for j, k in enumerate(kelimeler) if _NUMARA.fullmatch(k)), None)
+            if j is None:
+                continue
+            no = kelimeler[j]
+            parca: list[str] = []
+            for k in kelimeler[j + 1:]:
+                if not _harfli(k):
+                    break
+                parca.append(k)
+            if not parca:
+                for k in reversed(kelimeler[:j]):
+                    if not _harfli(k):
+                        break
+                    parca.insert(0, k)
+            ad_metni = " ".join(parca)
+        else:
+            i = numarali[0]
+            no = hucreler[i]
+
+            def al(kaydir):
+                k = None if kaydir is None else i + kaydir
+                return hucreler[k] if k is not None and 0 <= k < len(hucreler) and _harfli(hucreler[k]) else ""
+
+            if ad_kaydir is not None:
+                ad_metni = " ".join(x for x in (al(ad_kaydir), al(soyad_kaydir)) if x)
+            else:
+                ad_metni = al(1) or al(-1)
+        if no in gorulen:
+            continue
+        gorulen.add(no)
+        tablo.append([no, ad_metni])
+    return tablo
 
 
 def liste_oku(yol: str | Path, esleme: ListeEslemesi | None = None) -> OgrenciListesi:

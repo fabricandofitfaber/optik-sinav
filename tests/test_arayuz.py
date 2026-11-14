@@ -226,3 +226,78 @@ def test_serbest_gezinme_ve_eksik_seridi(pencere):
     pencere.adim_listesi.setCurrentRow(0)
     assert pencere.serit.isHidden()
     assert pencere.adimlar[0].dat_dugmesi.styleSheet()  # zorunlu dosya düğmesi vurgulu
+
+
+def test_otomatik_kayit_ve_kurtarma(pencere, fix, tmp_path, monkeypatch):
+    """Klasik sınavda girilen puanlar kendiliğinden kaydedilir; liste dosyası silinse bile açılışta geri gelir."""
+    import shutil
+
+    from PySide6.QtWidgets import QMessageBox
+
+    from optik_sinav.ui.ana_pencere import AnaPencere
+    from optik_sinav.ui.durum import kurtarma_ozeti, kurtarma_yolu
+
+    liste = tmp_path / "sinif.xlsx"
+    shutil.copy(fix / "uydurma_liste.xlsx", liste)
+    d = pencere.durum
+    assert not d.otomatik_kaydet()  # boş proje kaydedilmez
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(liste))
+    p1.klasik_sayi.setValue(3)
+    pencere.adim_listesi.setCurrentRow(3)
+    m = pencere.adimlar[3].klasik_model
+    m.setData(m.index(0, 3), "20")
+    m.setData(m.index(1, 5), "7,5")
+    pencere.otomatik_kaydet()
+    assert kurtarma_yolu().exists()
+    assert not d.otomatik_kaydet()  # değişiklik yoksa yeniden yazmaz
+    o = kurtarma_ozeti()
+    assert o["klasik"] and o["puanli"] == 2
+    ilk_no = d.liste.ogrenciler[0].no
+
+    liste.unlink()  # özgün liste kayboldu: gömülü kopyadan açılmalı
+    yeni = AnaPencere()
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
+    assert yeni.kurtarmayi_sor()
+    d2 = yeni.durum
+    assert d2.proje.klasik and d2.liste is not None and len(d2.liste.ogrenciler) == len(d.liste.ogrenciler)
+    assert d2.proje.klasik_puanlar[ilk_no][0] == "20"
+    assert yeni.yigin.currentIndex() == 3  # doğrudan puan girişine
+    assert d2.proje_yolu is None  # kurtarma dosyası "Kaydet" hedefi olmaz
+    yeni.close()
+
+    # "Hayır": çalışma silinmez, yedeklenir
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.No)
+    ucuncu = AnaPencere()
+    assert not ucuncu.kurtarmayi_sor()
+    assert not kurtarma_yolu().exists()
+    assert list((kurtarma_yolu().parent / "yedekler").glob("son_calisma_*.osd"))
+    ucuncu.close()
+
+
+def test_kayitli_dosyaya_otomatik_yazar(pencere, fix, tmp_path):
+    """Sınav bir dosyaya kaydedildiyse sonraki değişiklikler o dosyaya da kendiliğinden yazılır."""
+    import json
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    hedef = d.kaydet(str(tmp_path / "ara.osd"))
+    d.klasik_puan_yaz(d.liste.ogrenciler[0].no, 0, "15")
+    assert d.otomatik_kaydet()
+    v = json.loads(hedef.read_text(encoding="utf-8"))
+    assert v["klasik_puanlar"][d.liste.ogrenciler[0].no][0] == "15"
+    assert v["gomulu_dosyalar"]["liste"]
+
+
+def test_birakilan_pdf_liste_olarak_okunur(pencere, fix):
+    """Ders bilgi paketi olmayan PDF öğrenci listesi sayılır; klasik sınavda puan girişine geç düğmesi çıkar."""
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._pdf_ac(str(fix / "uydurma_liste.pdf"))
+    assert pencere.durum.liste is not None and len(pencere.durum.liste.ogrenciler) == 12
+    assert not p1.giris_dugmesi.isHidden()
+    p1.giris_dugmesi.click()
+    assert pencere.yigin.currentIndex() == 3

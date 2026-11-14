@@ -5,7 +5,7 @@ from __future__ import annotations
 import unicodedata
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from ...core.puanlama import sayi_yaz, soru_puanlari
 
@@ -14,6 +14,11 @@ def _sade(m: str) -> str:
     s = str(m or "").replace("İ", "i").replace("I", "ı").lower().replace("ı", "i")
     s = unicodedata.normalize("NFKD", s)
     return "".join(c for c in s if not unicodedata.combining(c))
+
+
+SUTUN = 8
+YOL = ("Kâğıtlar elinizdeki sırayla gelsin: öğrenciyi numarası ya da adının birkaç harfiyle bulun, puanları yazın "
+       "(Enter bir sonraki kutuya geçer); son kutuda Enter kaydeder ve yeni kâğıda hazırlar. Her giriş kendiliğinden kaydedilir.")
 
 
 class KagitPaneli(QGroupBox):
@@ -27,7 +32,8 @@ class KagitPaneli(QGroupBox):
         s = QHBoxLayout()
         s.addWidget(QLabel("Öğrenci"))
         self.ara = QLineEdit(placeholderText="Numaranın ya da adın birkaç harfi, sonra Enter")
-        self.ara.setMinimumWidth(300)
+        self.ara.setMinimumWidth(220)
+        self.ara.setToolTip(YOL)
         self.ara.textEdited.connect(self._oneri)
         self.ara.returnPressed.connect(self._ilkini_sec)
         s.addWidget(self.ara)
@@ -40,15 +46,26 @@ class KagitPaneli(QGroupBox):
         self.oneriler = QLabel()
         self.oneriler.setStyleSheet("color: gray")
         v.addWidget(self.oneriler)
-        self.kutu_satiri = QHBoxLayout()
+        # Soru kutuları ızgarada: etiket üstte, kutu altta; satır başına en çok SUTUN soru (dar pencerede de sığsın)
+        self.kutu_satiri = QGridLayout()
+        self.kutu_satiri.setHorizontalSpacing(8)
         v.addLayout(self.kutu_satiri)
+        self.alt_satir = QHBoxLayout()
+        self.alt_satir.addWidget(QLabel("Kâğıttaki toplam"))
+        self.toplam = QLineEdit()
+        self.toplam.setFixedWidth(70)
+        self.toplam.setToolTip("İsteğe bağlı: kâğıdın üstüne yazdığınız toplam; tutmazsa uyarılır.")
+        self.toplam.returnPressed.connect(self.kaydet)
+        self.alt_satir.addWidget(self.toplam)
+        self.kaydet_dugmesi = QPushButton("Kaydet, sonraki kâğıt")
+        self.kaydet_dugmesi.clicked.connect(self.kaydet)
+        self.alt_satir.addWidget(self.kaydet_dugmesi)
+        self.alt_satir.addStretch(1)
+        v.addLayout(self.alt_satir)
         self.durum_etiketi = QLabel()
         self.durum_etiketi.setWordWrap(True)
         v.addWidget(self.durum_etiketi)
-        yol = QLabel("Kâğıtlar elinizdeki sırayla gelsin: öğrenciyi bulun, puanları yazın (Enter bir sonraki kutuya geçer), "
-                     "son kutuda Enter kaydeder ve yeni kâğıda hazırlar.")
-        yol.setWordWrap(True)
-        v.addWidget(yol)
+        self.setToolTip(YOL)
 
     def kur(self):
         """Soru sayısı ve puanlar değişmiş olabilir: kutuları yeniden kurar."""
@@ -63,22 +80,14 @@ class KagitPaneli(QGroupBox):
             tam = []
         for k in range(self.durum.proje.anahtar.soru_sayisi):
             etiket = f"S{k + 1}" + (f" ({sayi_yaz(tam[k], 2).rstrip('0').rstrip(',')})" if k < len(tam) else "")
-            self.kutu_satiri.addWidget(QLabel(etiket))
+            satir, sutun = divmod(k, SUTUN)
+            self.kutu_satiri.addWidget(QLabel(etiket), 2 * satir, sutun)
             e = QLineEdit()
-            e.setFixedWidth(60)
+            e.setFixedWidth(64)
             e.returnPressed.connect(lambda k=k: self._sonraki_kutu(k))
-            self.kutu_satiri.addWidget(e)
+            self.kutu_satiri.addWidget(e, 2 * satir + 1, sutun)
             self.kutular.append(e)
-        self.kutu_satiri.addWidget(QLabel("Kâğıttaki toplam"))
-        self.toplam = QLineEdit()
-        self.toplam.setFixedWidth(70)
-        self.toplam.setToolTip("İsteğe bağlı: kâğıdın üstüne yazdığınız toplam; tutmazsa uyarılır.")
-        self.toplam.returnPressed.connect(self.kaydet)
-        self.kutu_satiri.addWidget(self.toplam)
-        self.kaydet_dugmesi = QPushButton("Kaydet, sonraki kâğıt")
-        self.kaydet_dugmesi.clicked.connect(self.kaydet)
-        self.kutu_satiri.addWidget(self.kaydet_dugmesi)
-        self.kutu_satiri.addStretch(1)
+        self.kutu_satiri.setColumnStretch(SUTUN, 1)
         self._temizle()
 
     # ------------------------------------------------------------ arama
@@ -97,7 +106,7 @@ class KagitPaneli(QGroupBox):
         if metin.strip() and not r:
             self.oneriler.setText("<span style='color:#C0504D'>Listede bulunamadı</span>")
         else:
-            self.oneriler.setText("   ".join(f"{o.no} {o.ad}" for o in r[:6]) + (f"   (+{len(r) - 6} öğrenci daha; biraz daha yazın)" if len(r) > 6 else ""))
+            self.oneriler.setText("   ".join(f"{o.no} {o.ad}" for o in r[:3]) + (f"   (+{len(r) - 3} öğrenci daha; biraz daha yazın)" if len(r) > 3 else ""))
 
     def _ilkini_sec(self):
         r = self.bul(self.ara.text())

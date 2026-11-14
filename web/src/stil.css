@@ -53,7 +53,7 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
 .birak.zorunlu { border: 2px solid var(--iyi); background: color-mix(in srgb, var(--iyi) 7%, transparent); padding: 20px 16px; }
 .birak.zorunlu .baslik { font-size: 17px; }
 .birak.zorunlu:hover, .birak.zorunlu.uzerinde { background: color-mix(in srgb, var(--iyi) 14%, transparent); border-color: var(--iyi); }
-.zorunlu-dugme { display: inline-block; margin-top: 10px; background: #2e7d32; color: #fff; font-weight: 600; font-size: 15px; padding: 9px 22px; border-radius: 8px; border: 2px solid #1b5e20; }
+.zorunlu-dugme { cursor: pointer; display: inline-block; margin-top: 10px; background: #2e7d32; color: #fff; font-weight: 600; font-size: 15px; padding: 9px 22px; border-radius: 8px; border: 2px solid #1b5e20; }
 .birak.tamam { border-style: solid; }
 .birak.tamam .baslik { color: var(--iyi); }
 nav.adimlar button .tamam { float: right; color: var(--iyi); font-weight: 700; }

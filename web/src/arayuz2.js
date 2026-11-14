@@ -109,11 +109,10 @@
       const s = D.sonuc || UI.degerlendir();
       const kl = D.proje.bicim === "klasik";
       if (!K.sekme || (K.sekme === "giris" && !kl)) K.sekme = kl ? "giris" : "sonuc";
-      if (!s) { k.innerHTML = "<h2>4. Kontrol ve düzeltme</h2><p>Değerlendirilecek okuma yok.</p>"; return; }
-      const uyarili = s.ogrenciler.filter((o) => o.uyarilar.length).length;
-      const ort = s.ogrenciler.length ? OS.sayiYaz(OS.topla(s.ogrenciler.map((o) => o.puan)).bol(s.ogrenciler.length), 2) : "-";
-      const kits = [...new Set(s.ogrenciler.map((o) => o.kitapcik).filter((x) => x))].sort();
-      const sek = [...(kl ? [["giris", "Puan girişi"]] : []), ["sonuc", "Sonuçlar"], ["girmeyen", `Sınava girmeyenler (${s.girmeyenler.length})`],
+      // Klasik sınavda puan girişi, sonuç hesaplanamasa da (ör. soru puanları 100 etmiyor) açık kalır.
+      if (!s && !(kl && D.liste)) { k.innerHTML = "<h2>4. Kontrol ve düzeltme</h2><p>Değerlendirilecek okuma yok.</p>"; return; }
+      if (!s) K.sekme = "giris";
+      const sek = !s ? [["giris", "Puan girişi"]] : [...(kl ? [["giris", "Puan girişi"]] : []), ["sonuc", "Sonuçlar"], ["girmeyen", `Sınava girmeyenler (${s.girmeyenler.length})`],
         ...(kl ? [] : [["olmayan", `Listede olmayanlar (${s.listede_olmayanlar.length})`], ["duzeltme", `Düzeltme kaydı (${D.proje.duzeltmeler.length})`]])];
       let icerik = "";
       if (K.sekme === "giris") icerik = `${kagitPaneli()}<div class="satir"><button id="exceldenAl">Excel'den puan al…</button><button id="sablonIndir">Boş puan şablonu indir</button>
@@ -126,7 +125,7 @@
         basitTablo(["Dosya satırı", "Okunan numara", "Okunan ad", "Olası numaralar", "Puan"], s.listede_olmayanlar.map((o) => [o.kayit.satir_no, e(o.no), e(o.okunan_ad), e(o.oneriler.join(", ")), OS.sayiYaz(o.puan, s.ayarlar.ondalik)]), "olmayan");
       else icerik = basitTablo(["Dosya satırı", "Alan", "Eski değer", "Yeni değer", "Kim", "Ne zaman"], D.proje.duzeltmeler.map((d) => [d.satir_no, e(d.alan), e(d.eski), e(d.yeni), e(d.kim), e(d.zaman)]));
       k.innerHTML = `<h2>4. Kontrol ve düzeltme</h2>
-        <p id="kontrolOzet">${kontrolOzeti(s)}</p>
+        <p id="kontrolOzet">${s ? kontrolOzeti(s) : "Puanları şimdiden girebilirsiniz; sonuç, üstteki eksikler tamamlanınca hesaplanır."}</p>
         <div class="sekmeler">${sek.map(([id, t]) => `<button data-sekme="${id}" class="${K.sekme === id ? "secili" : ""}">${t}</button>`).join("")}</div>${icerik}`;
       $$("[data-sekme]", k).forEach((b) => (b.onclick = () => { K.sekme = b.dataset.sekme; UI.ciz(); }));
       if ($("#yalnizUyarili", k)) $("#yalnizUyarili", k).onchange = (ev) => { K.yalnizUyarili = ev.target.checked; UI.ciz(); };
@@ -145,6 +144,7 @@
   }
   function klasikOzetGuncelle() {
     const s = UI.degerlendir();
+    UI.otomatikKaydet();  // sonuç hesaplanamasa da (ör. soru puanı eksik) girilen puan kaybolmasın
     if (!s) return;
     const p = $("#kontrolOzet");
     if (p) p.innerHTML = kontrolOzeti(s);
@@ -662,6 +662,8 @@
     const son = yerel.al("os_son_proje");
     if (son) { try { UI.projeAc(son); } catch (_) { D.proje = OS.yeniProje(); } }
     UI.ciz();
+    const n = Object.keys(D.proje.klasik_puanlar || {}).length;
+    if (son && (D.liste || D.okuma)) bildir("Son çalışmanız geri yüklendi" + (D.proje.bicim === "klasik" && n ? `: ${n} öğrencinin puanı girilmiş.` : ".") + " Baştan başlamak için \"Yeni sınav\".", 6000);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", baslat); else baslat();
 })();

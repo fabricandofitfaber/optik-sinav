@@ -76,9 +76,13 @@ Program tek pencerede, soldaki altı adımla ilerler. Optik (test) ve klasik (ya
 
 **Ders bilgi paketi:** "Ders bilgi paketini yükle (PDF)" ile Akademik Bilgi Sistemi'nden indirilen ders bilgi paketini gösterin (pencereye sürükleyip bırakmak da olur). Dersin öğrenme çıktıları, program çıktıları, katkı düzeyleri ve değerlendirme ağırlıkları okunur ve ders koduna göre saklanır; ders kodu bir dahaki sefere kendiliğinden tanınır. UTL4513, EKF3005 ve EKF4507 paketle birlikte gelir.
 
-Ders kodu, ders adı, sınav türü, tarih, saat ve etki oranını girin. Optik dosyayı ve (isteğe bağlı) öğrenci listesini seçin ya da pencereye sürükleyip bırakın. Program soru sayısını kendisi önerir; alan konumları ve soru sayısı "Okuyucu şablonu" bölümünden değiştirilebilir. Önizlemede ad, numara ve cevap alanları ayrı renklerle, alan dışındaki işaretler turuncu ile görünür. Öğrenci listesinde numara ve ad sütunları tahmin edilir; yanlışsa "Sütun eşlemesi" satırından düzeltin.
+Ders kodu, ders adı, sınav türü, tarih, saat ve etki oranı isteğe bağlıdır; yalnızca raporlarda ve dosya adlarında görünür. Adımlar arasında serbestçe dolaşabilirsiniz; eksik bir şey varsa altta yazar, tamamlanan adımların yanında ✓ görünür. Optik dosyayı ve (isteğe bağlı) öğrenci listesini seçin ya da pencereye sürükleyip bırakın. Program soru sayısını kendisi önerir; alan konumları ve soru sayısı "Okuyucu şablonu" bölümünden değiştirilebilir. Önizlemede ad, numara ve cevap alanları ayrı renklerle, alan dışındaki işaretler turuncu ile görünür. Öğrenci listesinde numara ve ad sütunları tahmin edilir; yanlışsa "Sütun eşlemesi" satırından düzeltin.
 
-Kabul edilen öğrenci listeleri: Akademik Bilgi Sistemi'nden indirilen Excel listesi, eski optik okuma yazılımının Excel çıktısı, akreditasyon şablonunun kendisi ya da numara ve ad içeren `.csv` dosyası.
+Kabul edilen öğrenci listeleri: Akademik Bilgi Sistemi'nden indirilen Excel listesi, eski optik okuma yazılımının Excel çıktısı, akreditasyon şablonunun kendisi, numara ve ad içeren `.csv` dosyası ya da **sınav yoklama listesi PDF'i**. PDF'te her satırdaki 6-12 haneli numara ve yanındaki ad okunur; taranmış (resim) PDF okunamaz. Okunan öğrenci sayısını ve sütunları kontrol edin.
+
+**Klasik sınavda** liste yüklenince "Puan girişine geç" düğmesi çıkar; öğrenciler satır, sorular sütun olarak açılır. Soru puanlarını girmediyseniz toplam puan sorulara eşit dağıtılır (2. adımda değiştirebilirsiniz).
+
+**Otomatik kayıt:** girdiğiniz her puan ve yaptığınız her değişiklik birkaç saniye içinde kendiliğinden kaydedilir. Bilgisayarı kapatıp programı yeniden açtığınızda "Kaldığınız yerden devam edilsin mi?" diye sorulur; liste dosyası taşınmış ya da silinmiş olsa bile çalışma kayıttaki kopyadan geri gelir. Sınavı bir dosyaya kaydettiyseniz ("Kaydet") o dosya da kendiliğinden güncel tutulur. "Hayır" ya da "Yeni sınav" derseniz eski çalışma silinmez, yedek klasörüne alınır. Tarayıcı sürümü son çalışmayı tarayıcının kendisinde saklar ve sayfa açılınca geri yükler.
 
 ### 2. Cevap anahtarı
 

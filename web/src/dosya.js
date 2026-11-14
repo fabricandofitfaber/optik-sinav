@@ -9,7 +9,7 @@
     if (uz === "csv" || uz === "txt") {
       const [metin] = OS.baytlariCoz(bayt instanceof Uint8Array ? bayt : new Uint8Array(bayt));
       const ornek = metin.slice(0, 4096);
-      const sayilar = [";", ",", "\t", "|"].map((a) => [a, ornek.split("\n").slice(0, 10).map((s) => s.split(a).length - 1)]);
+      const sayilar = [";", ",", "\t", "|"].map((a) => [a, ornek.split("\n").filter((s) => s.trim()).slice(0, 10).map((s) => s.split(a).length - 1)]);
       let ayrac = ",";
       let enIyi = -1;
       for (const [a, s] of sayilar) {
