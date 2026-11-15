@@ -16,6 +16,7 @@ class Adim(QWidget):
         self.durum = durum
         self.duzen = QVBoxLayout(self)
         b = QLabel(f"<h2>{baslik}</h2>")
+        self.baslik_etiketi = b
         self.duzen.addWidget(b)
 
     def eksikler(self) -> list[str]:

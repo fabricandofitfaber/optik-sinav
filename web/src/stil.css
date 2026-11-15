@@ -81,8 +81,8 @@ table.sorular tr.etkin { background: var(--vurgu-acik); }
 .kabarcik { width: 28px; height: 28px; border-radius: 50%; padding: 0; border: 1.5px solid var(--soluk); font-weight: 700; margin-right: 3px; background: transparent; }
 .kabarcik.secili { background: var(--vurgu); border-color: var(--vurgu); color: #fff; }
 .kabarcik:disabled { opacity: .3; }
-input.puan { width: 80px; } input.cikti { width: 100%; min-width: 180px; } input.pc { width: 120px; } input.esleme { width: 70px; }
-.ozet-panel { position: sticky; bottom: 0; }
+input.puan { width: 80px; font-weight: 600; border: 1px solid var(--vurgu); background: var(--kart); } input.cikti { width: 100%; min-width: 180px; } input.pc { width: 120px; } input.esleme { width: 70px; }
+.ozet-panel { position: sticky; bottom: 0; box-shadow: 0 -8px 14px -6px rgba(0,0,0,.25); }
 /* tablolar */
 .tablo-kap { overflow: auto; max-height: calc(100vh - 280px); border: 1px solid var(--cizgi); border-radius: 8px; background: var(--kart); }
 table.veri { border-collapse: collapse; font-size: 13px; width: max-content; min-width: 100%; }

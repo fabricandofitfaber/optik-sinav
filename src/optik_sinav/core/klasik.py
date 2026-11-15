@@ -36,6 +36,33 @@ def puan_coz(metin: object) -> Fraction | None:
     return fraction_decimal(s)
 
 
+def puan_listesi_coz(metin: str) -> list[str]:
+    """"10 10 10 10 20 40" gibi soru puanı dizisini çözer; her puanı "12.5" biçiminde döndürür.
+
+    Ayırıcı: boşluk, noktalı virgül, artı ya da eğik çizgi. Virgül ondalık işaretidir ("12,5"); ancak sonunda
+    duran virgül ("10, 20") ya da birden çok virgül içeren parça ("10,10,20") ayırıcı sayılır.
+    Sayı olmayan ya da eksi parça için ValueError.
+    """
+    import re
+
+    parcalar = []
+    for p in re.split(r"[\s;+/|]+", str(metin or "").strip()):
+        p = p.strip(",")
+        if not p:
+            continue
+        parcalar.extend(x for x in p.split(",") if x) if p.count(",") > 1 else parcalar.append(p)
+    sonuc = []
+    for p in parcalar:
+        try:
+            v = puan_coz(p)
+        except (ValueError, ArithmeticError):
+            raise ValueError(f"Sayı değil: {p!r}") from None
+        if v is None or v < 0:
+            raise ValueError(f"Puan sıfır ya da daha büyük olmalı: {p!r}")
+        sonuc.append(str(v.numerator) if v.denominator == 1 else p.replace(",", "."))
+    return sonuc
+
+
 def klasik_degerlendir(liste: OgrenciListesi, anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari,
                        puanlar: dict[str, list[str | None]], toplamlar: dict[str, str | None] | None = None) -> SinavSonucu:
     """`toplamlar`: kâğıdın üstüne yazılan toplam (isteğe bağlı); soru puanlarının toplamıyla tutmazsa uyarı verilir."""

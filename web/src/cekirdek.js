@@ -712,6 +712,21 @@
     if (!s) return null;
     return Kesir.ondaliktan(s);
   }
+  /** "10 10 10 10 20 40" gibi soru puanı dizisi (Python: puan_listesi_coz). Virgül ondalıktır; sondaki ya da çoklu virgül ayırıcıdır. */
+  function puanListesiCoz(metin) {
+    const parcalar = [];
+    for (let p of String(metin ?? "").trim().split(/[\s;+/|]+/)) {
+      p = p.replace(/^,+|,+$/g, "");
+      if (!p) continue;
+      if ((p.match(/,/g) || []).length > 1) parcalar.push(...p.split(",").filter(Boolean)); else parcalar.push(p);
+    }
+    return parcalar.map((p) => {
+      let v;
+      try { v = puanCoz(p); } catch (_) { throw new Error(`Sayı değil: '${p}'`); }
+      if (v === null || v.p < 0n) throw new Error(`Puan sıfır ya da daha büyük olmalı: '${p}'`);
+      return v.q === 1n ? String(v.p) : p.replace(",", ".");
+    });
+  }
   function klasikYaz(x) {
     if (x === null) return "";
     if (x.q === 1n) return String(x.p);
@@ -861,6 +876,6 @@
     baytlariCoz, metinDosyasiOku, satirlaraBol, alanlar, satiriCoz, satirlariOku, soruSayisiOner, sablonOner,
     sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe, pdfHucrelerindenTablo,
     duzeltilmisDegerler, duzeltilmisKitapcik, duzeltmeOlustur, numaraOnerileri, sinaviDegerlendir,
-    puanCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, dersPaketiCoz, dogalKarsilastir,
+    puanCoz, puanListesiCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, dersPaketiCoz, dogalKarsilastir,
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

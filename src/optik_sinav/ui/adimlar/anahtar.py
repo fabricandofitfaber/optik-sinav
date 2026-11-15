@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 from ... import metinler as M
 from ...core.madde_analizi import cikti_dagilimi, cikti_denetimi
 from ...core.modeller import SIKLAR, CevapAnahtari, PuanYontemi, SoruDurumu, esit_yuzdeler
+from ...core.klasik import puan_listesi_coz
 from ...core.puanlama import anahtar_eksikleri, esit_soru_puanlari, sayi_yaz, soru_puanlari
 from ..tema import koyu_mu
 from .temel import Adim
@@ -214,8 +215,9 @@ class AnahtarAdimi(Adim):
         s.addStretch(1)
         u.addLayout(s)
         s = QHBoxLayout()
-        s.addWidget(QLabel("Hızlı giriş:"))
-        self.hizli = QLineEdit(placeholderText="Harfleri sırayla yazın, örneğin BEDAC DEDBC BEAAC ('-' soruyu atlar). Enter ile uygulayın.")
+        self.hizli_etiket = QLabel("Hızlı giriş:")
+        s.addWidget(self.hizli_etiket)
+        self.hizli = QLineEdit()
         self.hizli.returnPressed.connect(self._hizli_uygula)
         s.addWidget(self.hizli, 1)
         b = QPushButton("Uygula")
@@ -237,6 +239,18 @@ class AnahtarAdimi(Adim):
         self.kaydirma.setWidgetResizable(True)
         self.kaydirma.setWidget(self.izgara)
         self.duzen.addWidget(self.kaydirma, 1)
+        # klasik sınav: soru ekle / son soruyu çıkar
+        self.soru_dugmeleri = QWidget()
+        s = QHBoxLayout(self.soru_dugmeleri)
+        s.setContentsMargins(0, 0, 0, 0)
+        b = QPushButton("+ Soru ekle")
+        b.clicked.connect(self._soru_ekle)
+        s.addWidget(b)
+        b = QPushButton("− Son soruyu çıkar")
+        b.clicked.connect(self._soru_cikar)
+        s.addWidget(b)
+        s.addStretch(1)
+        self.duzen.addWidget(self.soru_dugmeleri)
         self.ipucu = QLabel()
         self.ipucu.setWordWrap(True)
         self.ipucu.setStyleSheet("color: gray")
@@ -332,8 +346,17 @@ class AnahtarAdimi(Adim):
 
     def _sekmeleri_kur(self):
         self.ust.setVisible(True)
-        for w in (self.kitapcik_ekle, self.kitapcik_sil, self.hizli, self.sekmeler):
+        for w in (self.kitapcik_ekle, self.kitapcik_sil, self.sekmeler):
             w.setVisible(not self.klasik)
+        self.soru_dugmeleri.setVisible(self.klasik)
+        self.baslik_etiketi.setText(f"<h2>{M.ADIM_KLASIK_2 if self.klasik else M.ADIMLAR[1]}</h2>")
+        if self.klasik:
+            self.hizli_etiket.setText("Soru puanları:")
+            self.hizli.setPlaceholderText("Sırayla yazın, örneğin 10 10 10 10 20 40. Soru sayısı da buna göre ayarlanır. Enter ile uygulayın.")
+            self._hizli_doldur()
+        else:
+            self.hizli_etiket.setText("Hızlı giriş:")
+            self.hizli.setPlaceholderText("Harfleri sırayla yazın, örneğin BEDAC DEDBC BEAAC ('-' soruyu atlar). Enter ile uygulayın.")
         istenen = self.anahtar.kitapciklar() if not self.klasik else []
         mevcut = [self.sekmeler.tabData(i) for i in range(self.sekmeler.count())]
         if istenen != mevcut:
@@ -439,7 +462,11 @@ class AnahtarAdimi(Adim):
             self.izgara_duzen.setColumnStretch(len(basliklar) - 3, 3)
             self.izgara_duzen.setColumnStretch(len(basliklar) - 1, 2)
         self.izgara_duzen.setRowStretch(n + 1, 1)
-        if bilinen:
+        if self.klasik:
+            self.ipucu.setText("Puanı değiştirmek için kutuya tıklayıp yazın ya da yukarıdaki satıra bütün puanları sırayla yazın. "
+                               + (f"Dersin öğrenme çıktıları: {', '.join(bilinen)}; çıktı sütununa yalnızca numara da yazabilirsiniz (\"1, 3\" → Ö01 ve Ö03 eşit)."
+                                  if bilinen else "Ders bilgi paketini 1. adımda yüklerseniz çıktılar açıklamalarıyla seçilebilir."))
+        elif bilinen:
             self.ipucu.setText(f"Dersin öğrenme çıktıları: {', '.join(bilinen)}. Çıktı sütununa yalnızca numara da yazabilirsiniz "
                                "(\"1, 3\" → Ö01 ve Ö03 eşit). Klavye: tabloya tıklayıp A-E harflerine basın, otomatik olarak sonraki soruya geçer.")
         else:
@@ -538,6 +565,8 @@ class AnahtarAdimi(Adim):
         self.kaydirma.ensureWidgetVisible(self.satirlar[self.etkin].no)
 
     def _hizli_uygula(self):
+        if self.klasik:
+            return self._klasik_puanlari_uygula()
         n = self.anahtar.soru_sayisi
         metin = self.hizli.text()
         harf_sayisi = len([c for c in metin if not c.isspace()])
@@ -556,6 +585,52 @@ class AnahtarAdimi(Adim):
         self.durumdan_yukle()
         if harf_sayisi != n:
             QMessageBox.information(self, "Cevap anahtarı", f"{harf_sayisi} harf girildi, soru sayısı {n}. Eksik sorular anahtarsız bırakıldı, fazlası atıldı.")
+
+    # ---------------------------------------------------------------- klasik: puan dizisi, soru ekle/çıkar
+    def _hizli_doldur(self):
+        """Klasik sınavda üstteki satır, o anki soru puanlarını gösterir (doğrudan düzenlenebilir)."""
+        if self.klasik and not self.hizli.hasFocus():
+            self.hizli.setText(" ".join((s.puan or "?").replace(".", ",") for s in self.anahtar.sorular))
+
+    def _klasik_puanlari_uygula(self):
+        try:
+            puanlar = puan_listesi_coz(self.hizli.text())
+        except ValueError as e:
+            QMessageBox.warning(self, "Soru puanları", f"{e}\n\nPuanları boşlukla ayırarak yazın, örneğin: 10 10 10 10 20 40")
+            return
+        if not puanlar:
+            return
+        if not self._cikarmayi_onayla(len(puanlar)):
+            return
+        self.durum.klasik_puanlarini_yaz(puanlar)
+        self.hizli.clearFocus()
+        self.durumdan_yukle()
+
+    def _cikarmayi_onayla(self, yeni_n: int) -> bool:
+        """Soru sayısı azalıyorsa ve çıkan sorulara öğrenci puanı girilmişse onay ister (puanlar silinmez)."""
+        etkilenen = [(k + 1, self.durum.puanli_ogrenci_sayisi(k)) for k in range(yeni_n, self.anahtar.soru_sayisi)]
+        etkilenen = [(k, n) for k, n in etkilenen if n]
+        if not etkilenen:
+            return True
+        ayrinti = ", ".join(f"{k}. soruda {n} öğrenci" for k, n in etkilenen)
+        return QMessageBox.question(
+            self, "Soru çıkarılsın mı?",
+            f"Çıkarılacak sorulara puan girilmiş: {ayrinti}.\nBu puanlar hesaba katılmaz ama silinmez; soruyu geri eklerseniz geri gelir. Devam edilsin mi?",
+        ) == QMessageBox.StandardButton.Yes
+
+    def _soru_ekle(self):
+        self.durum.klasik_soru_sayisi_ayarla(self.anahtar.soru_sayisi + 1)
+        self.durumdan_yukle()
+        if self.satirlar and self.satirlar[-1].puan is not None:
+            self.satirlar[-1].puan.setFocus()
+            self.satirlar[-1].puan.selectAll()
+
+    def _soru_cikar(self):
+        n = self.anahtar.soru_sayisi
+        if n <= 1 or not self._cikarmayi_onayla(n - 1):
+            return
+        self.durum.klasik_soru_sayisi_ayarla(n - 1)
+        self.durumdan_yukle()
 
     def _durum_degisti(self, i):
         if self._yukleniyor:
@@ -577,6 +652,7 @@ class AnahtarAdimi(Adim):
                 s.puan = p
             a.yontem = PuanYontemi.SORU_BAZLI
         self.anahtar.sorular[i].puan = f"{deger:.2f}".rstrip("0").rstrip(".")
+        self._hizli_doldur()
         self._ozet()
 
     def _esit_puan(self):
@@ -731,8 +807,16 @@ class AnahtarAdimi(Adim):
             dogru = toplam == Fraction(hedef.replace(",", "."))
         except (ValueError, ZeroDivisionError):
             dogru = False
+        try:
+            fark = Fraction(hedef.replace(",", ".")) - toplam
+            neden = f"{sayi_yaz(abs(fark), 2)} puan {'eksik' if fark > 0 else 'fazla'}" if fark else ""
+        except (ValueError, ZeroDivisionError):
+            neden = ""
+        bos = [str(s.no) for s in a.sorular if s.puan in (None, "")] if (self.klasik or p.ayarlar.yontem != PuanYontemi.ESIT) else []
+        if bos:
+            neden = f"puanı girilmemiş soru: {', '.join(bos)}"
         self.puan_ozeti.setText(f"<b>Soru puanlarının toplamı:</b> {sayi_yaz(toplam, 2)} / {hedef} ({yontem})"
-                                + (" ✓" if dogru else "  <span style='color:#C0504D'><b>toplam tutmuyor</b></span>"))
+                                + (" ✓" if dogru and not bos else f"  <span style='color:#C0504D'><b>toplam tutmuyor{': ' + neden if neden else ''}</b></span>"))
         hatalar, bilgiler = cikti_denetimi(a, self.durum.ogrenme_kodlari() or None)
         if any(s.ogrenme_ciktilari for s in a.sorular) and puanlar:
             dag = cikti_dagilimi(a, puanlar)
@@ -752,7 +836,8 @@ class AnahtarAdimi(Adim):
 
     def eksikler(self):
         a = self.anahtar
-        e = [x for x in anahtar_eksikleri(a, self.durum.proje.ayarlar, self.klasik) if "puan" not in x.lower()]
+        # Klasik sınavda soru puanları bu adımda girilir; optikte 3. adımda
+        e = [x for x in anahtar_eksikleri(a, self.durum.proje.ayarlar, self.klasik) if self.klasik or "puan" not in x.lower()]
         if not self.klasik:
             for k in a.kitapciklar()[1:]:
                 harfler = [c for c in a.kitapcik_anahtarlari.get(k, "") if not c.isspace()]

@@ -84,6 +84,19 @@ class Durum(QObject):
         self.sonuc = None
         self.degisti.emit()
 
+    def klasik_puanlarini_yaz(self, puanlar: list[str]) -> None:
+        """Klasik sınavda soru sayısını ve soru puanlarını birlikte ayarlar ("10 10 10 10 20 40")."""
+        self.proje.klasik_soru_sayisi = max(1, len(puanlar))
+        self.anahtari_boyutla()
+        for s, p in zip(self.proje.anahtar.sorular, puanlar):
+            s.puan = p
+        self.sonuc = None
+        self.degisti.emit()
+
+    def puanli_ogrenci_sayisi(self, k: int) -> int:
+        """Klasik sınavda k. soruya (0'dan) puanı girilmiş öğrenci sayısı."""
+        return sum(1 for d in self.proje.klasik_puanlar.values() if k < len(d) and d[k] not in (None, ""))
+
     def klasik_soru_sayisi_ayarla(self, n: int) -> None:
         from ..core.puanlama import esit_soru_puanlari
 

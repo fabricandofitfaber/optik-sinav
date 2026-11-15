@@ -178,6 +178,19 @@ def main():
     (cikis / "liste_pdf.json").write_text(json.dumps([{"girdi": g, "beklenen": pdf_hucrelerinden_tablo(g)} for g in pdf_ornekleri],
                                                      ensure_ascii=False, indent=1), encoding="utf-8")
 
+    # Klasik sınavda tek satırdan soru puanı dizisi (hatalı girdi: null)
+    from optik_sinav.core.klasik import puan_listesi_coz
+
+    def coz(m):
+        try:
+            return puan_listesi_coz(m)
+        except ValueError:
+            return None
+
+    ornekler = ["10 10 10 10 20 40", "10, 10, 20, 12,5", "10,10,20", "7,5;12.5+5", "20/20/60", "  ", "10 -5", "10 abc", "0 0,25 99.75", "1,5,"]
+    (cikis / "puan_listesi.json").write_text(json.dumps([{"girdi": m, "beklenen": coz(m)} for m in ornekler], ensure_ascii=False, indent=1),
+                                             encoding="utf-8")
+
     for s in senaryolar:
         (cikis / f"parite_{s['ad']}.json").write_text(json.dumps(s, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     print("Yazıldı:", ", ".join(s["ad"] for s in senaryolar))

@@ -332,3 +332,19 @@ def test_karne():
     s = sinavi_degerlendir([kayit(1, "ABCD"), kayit(2, "ABAA"), kayit(3, "CCCD")], a, PuanlamaAyarlari())
     k = {x.no: x for x in karneler(s, ogrenme_ciktisi_raporu(s))}
     assert k["101"].sira == 1 and k["102"].ciktilar[0][2] == 100.0 and "Ö01" in k["102"].guclu and "Ö02" in k["102"].gelismeli
+
+
+def test_puan_listesi_coz():
+    import pytest
+
+    from optik_sinav.core.klasik import puan_listesi_coz
+
+    assert puan_listesi_coz("10 10 10 10 20 40") == ["10", "10", "10", "10", "20", "40"]
+    assert puan_listesi_coz("10, 10, 20, 12,5") == ["10", "10", "20", "12.5"]
+    assert puan_listesi_coz("10,10,20") == ["10", "10", "20"]
+    assert puan_listesi_coz("7,5;12.5+5") == ["7.5", "12.5", "5"]
+    assert puan_listesi_coz("  ") == []
+    with pytest.raises(ValueError):
+        puan_listesi_coz("10 -5")
+    with pytest.raises(ValueError):
+        puan_listesi_coz("10 abc")

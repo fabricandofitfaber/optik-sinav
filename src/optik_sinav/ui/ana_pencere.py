@@ -207,7 +207,8 @@ class AnaPencere(QMainWindow):
         tamam = True  # bir adım, kendisi ve öncekiler eksiksizse işaretlenir
         for j, e in on:
             tamam = tamam and not e
-            self.adim_listesi.item(j).setText(M.ADIMLAR[j] + ("  ✓" if tamam else ""))
+            ad = M.ADIM_KLASIK_2 if (j == 1 and self.durum.proje.klasik) else M.ADIMLAR[j]
+            self.adim_listesi.item(j).setText(ad + ("  ✓" if tamam else ""))
         if i >= 3:
             satirlar = [f"<a href='{j}'>{j + 1}. adım</a>: {' '.join(e)}" for j, e in on if e]
             if self.durum.sonuc is None and not satirlar:

@@ -110,4 +110,15 @@ if (existsSync(pdfOrnek)) {
   if (farklar.length) { hata++; console.log(`✗ PDF listesi: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }
   else console.log("✓ PDF listesi: bütün örnekler aynı");
 }
+const puanOrnek = join(KOK, "tests/web/puan_listesi.json");
+if (existsSync(puanOrnek)) {
+  const farklar = [];
+  for (const o of JSON.parse(readFileSync(puanOrnek, "utf8"))) {
+    let js;
+    try { js = OS.puanListesiCoz(o.girdi); } catch (_) { js = null; }
+    karsilastir(o.beklenen, js, `puan_listesi(${JSON.stringify(o.girdi)})`, farklar);
+  }
+  if (farklar.length) { hata++; console.log(`✗ Puan dizisi: ${farklar.length} fark`); for (const x of farklar) console.log("   " + x); }
+  else console.log("✓ Puan dizisi: bütün örnekler aynı");
+}
 process.exit(hata ? 1 : 0);

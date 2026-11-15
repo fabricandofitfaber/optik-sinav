@@ -157,4 +157,6 @@ class PuanlamaAdimi(Adim):
             float(self.durum.proje.ayarlar.toplam_puan)
         except ValueError:
             return ["Toplam puan sayı olmalı."]
+        if self.durum.proje.klasik:
+            return []  # klasik sınavda soru puanları 2. adımda
         return [x for x in anahtar_eksikleri(self.durum.proje.anahtar, self.durum.proje.ayarlar, self.durum.proje.klasik) if "puan" in x.lower()]

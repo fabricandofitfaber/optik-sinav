@@ -310,6 +310,7 @@
       const j = Number(b.dataset.adim);
       b.classList.toggle("secili", j === D.adim);
       if (j < 3) { tamam = tamam && !on[j].length; b.querySelector(".tamam").textContent = tamam ? "✓" : ""; }
+      if (j === 1) b.childNodes[1].textContent = D.proje.bicim === "klasik" ? "Sorular ve puanlar" : ADIMLAR[1];
     });
     if (D.adim >= 3 && !D.sonuc) {
       let sat = on.map((x, j) => (x.length ? `<a href="#" data-git="${j}">${j + 1}. adım</a>: ${e(x.join(" "))}` : "")).filter(Boolean);
@@ -627,7 +628,14 @@
     let dogru = false;
     try { dogru = toplam.esit(OS.Kesir.ondaliktan(p.ayarlar.toplam_puan)); } catch (_) { dogru = false; }
     const yontem = p.ayarlar.yontem === "esit" && !kl ? "eşit puan" : "soru bazlı puan";
-    let m = `<div class="satir"><span><b>Soru puanlarının toplamı:</b> ${OS.sayiYaz(toplam)} / ${e(p.ayarlar.toplam_puan)} (${yontem}) ${dogru ? '<span class="yesil">✓</span>' : '<b class="kirmizi">toplam tutmuyor</b>'}</span></div>`;
+    let neden = "";
+    try {
+      const fark = OS.Kesir.ondaliktan(p.ayarlar.toplam_puan).cikar(toplam);
+      if (!fark.sifirMi()) neden = `${OS.sayiYaz(fark.p < 0n ? new OS.Kesir(-fark.p, fark.q) : fark, 2)} puan ${fark.p > 0n ? "eksik" : "fazla"}`;
+    } catch (_) { neden = ""; }
+    const bos = kl || p.ayarlar.yontem !== "esit" ? a.sorular.filter((s) => s.puan === null || s.puan === undefined || s.puan === "").map((s) => s.no) : [];
+    if (bos.length) neden = `puanı girilmemiş soru: ${bos.join(", ")}`;
+    let m = `<div class="satir"><span><b>Soru puanlarının toplamı:</b> ${OS.sayiYaz(toplam)} / ${e(p.ayarlar.toplam_puan)} (${yontem}) ${dogru && !bos.length ? '<span class="yesil">✓</span>' : `<b class="kirmizi">toplam tutmuyor${neden ? ": " + neden : ""}</b>`}</span></div>`;
     const [hatalar, bilgiler] = OS.ciktiDenetimi(a, UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null);
     if (a.sorular.some((s) => (s.ogrenme_ciktilari || []).length) && puanlar.length) {
       const dag = OS.ciktiDagilimiSinav(a, puanlar);
@@ -638,10 +646,23 @@
     for (const b of bilgiler) m += `<div class="soluk">${e(b)}</div>`;
     return m;
   }
+  const klasikPuanMetni = (a) => a.sorular.map((s) => (s.puan === null || s.puan === undefined || s.puan === "" ? "?" : String(s.puan).replace(".", ","))).join(" ");
+  /** Klasik sınavda çıkarılacak sorulara puan girilmişse onay ister (puanlar silinmez, soru geri eklenirse geri gelir). */
+  async function cikarmayiOnayla(yeniN) {
+    const p = D.proje.klasik_puanlar || {};
+    const etkilenen = [];
+    for (let k2 = yeniN; k2 < D.proje.anahtar.sorular.length; k2++) {
+      const say = Object.values(p).filter((d) => k2 < d.length && d[k2] !== null && d[k2] !== "").length;
+      if (say) etkilenen.push(`${k2 + 1}. soruda ${say} öğrenci`);
+    }
+    if (!etkilenen.length) return true;
+    return onay("Soru çıkarılsın mı?", `Çıkarılacak sorulara puan girilmiş: ${etkilenen.join(", ")}. Bu puanlar hesaba katılmaz ama silinmez; soruyu geri eklerseniz geri gelir. Devam edilsin mi?`);
+  }
   const adim2 = {
     eksikler() {
       const { a, kl } = anahtarDurum();
-      const e2 = OS.anahtarEksikleri(a, D.proje.ayarlar, kl).filter((x) => !x.toLowerCase().includes("puan"));
+      // Klasik sınavda soru puanları bu adımda girilir; optikte 3. adımda
+      const e2 = OS.anahtarEksikleri(a, D.proje.ayarlar, kl).filter((x) => kl || !x.toLowerCase().includes("puan"));
       if (!kl) for (const k2 of OS.kitapciklar(a).slice(1)) {
         const h = [...(a.kitapcik_anahtarlari[k2] || "")].filter((c) => !/\s/.test(c));
         const es = OS.esleme(a, k2);
@@ -666,8 +687,9 @@
       const basliklar = ["Soru"].concat(kl ? [] : ["Doğru şık"]).concat(ana ? (kl ? [] : ["Durum"]).concat(["Puan", "Öğrenme çıktıları (yüzdeleriyle)", "", "Program çıktıları"]) : ["Ana kitapçıktaki karşılığı", ""]);
       const hizli = kl ? "" : ana ? (a.sorular.some((s) => s.dogru) ? OS.anahtarMetne(a) : "") : kitHarfleri(a, kit).some((h) => OS.SIKLAR.includes(h) && h) ? kitHarfleri(a, kit).join("") : "";
       const kodlar = UI.ogrenmeKodlari();
-      k.innerHTML = `<h2>2. Cevap anahtarı</h2>
-        ${kl ? `<p class="soluk">Klasik sınav: her sorunun puanını ve ölçtüğü öğrenme çıktılarını girin. Öğrencilerin puanları 4. adımda girilir.</p>` : `
+      k.innerHTML = `<h2>${kl ? "2. Sorular ve puanlar" : "2. Cevap anahtarı"}</h2>
+        ${kl ? `<div class="satir"><label>Soru puanları</label><input type="text" id="klasikPuanlar" style="flex:1" placeholder="Sırayla yazın, örneğin 10 10 10 10 20 40; soru sayısı da buna göre ayarlanır. Enter ile uygulayın." value="${e(klasikPuanMetni(a))}"><button id="klasikPuanUygula">Uygula</button></div>
+        <p class="soluk">Klasik sınav: her sorunun puanını ve ölçtüğü öğrenme çıktılarını girin. Öğrencilerin puanları 4. adımda girilir.</p>` : `
         <div class="sekmeler">${kitler.map((x) => `<button data-kit="${e(x)}" class="${x === kit ? "secili" : ""}">${e(x)} kitapçığı${x === a.ana_kitapcik && kitler.length > 1 ? " (ana)" : ""}</button>`).join("")}
           <button id="kitEkle" title="Farklı soru ya da şık sırası olan kitapçık ekler">+ Kitapçık ekle</button>
           ${!ana ? `<button id="kitSil">Bu kitapçığı sil</button>` : ""}</div>
@@ -677,7 +699,8 @@
           <table class="sorular"><thead><tr>${basliklar.map((b) => `<th>${b}</th>`).join("")}</tr></thead>
           <tbody>${Array.from({ length: n }, (_, i) => soruSatiri(i, st)).join("")}</tbody></table>
         </div>
-        <p class="soluk">${kl ? "" : "Klavye: tabloya bir kez tıklayın, sonra A-E harflerine basın; her harf o sorunun şıkkını seçip sonraki soruya geçer (Boşluk ya da Sil temizler, oklar soru değiştirir). "}${kodlar.length ? `Dersin öğrenme çıktıları: ${kodlar.join(", ")}. Çıktı sütununa yalnızca numara yazabilirsiniz: "1, 3" yazmak Ö01 ve Ö03'e yarı yarıya demektir.` : "Ders bilgi paketini 1. adımda yüklerseniz çıktılar açıklamalarıyla seçilebilir."}</p>
+        ${kl ? `<div class="satir"><button id="soruEkle">+ Soru ekle</button><button id="soruCikar">− Son soruyu çıkar</button></div>` : ""}
+        <p class="soluk">${kl ? "Puanı değiştirmek için kutuya tıklayıp yazın ya da yukarıdaki satıra bütün puanları sırayla yazın. " : "Klavye: tabloya bir kez tıklayın, sonra A-E harflerine basın; her harf o sorunun şıkkını seçip sonraki soruya geçer (Boşluk ya da Sil temizler, oklar soru değiştirir). "}${kodlar.length ? `Dersin öğrenme çıktıları: ${kodlar.join(", ")}. Çıktı sütununa yalnızca numara yazabilirsiniz: "1, 3" yazmak Ö01 ve Ö03'e yarı yarıya demektir.` : "Ders bilgi paketini 1. adımda yüklerseniz çıktılar açıklamalarıyla seçilebilir."}</p>
         ${ana ? `<div class="kutu ozet-panel"><div id="anahtarOzet">${anahtarOzetHtml()}</div>
           <div class="satir" style="margin-top:8px"><button class="ana" id="sistemeKopyala" title="Sınav Akreditasyon İşlemleri > Toplu Aktarım Yap > Aktarım Kutusu'na yapıştırılır">Soru tanımını sistem için kopyala</button>
           <button id="esitDagit">Puanları eşit dağıt</button><button id="siraylaDagit">Çıktıları sorulara sırayla dağıt</button>
@@ -731,6 +754,7 @@
         if (ay.yontem === "esit") { OS.esitSoruPuanlari(ay.toplam_puan, a.sorular.length).forEach((x, j) => (a.sorular[j].puan = x)); ay.yontem = "soru_bazli"; }
         const v2 = parseFloat(String(puan.value).replace(",", "."));
         s.puan = isFinite(v2) && v2 >= 0 ? String(Math.round(v2 * 100) / 100) : null;
+        if ($("#klasikPuanlar", k)) $("#klasikPuanlar", k).value = klasikPuanMetni(a);
         ozetGuncelle();
       };
       const cikti = $(".cikti", tr);
@@ -761,6 +785,32 @@
       };
     }
     $$("tr[data-i]", k).forEach(satirOlaylari);
+    if (kl) {
+      const uygula = async () => {
+        let puanlar;
+        try { puanlar = OS.puanListesiCoz($("#klasikPuanlar", k).value); } catch (h) { bilgi("Soru puanları", `${h.message}\n\nPuanları boşlukla ayırarak yazın, örneğin: 10 10 10 10 20 40`); return; }
+        if (!puanlar.length || !(await cikarmayiOnayla(puanlar.length))) return;
+        D.proje.klasik_soru_sayisi = puanlar.length;
+        UI.anahtariBoyutla();
+        puanlar.forEach((x, j) => (D.proje.anahtar.sorular[j].puan = x));
+        D.sonuc = null;
+        yenidenCiz();
+      };
+      $("#klasikPuanlar", k).onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); uygula(); } };
+      $("#klasikPuanUygula", k).onclick = uygula;
+      $("#soruEkle", k).onclick = () => {
+        UI.klasikSoruSayisi(a.sorular.length + 1);
+        yenidenCiz();
+        const son = $$("input.puan", $("#icerik")).pop();
+        if (son) { son.focus(); son.select(); }
+      };
+      $("#soruCikar", k).onclick = async () => {
+        const n2 = a.sorular.length;
+        if (n2 <= 1 || !(await cikarmayiOnayla(n2 - 1))) return;
+        UI.klasikSoruSayisi(n2 - 1);
+        yenidenCiz();
+      };
+    }
     const izgara = $("#izgara", k);
     izgara.onkeydown = (ev) => {
       if (kl || ["INPUT", "SELECT", "BUTTON"].includes(ev.target.tagName) && !ev.target.classList.contains("kabarcik")) return;
@@ -878,6 +928,7 @@
   const adim3 = {
     eksikler() {
       if (!isFinite(parseFloat(String(D.proje.ayarlar.toplam_puan).replace(",", ".")))) return ["Toplam puan sayı olmalı."];
+      if (D.proje.bicim === "klasik") return [];  // klasik sınavda soru puanları 2. adımda
       try { return OS.anahtarEksikleri(D.proje.anahtar, D.proje.ayarlar, D.proje.bicim === "klasik").filter((x) => x.toLowerCase().includes("puan")); }
       catch (h) { return [h.message]; }
     },

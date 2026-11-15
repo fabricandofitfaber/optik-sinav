@@ -30,6 +30,7 @@ CIFT_ISARET_ADI = {"bos": "Boş say", "yanlis": "Yanlış say"}
 YUVARLAMA_ADI = {"yarim_yukari": "Yarım yukarı", "asagi": "Aşağı", "yukari": "Yukarı"}
 YONTEM_ADI = {"esit": "Eşit puan", "soru_bazli": "Soru bazlı puan"}
 
+ADIM_KLASIK_2 = "2. Sorular ve puanlar"
 ADIMLAR = [
     "1. Sınav ve dosyalar",
     "2. Cevap anahtarı",

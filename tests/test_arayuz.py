@@ -301,3 +301,37 @@ def test_birakilan_pdf_liste_olarak_okunur(pencere, fix):
     assert not p1.giris_dugmesi.isHidden()
     p1.giris_dugmesi.click()
     assert pencere.yigin.currentIndex() == 3
+
+
+def test_klasik_sorular_ve_puanlar(pencere, fix, monkeypatch):
+    """Klasik sınavda puan dizisi tek satırdan girilir; soru eklenir ve çıkarılır, girilmiş puanlar silinmez."""
+    from PySide6.QtWidgets import QMessageBox
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    assert "Sorular ve puanlar" in a.baslik_etiketi.text()
+    assert pencere.adim_listesi.item(1).text().startswith("2. Sorular ve puanlar")
+    a.hizli.setText("10 10 10 10 20 40")
+    a._hizli_uygula()
+    assert d.proje.klasik_soru_sayisi == 6 and p1.klasik_sayi.value() == 6
+    assert [s.puan for s in d.proje.anahtar.sorular] == ["10", "10", "10", "10", "20", "40"]
+    assert "✓" in a.puan_ozeti.text()
+    a._soru_ekle()
+    assert d.proje.anahtar.soru_sayisi == 7 and "puanı girilmemiş soru: 7" in a.puan_ozeti.text()
+    a._soru_cikar()
+    no = d.liste.ogrenciler[0].no
+    d.klasik_puan_yaz(no, 5, "35")
+    monkeypatch.setattr(QMessageBox, "question", lambda *x, **k: QMessageBox.StandardButton.No)
+    a._soru_cikar()  # 6. soruda puan var, vazgeçildi
+    assert d.proje.anahtar.soru_sayisi == 6
+    monkeypatch.setattr(QMessageBox, "question", lambda *x, **k: QMessageBox.StandardButton.Yes)
+    a._soru_cikar()
+    assert d.proje.anahtar.soru_sayisi == 5 and d.proje.klasik_puanlar[no][5] == "35"  # silinmedi
+    a.hizli.setText("10 abc")
+    monkeypatch.setattr(QMessageBox, "warning", lambda *x, **k: None)
+    a._hizli_uygula()
+    assert d.proje.anahtar.soru_sayisi == 5

@@ -96,7 +96,7 @@ Kabul edilen öğrenci listeleri: Akademik Bilgi Sistemi'nden indirilen Excel li
 
 **A ve B kitapçığı:** "Kitapçık ekle" ile B (C…) kitapçığı açılır. B sekmesinde şıkları B'nin kendi soru sırasıyla işaretleyin ve "Ana kitapçıktaki karşılığı" sütununa sorunun A'da kaçıncı soru olduğunu yazın (sıra aynıysa dokunmayın). Puan, durum ve öğrenme çıktısı A'dan gelir; bütün çıktılar A'nın soru numaralarıyla verilir. Öğrencinin kitapçığı optik formdan okunur (1. adımda "Kitapçık başlangıcı"); okunamazsa 4. adımda Kitapçık sütununa çift tıklayarak seçilir.
 
-**Klasik sınavda** şık yoktur: her sorunun puanını ve öğrenme çıktılarını girersiniz.
+**Klasik sınavda** bu adımın adı "Sorular ve puanlar"dır; şık yoktur, her sorunun puanını ve öğrenme çıktılarını girersiniz. En hızlısı üstteki **Soru puanları** satırıdır: `10 10 10 10 20 40` yazıp Enter'a basınca soru sayısı 6 olur ve puanlar yerleşir. Tek bir puanı kutusuna tıklayıp da değiştirebilirsiniz. "+ Soru ekle" ve "− Son soruyu çıkar" düğmeleri tablonun altındadır; çıkarılan soruya öğrenci puanı girilmişse onay sorulur ve puanlar silinmez (soru geri eklenince geri gelir). Toplam tutmazsa kaç puan eksik ya da fazla olduğu yazar.
 
 ### 3. Puanlama
 
