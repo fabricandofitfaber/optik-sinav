@@ -132,6 +132,12 @@ Sayıların sade Türkçe yorumu, temel değerler (ortalama, ortanca, standart s
 
 Ayrıca: **Kavram yanılgıları** (iki sorunun yanlış şıklarını birlikte seçen öğrenciler; şansla açıklanamayanlar), **Sınav yapısı** (sınav tek bir beceriyi mi ölçüyor, hangi soru ayrışıyor, öğrenme çıktısı eşlemesi verilerle uyumlu mu) ve **Dönem sonu notu** (final puanlarını girin ya da Excel'den alın; mutlak ya da T-puanına dayalı bağıl değerlendirmeyle harf notu, geçen ve kalanlar, bir üst harfe 1 puandan az kalanlar; harf tabloları örnektir, yönetmeliğinizle karşılaştırın). 6. adımdaki **Öğrenci karneleri** her öğrenciye bir sayfa üretir: puan, sıra, öğrenme çıktısı başarısı ve soru soru sonuç.
 
+**Notu belirleyen sorular:** öğrenciler arasındaki not farklarının ne kadarının hangi sorudan geldiği, sorunun puan payıyla karşılaştırmalı. Örneğin 40 puanlık soru farkların %90'ını oluşturuyorsa sınav fiilen tek soruya dayanıyordur; bir soru puanına göre çok az katkı veriyorsa herkes benzer puan almıştır.
+
+**Puanlama (yalnızca klasik sınav):**
+- *Kısmi puan profili:* her soruda tam, kısmi, sıfır ve boş sayısı. Çoğu öğrencinin kısmi aldığı soruda puanlama ölçütü belirsiz olabilir.
+- *Okuma sırası etkisi:* program kâğıtların hangi sırayla girildiğini kendiliğinden kaydeder (Excel'den alınan puanlarda dosyadaki sıra). En az 10 kâğıtta, okuma ilerledikçe puanların sistematik olarak düşüp düşmediğine ya da yükselip yükselmediğine bakar (okuyanın yorulması ya da ölçütün kayması). Kâğıtlar başarıya göre sıralıysa fark okumadan değil sıradan kaynaklanır.
+
 Bunlara ek olarak Excel raporunda çeldirici analizi (her yanlış şıkkın üst ve alt gruptaki seçilme oranı, işlemeyen çeldiriciler), soru sırasına göre boş bırakma (süre yetti mi), çarpıklık, basıklık, çeyrekler ve z ile T puanları bulunur.
 
 ### 6. Dışa aktar

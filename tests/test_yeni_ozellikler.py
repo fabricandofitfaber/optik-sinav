@@ -348,3 +348,51 @@ def test_puan_listesi_coz():
         puan_listesi_coz("10 -5")
     with pytest.raises(ValueError):
         puan_listesi_coz("10 abc")
+
+
+# ------------------------------------------------------------------ notu belirleyen sorular, kısmi puan, okuma sırası
+def _klasik_sinav(puanlar_listesi, tam):
+    from optik_sinav.core.modeller import CevapAnahtari, PuanlamaAyarlari, PuanYontemi, Soru
+
+    a = CevapAnahtari(sorular=[Soru(i + 1, puan=str(t)) for i, t in enumerate(tam)])
+    p = {str(100 + i): [None if x is None else str(x) for x in r] for i, r in enumerate(puanlar_listesi)}
+    return klasik_degerlendir(liste(*p), a, PuanlamaAyarlari(yontem=PuanYontemi.SORU_BAZLI), p), list(p)
+
+
+def test_notu_belirleyen_sorular():
+    from optik_sinav.core import ek_istatistik as E
+
+    # 1. soru (40 puan) öğrencileri ayırıyor; 2. ve 3. soruda herkes neredeyse aynı puanı almış
+    s, _ = _klasik_sinav([[40, 20, 20], [30, 20, 21], [20, 21, 20], [10, 20, 20], [0, 21, 21], [35, 20, 20]], [40, 30, 30])
+    nb = E.notu_belirleyen_sorular(s)
+    assert math.isclose(sum(k.katki_payi for k in nb.sorular), 1.0)
+    k1, k2, k3 = nb.sorular
+    assert k1.durum == "fazla_belirleyici" and k1.katki_payi > 0.9 and math.isclose(k1.puan_payi, 0.4)
+    assert k2.durum == "az_etkili" and k3.durum == "az_etkili"
+    assert "1. sorudan" in nb.yorum and "Notu puanından çok daha fazla belirleyen soru: 1" in nb.yorum
+    # herkes aynı toplamı almışsa hesaplanmaz
+    s, _ = _klasik_sinav([[10, 10]] * 6, [50, 50])
+    assert E.notu_belirleyen_sorular(s) is None
+
+
+def test_kismi_puan_profili():
+    from optik_sinav.core import ek_istatistik as E
+
+    s, _ = _klasik_sinav([[5, 50, 10], [7, 50, None], [6, 50, 0], [10, 50, 3]], [10, 50, 20])
+    k1, k2, k3 = E.kismi_puan_profili(s)
+    assert (k1.tam, k1.kismi, k1.sifir, k1.bos) == (1, 3, 0, 0) and "çoğu kısmi" in k1.notlar[0]
+    assert k2.tam == 4 and "herkes tam" in k2.notlar[0]
+    assert (k3.kismi, k3.sifir, k3.bos) == (2, 1, 1) and any("kimse tam" in n for n in k3.notlar)
+    assert math.isclose(k1.ortalama_oran, 0.7)
+
+
+def test_okuma_sirasi_etkisi():
+    from optik_sinav.core import ek_istatistik as E
+
+    # girildikçe düşen puanlar: yorulma
+    s, nolar = _klasik_sinav([[100 - 7 * i] for i in range(12)], [100])
+    ok = E.okuma_sirasi_etkisi(s, nolar)
+    assert ok.n == 12 and math.isclose(ok.rho, -1.0) and ok.p == 0.0 and "düşüyor" in ok.yorum and ok.ilk_ortalama > ok.son_ortalama
+    karisik = [nolar[i] for i in (5, 0, 9, 3, 11, 1, 7, 2, 10, 4, 8, 6)]
+    assert "belirgin bir kayma yok" in E.okuma_sirasi_etkisi(s, karisik).yorum
+    assert E.okuma_sirasi_etkisi(s, nolar[:9]) is None  # en az 10 kâğıt

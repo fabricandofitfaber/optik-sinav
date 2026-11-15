@@ -20,7 +20,8 @@ def _v(x, basamak=2, yuzde=False):
     if x is None:
         return "-"
     if yuzde:
-        return f"%{x * 100:.0f}"
+        m = f"{abs(x) * 100:.0f}"
+        return ("-" if x < 0 and m != "0" else "") + f"%{m}"  # Türkçe yazım: -%1
     return f"{x:.{basamak}f}".replace(".", ",")
 
 
@@ -153,6 +154,10 @@ class IstatistikAdimi(Adim):
         self.sekmeler.addTab(self.kavram, "Kavram yanılgıları")
         self.yapi = QTextBrowser()
         self.sekmeler.addTab(self.yapi, "Sınav yapısı")
+        self.belirleyen = QTextBrowser()
+        self.sekmeler.addTab(self.belirleyen, "Notu belirleyen sorular")
+        self.puanlama = QTextBrowser()
+        self.sekmeler.addTab(self.puanlama, "Puanlama (klasik)")
         from .donem import DonemPaneli
 
         self.donem = DonemPaneli(self.durum)
@@ -252,6 +257,9 @@ class IstatistikAdimi(Adim):
         self.ek.setHtml(self._ek_html(s, maddeler, g, esik))
         self.kavram.setHtml(self._kavram_html(s))
         self.yapi.setHtml(self._yapi_html(s))
+        self.belirleyen.setHtml(self._belirleyen_html(s))
+        self.puanlama.setHtml(self._puanlama_html(s))
+        self.sekmeler.setTabVisible(self.sekmeler.indexOf(self.puanlama), s.klasik)
         i = self.sekmeler.indexOf(self.kavram)
         self.sekmeler.setTabVisible(i, not s.klasik)
         self.donem.yenile()
@@ -270,6 +278,47 @@ class IstatistikAdimi(Adim):
             h.append(f"<li><b>{x.soru1}. sorunun {x.sik1} şıkkını</b> seçen {x.secen1} öğrencinin <b>%{x.kosullu * 100:.0f}</b>'i "
                      f"<b>{x.soru2}. sorunun {x.sik2} şıkkını</b> da seçmiş (sınıfın tamamında bu oran %{x.taban * 100:.0f}; p = {_v(x.p, 4)}).</li>")
         return "".join(h) + "</ul>"
+
+    def _belirleyen_html(self, s) -> str:
+        from ...core import ek_istatistik as E
+
+        nb = E.notu_belirleyen_sorular(s)
+        if nb is None:
+            return "<p>Bu analiz için en az 5 öğrenci, 2 soru ve öğrenciler arasında puan farkı gerekir.</p>"
+        h = [f"<p><b>{nb.yorum}</b></p><p style='color:gray'>Öğrencilerin toplam puanları arasındaki farkların (varyansın) her sorudan gelen payı. "
+             "Bir sorunun nota katkısı puan payıyla aynıysa oran 1'dir; 1,5 ve üstü soru notu puanından fazla belirliyor, "
+             "0,5 ve altı az belirliyor demektir. Paylar toplamı %100'dür. Bir soru öteki sorularla ters yönde gidiyorsa payı eksi çıkar; o zaman başka bir sorunun payı %100'ü aşabilir.</p>"
+             "<table cellpadding=4><tr><th>Soru</th><th>Puan payı</th><th>Nota katkı payı</th><th>Oran</th><th>Değerlendirme</th><th></th></tr>"]
+        en = max((k.katki_payi for k in nb.sorular), default=0) or 1
+        for k in nb.sorular:
+            renk = "#C0504D" if k.durum == "fazla_belirleyici" else "#B45309" if k.durum == "az_etkili" else "#2F5597"
+            cubuk = max(0, int(round(160 * k.katki_payi / en)))
+            ad = {"fazla_belirleyici": "notu puanından fazla belirliyor", "az_etkili": "notu puanından az belirliyor"}.get(k.durum, "")
+            h.append(f"<tr><td align=center>{k.soru_no}</td><td align=center>{_v(k.puan_payi, yuzde=True)}</td>"
+                     f"<td align=center><b>{_v(k.katki_payi, yuzde=True)}</b></td><td align=center>{_v(k.oran)}</td><td>{ad}</td>"
+                     f"<td><span style='background:{renk}'>{'&nbsp;' * max(1, cubuk // 4)}</span></td></tr>")
+        return "".join(h) + "</table>"
+
+    def _puanlama_html(self, s) -> str:
+        from ...core import ek_istatistik as E
+
+        if not s.klasik:
+            return ""
+        h = ["<h3>Okuma sırası etkisi</h3>"]
+        ok = E.okuma_sirasi_etkisi(s, self.durum.proje.klasik_giris_sirasi)
+        if ok is None:
+            h.append("<p style='color:gray'>En az 10 kâğıdın girildiği sıra gerekir. Sıra, 4. adımda bir öğrenciye ilk puan girildiğinde "
+                     "kendiliğinden kaydedilir (Excel'den alınan puanlarda dosyadaki satır sırası).</p>")
+        else:
+            h.append(f"<p><b>{ok.yorum}</b></p>")
+        h.append("<h3>Kısmi puan profili</h3><p style='color:gray'>Her soruda tam puan, kısmi puan, sıfır ve boş sayısı. Çoğu öğrencinin kısmi "
+                 "puan aldığı soruda puanlama ölçütü belirsiz olabilir.</p><table cellpadding=4><tr><th>Soru</th><th>Tam</th><th>Kısmi</th>"
+                 "<th>Sıfır</th><th>Boş</th><th>Ortalama başarı</th><th>Not</th></tr>")
+        for k in E.kismi_puan_profili(s) or []:
+            h.append(f"<tr><td align=center>{k.soru_no}</td><td align=center>{k.tam}</td><td align=center>{k.kismi}</td>"
+                     f"<td align=center>{k.sifir}</td><td align=center>{k.bos}</td><td align=center>{_v(k.ortalama_oran, yuzde=True)}</td>"
+                     f"<td style='color:#C0504D'>{'; '.join(k.notlar)}</td></tr>")
+        return "".join(h) + "</table>"
 
     def _yapi_html(self, s) -> str:
         from ...core import ek_istatistik as E

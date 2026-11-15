@@ -335,3 +335,26 @@ def test_klasik_sorular_ve_puanlar(pencere, fix, monkeypatch):
     monkeypatch.setattr(QMessageBox, "warning", lambda *x, **k: None)
     a._hizli_uygula()
     assert d.proje.anahtar.soru_sayisi == 5
+
+
+def test_klasik_yeni_istatistik_sekmeleri(pencere, fix):
+    """Puan girildikçe giriş sırası kaydedilir; 5. adımda notu belirleyen sorular ve klasik puanlama sekmeleri dolar."""
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._pdf_ac(str(fix / "uydurma_liste.pdf"))
+    d.klasik_puanlarini_yaz(["40", "30", "30"])
+    nolar = [o.no for o in d.liste.ogrenciler]
+    sira = list(reversed(nolar))
+    for i, no in enumerate(sira):
+        d.klasik_puan_yaz(no, 0, str(40 - 3 * i))
+        d.klasik_puan_yaz(no, 1, "20")
+        d.klasik_puan_yaz(no, 2, str(10 + (i % 3)))
+    d.klasik_puan_yaz(sira[0], 0, "39")  # düzeltme sırayı değiştirmez
+    assert d.proje.klasik_giris_sirasi == sira
+    pencere.adim_listesi.setCurrentRow(4)
+    ist = pencere.adimlar[4]
+    assert "en büyük katkı 1. sorudan" in ist.belirleyen.toPlainText()
+    assert ist.sekmeler.isTabVisible(ist.sekmeler.indexOf(ist.puanlama))
+    metin = ist.puanlama.toPlainText()
+    assert "Okuma ilerledikçe puanlar düşüyor" in metin and "Kısmi puan profili" in metin

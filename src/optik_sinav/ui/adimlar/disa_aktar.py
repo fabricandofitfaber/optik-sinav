@@ -284,7 +284,7 @@ class DisaAktarAdimi(Adim):
         p = self.durum.proje
         try:
             t = tum_raporlari_yaz(self.durum.sonuc, p.sinav, klasor, p.duzeltmeler, self._profil("akr"), self._profil("ng"),
-                                  p.sistem_sablonu_yolu or None,
+                                  p.sistem_sablonu_yolu or None, giris_sirasi=p.klasik_giris_sirasi,
                                   kaynaklar={"Sınav biçimi": "Klasik" if p.klasik else "Optik",
                                              "Optik dosya": Path(p.dat_yolu).name if p.dat_yolu else "",
                                              "Öğrenci listesi": Path(p.liste_yolu).name if p.liste_yolu else ""},

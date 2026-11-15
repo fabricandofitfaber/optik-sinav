@@ -153,6 +153,7 @@
   "klasik_soru_sayisi": 5,
   "klasik_puanlar": {},
   "klasik_toplamlar": {},
+  "klasik_giris_sirasi": [],
   "final_puanlar": {},
   "harf_ayarlari": {}
  },
@@ -1422,6 +1423,76 @@
    [],
    "Sınavda baskın bir ortak beceri var ama sorular birkaç ayrı konuya da dağılıyor; öğrenme çıktısı bazında bakmak toplam puandan daha bilgilendirici olabilir."
   ],
+  "belirleyen": [
+   [
+    [
+     1,
+     0.05405405405405406,
+     0.04561488869967158,
+     0.8438754409439241,
+     ""
+    ],
+    [
+     2,
+     0.05405405405405406,
+     0.023476462717430976,
+     0.434314560272473,
+     "az_etkili"
+    ],
+    [
+     4,
+     0.08108108108108109,
+     0.08758058630336943,
+     1.0801605644082228,
+     ""
+    ],
+    [
+     5,
+     0.10810810810810811,
+     0.06982118963629728,
+     0.6458460041357499,
+     ""
+    ],
+    [
+     6,
+     0.10810810810810811,
+     0.09122977739934315,
+     0.8438754409439241,
+     ""
+    ],
+    [
+     7,
+     0.13513513513513514,
+     0.11403722174917892,
+     0.843875440943924,
+     ""
+    ],
+    [
+     8,
+     0.13513513513513514,
+     0.16938328670478048,
+     1.2534363216153754,
+     ""
+    ],
+    [
+     9,
+     0.16216216216216217,
+     0.24157645055346066,
+     1.489721445079674,
+     ""
+    ],
+    [
+     10,
+     0.16216216216216217,
+     0.15728013623646758,
+     0.9698941734582167,
+     ""
+    ]
+   ],
+   "Öğrenciler arasındaki not farklarına en büyük katkı 9. sorudan geliyor: farkların payı %24, sorunun puan payı %16. Puanına göre not farklarına az katkı veren soru: 2. Bu sorularda herkes benzer puan almış ya da soru öteki sorularla ters yönde gidiyor."
+  ],
+  "kismi": null,
+  "okuma": null,
   "donem": {
    "mutlak": [
     "mutlak",

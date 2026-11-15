@@ -4,7 +4,11 @@
   const OS = window.OS, UI = window.UI, D = UI.D;
   const { e, $, $$, bildir, pencere, bilgi, dosyaSec, baytOku, indir, kopyala, yerel } = UI;
   const v = OS.v;
-  const pct = (x) => (x === null || x === undefined ? "-" : `%${OS.pyOndalik(x * 100, 0)}`);
+  const pct = (x) => {
+    if (x === null || x === undefined) return "-";
+    const m = OS.pyOndalik(Math.abs(x) * 100, 0);
+    return (x < 0 && m !== "0" ? "-" : "") + `%${m}`;  // Türkçe yazım: -%1
+  };
   const sayi = (x, n = 2) => (x === null || x === undefined || Number.isNaN(x) ? "-" : v(x, n));
 
   // ------------------------------------------------------------------ 4. adım: kontrol ve düzeltme
@@ -98,6 +102,11 @@
     while (s.length <= k) s.push(null);
     s[k] = String(deger ?? "").trim() || null;
     if (s.every((x) => x === null)) delete p[no];
+    else {
+      // okuma sırası etkisi için: öğrencinin ilk puanının girildiği sıra
+      const g = (D.proje.klasik_giris_sirasi = D.proje.klasik_giris_sirasi || []);
+      if (!g.includes(no)) g.push(no);
+    }
   }
   const adim4 = {
     girildi() { UI.degerlendir(); if (D.proje.bicim === "klasik" && !Object.keys(D.proje.klasik_puanlar).length) K.sekme = "giris"; },
@@ -301,7 +310,8 @@
         const [p, notlar] = OS.tablodanKlasikPuanlar(sayfalar[OS.sayfaSec(sayfalar)], D.proje.anahtar.sorular.length);
         const listede = new Set(D.liste.ogrenciler.map((o) => o.no));
         const yabanci = Object.keys(p).filter((x) => !listede.has(x));
-        for (const [no, d] of Object.entries(p)) if (listede.has(no) && d.some((x) => x !== null)) D.proje.klasik_puanlar[no] = d;
+        const g = (D.proje.klasik_giris_sirasi = D.proje.klasik_giris_sirasi || []);
+        for (const [no, d] of Object.entries(p)) if (listede.has(no) && d.some((x) => x !== null)) { D.proje.klasik_puanlar[no] = d; if (!g.includes(no)) g.push(no); }
         UI.degerlendir();
         UI.ciz();
         bilgi("Excel'den puan", `${Object.keys(p).filter((x) => listede.has(x)).length} öğrencinin puanı alındı.${yabanci.length ? `\nListede olmayan numaralar alınmadı: ${yabanci.slice(0, 10).join(", ")}` : ""}${notlar.length ? "\n" + notlar.join("\n") : ""}`);
@@ -386,6 +396,25 @@
     return `<p class="soluk">İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden yanıltıyor olabilir; o iki sorunun ortak konusunu sınıfla yeniden ele almak yararlı olur. Yalnızca şansla açıklanamayacak (Fisher kesin testi, p ≤ 0,01) çiftler listelenir.</p>
       <ul class="yorum">${k.map((x) => `<li><b>${x.soru1}. sorunun ${x.sik1} şıkkını</b> seçen ${x.secen1} öğrencinin <b>${pct(x.kosullu)}</b>'i <b>${x.soru2}. sorunun ${x.sik2} şıkkını</b> da seçmiş (sınıfın tamamında bu oran ${pct(x.taban)}).</li>`).join("")}</ul>` +
       basitTablo(["Soru", "Yanlış şık", "Birlikte seçilen soru", "Yanlış şık", "Birlikte seçen", "Phi", "p değeri"], k.map((x) => [x.soru1, x.sik1, x.soru2, x.sik2, x.birlikte, sayi(x.phi), v(x.p, 4)]));
+  }
+  function belirleyenHtml(s) {
+    const nb = OS.notuBelirleyenSorular(s);
+    if (!nb) return `<p class="soluk">Bu analiz için en az 5 öğrenci, 2 soru ve öğrenciler arasında puan farkı gerekir.</p>`;
+    const en = Math.max(...nb.sorular.map((k) => k.katki_payi), 0) || 1;
+    const ad = { fazla_belirleyici: "notu puanından fazla belirliyor", az_etkili: "notu puanından az belirliyor" };
+    return `<p><b>${e(nb.yorum)}</b></p>
+      <p class="soluk">Öğrencilerin toplam puanları arasındaki farkların (varyansın) her sorudan gelen payı. Bir sorunun nota katkısı puan payıyla aynıysa oran 1'dir; 1,5 ve üstü soru notu puanından fazla belirliyor, 0,5 ve altı az belirliyor demektir. Paylar toplamı %100'dür. Bir soru öteki sorularla ters yönde gidiyorsa payı eksi çıkar; o zaman başka bir sorunun payı %100'ü aşabilir.</p>
+      <div class="tablo-kap"><table class="veri"><thead><tr><th>Soru</th><th>Puan payı</th><th>Nota katkı payı</th><th class="sol"></th><th>Oran</th><th class="sol">Değerlendirme</th></tr></thead><tbody>
+      ${nb.sorular.map((k) => `<tr><td>${k.soru_no}</td><td>${pct(k.puan_payi)}</td><td><b>${pct(k.katki_payi)}</b></td>
+        <td class="sol"><div class="cubuk"><i style="width:${Math.max(0, Math.min(100, (100 * k.katki_payi) / en))}%;background:${k.durum === "fazla_belirleyici" ? "var(--hata)" : k.durum === "az_etkili" ? "var(--uyari)" : "var(--vurgu)"}"></i></div></td>
+        <td>${k.oran === null ? "-" : v(k.oran, 2)}</td><td class="sol ${k.durum ? "uy" : ""}">${ad[k.durum] || ""}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+  function puanlamaHtml(s) {
+    const ok = OS.okumaSirasiEtkisi(s, D.proje.klasik_giris_sirasi || []);
+    const kp = OS.kismiPuanProfili(s) || [];
+    return `<h3>Okuma sırası etkisi</h3>${ok ? `<p><b>${e(ok.yorum)}</b></p>` : `<p class="soluk">En az 10 kâğıdın girildiği sıra gerekir. Sıra, 4. adımda bir öğrenciye ilk puan girildiğinde kendiliğinden kaydedilir (Excel'den alınan puanlarda dosyadaki sıra).</p>`}
+      <h3>Kısmi puan profili</h3><p class="soluk">Her soruda tam puan, kısmi puan, sıfır ve boş sayısı. Çoğu öğrencinin kısmi puan aldığı soruda puanlama ölçütü belirsiz olabilir.</p>
+      ${basitTablo(["Soru", "Tam", "Kısmi", "Sıfır", "Boş", "Ortalama başarı", "Not"], kp.map((k) => [k.soru_no, k.tam, k.kismi, k.sifir, k.bos, k.ortalama_oran === null ? "-" : pct(k.ortalama_oran), e(k.notlar.join("; "))]))}`;
   }
   function yapiHtml(s) {
     const y = OS.sinavYapisi(s);
@@ -489,7 +518,8 @@
       const rapor = OS.ogrenmeCiktisiRaporu(s, esik, UI.aciklamalar()).filter((c) => c.tur.startsWith("Öğrenme"));
       const kavram = kl ? [] : OS.kavramYanilgilari(s);
       const sek = [["madde", "Madde analizi"], ["cikti", "Öğrenme çıktıları"], ...(kl ? [] : [["uyum", `Kişi uyumu (${g.kisi_uyumu.length})`], ["benzer", `Benzer cevaplar (${g.benzer_ciftler.length})`],
-        ["kavram", `Kavram yanılgıları (${kavram.length})`]]), ["yapi", "Sınav yapısı"], ["donem", "Dönem sonu notu"], ["ek", "Ek analizler"]];
+        ["kavram", `Kavram yanılgıları (${kavram.length})`]]), ["yapi", "Sınav yapısı"], ["belirleyen", "Notu belirleyen sorular"],
+        ...(kl ? [["puanlama", "Puanlama (klasik)"]] : []), ["donem", "Dönem sonu notu"], ["ek", "Ek analizler"]];
       if (!sek.some(([id]) => id === I.sekme)) I.sekme = "madde";
       let icerik = "";
       const renk = (d) => (d === null ? "" : d >= 0.3 ? "D" : d >= 0.2 ? "B" : "Y");
@@ -508,6 +538,8 @@
         basitTablo(["1. öğrenci", "2. öğrenci", "Aynı yanlış şık", "İkisinin de yanlışı", "Uzaklık (standart sapma)", "Sorular"], g.benzer_ciftler.map((c) => [`${e(c.no1)} ${e(c.ad1)}`, `${e(c.no2)} ${e(c.ad2)}`, c.ayni_yanlis, c.ikisi_yanlis, v(c.z, 1), c.sorular.join(", ")]));
       else if (I.sekme === "kavram") icerik = kavramHtml(kavram);
       else if (I.sekme === "yapi") icerik = yapiHtml(s);
+      else if (I.sekme === "belirleyen") icerik = belirleyenHtml(s);
+      else if (I.sekme === "puanlama") icerik = puanlamaHtml(s);
       else if (I.sekme === "donem") icerik = donemHtml(s);
       else icerik = ekAnalizHtml(s, m, g, esik);
       k.innerHTML = `<h2>5. İstatistikler</h2>

@@ -172,6 +172,20 @@
    "990000001": "999",
    "990000002": "abc"
   },
+  "klasik_giris_sirasi": [
+   "990000005",
+   "990000010",
+   "990000003",
+   "990000008",
+   "990000001",
+   "990000006",
+   "990000011",
+   "990000004",
+   "990000009",
+   "990000002",
+   "990000007",
+   "990000012"
+  ],
   "final_puanlar": {},
   "harf_ayarlari": {}
  },
@@ -819,6 +833,95 @@
     ]
    ],
    "Sınavda baskın bir ortak beceri var ama sorular birkaç ayrı konuya da dağılıyor; öğrenme çıktısı bazında bakmak toplam puandan daha bilgilendirici olabilir."
+  ],
+  "belirleyen": [
+   [
+    [
+     1,
+     0.1,
+     0.11821393080526768,
+     1.1821393080526768,
+     ""
+    ],
+    [
+     2,
+     0.25,
+     0.1399343627086656,
+     0.5597374508346624,
+     ""
+    ],
+    [
+     3,
+     0.25,
+     -0.011223475770152563,
+     -0.044893903080610253,
+     "az_etkili"
+    ],
+    [
+     4,
+     0.4,
+     0.7530751822562192,
+     1.8826879556405478,
+     "fazla_belirleyici"
+    ]
+   ],
+   "Öğrenciler arasındaki not farklarına en büyük katkı 4. sorudan geliyor: farkların payı %75, sorunun puan payı %40. Notu puanından çok daha fazla belirleyen soru: 4. Sınav fiilen bu sorulara dayanıyor olabilir; puanı bölmek ya da benzer ağırlıkta başka sorular eklemek notu daha dengeli kılar. Puanına göre not farklarına az katkı veren soru: 3. Bu sorularda herkes benzer puan almış ya da soru öteki sorularla ters yönde gidiyor."
+  ],
+  "kismi": [
+   [
+    1,
+    1,
+    7,
+    2,
+    0,
+    0.48,
+    [
+     "çoğu kısmi puan almış: puanlama ölçütü belirsiz olabilir"
+    ]
+   ],
+   [
+    2,
+    0,
+    10,
+    0,
+    0,
+    0.434,
+    [
+     "çoğu kısmi puan almış: puanlama ölçütü belirsiz olabilir",
+     "kimse tam puan almamış"
+    ]
+   ],
+   [
+    3,
+    0,
+    9,
+    0,
+    1,
+    0.25777777777777783,
+    [
+     "çoğu kısmi puan almış: puanlama ölçütü belirsiz olabilir",
+     "kimse tam puan almamış"
+    ]
+   ],
+   [
+    4,
+    2,
+    8,
+    0,
+    0,
+    0.525,
+    [
+     "çoğu kısmi puan almış: puanlama ölçütü belirsiz olabilir"
+    ]
+   ]
+  ],
+  "okuma": [
+   10,
+   -0.21212121212121213,
+   0.5563057751029294,
+   44.0,
+   40.333333333333336,
+   "Okuma sırasına bağlı belirgin bir kayma yok (sıra korelasyonu -0,21, p = 0,556; ilk 3 kâğıt %44, son 3 kâğıt %40)."
   ],
   "donem": {
    "mutlak": [

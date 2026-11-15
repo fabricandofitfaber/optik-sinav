@@ -116,6 +116,8 @@ class Durum(QObject):
         satir[soru_indeksi] = (deger or "").strip() or None
         if all(v is None for v in satir):
             del self.proje.klasik_puanlar[no]
+        elif no not in self.proje.klasik_giris_sirasi:
+            self.proje.klasik_giris_sirasi.append(no)  # okuma sırası etkisi için: ilk puanının girildiği an
 
     # ---------------------------------------------------------- dosyalar
     def dat_yukle(self, yol: str, sablonu_oner: bool = True) -> None:

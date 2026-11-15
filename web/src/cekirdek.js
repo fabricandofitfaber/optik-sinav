@@ -201,7 +201,7 @@
       ayarlar: yeniAyarlar(), okuyucu: yeniOkuyucu(), dat_yolu: "", liste_yolu: "",
       liste_esleme: { sayfa: null, baslik_satiri: null, no_sutun: null, ad_sutun: null, soyad_sutun: null },
       duzeltmeler: [], profil_akreditasyon: "akreditasyon_soru_bazli_varsayilan", profil_not_giris: "not_giris_varsayilan",
-      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, final_puanlar: {}, harf_ayarlari: {},
+      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, klasik_giris_sirasi: [], final_puanlar: {}, harf_ayarlari: {},
     };
   }
   /** Masaüstü programın kaydettiği .osd dosyasını eksik alanları tamamlayarak yükler. */
@@ -216,6 +216,7 @@
     p.klasik_puanlar = d.klasik_puanlar || {};
     p.final_puanlar = d.final_puanlar || {};
     p.klasik_toplamlar = d.klasik_toplamlar || {};
+    p.klasik_giris_sirasi = (d.klasik_giris_sirasi || []).map(String);
     p.harf_ayarlari = d.harf_ayarlari || {};
     return p;
   }

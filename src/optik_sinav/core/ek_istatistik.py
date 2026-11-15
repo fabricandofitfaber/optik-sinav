@@ -8,6 +8,9 @@
 - Rasch modeli: soruların ve öğrencilerin aynı logit ölçeğinde konumu (birleşik en çok olabilirlik, (k-1)/k
   yanlılık düzeltmesi) ve sınavın bilgi eğrisi (hangi başarı düzeyini en iyi ölçtüğü). Yalnızca test.
 - Arşiv: sınav özetini ders koduna göre saklar; aynı dersin önceki sınavlarıyla karşılaştırma için.
+- Notu belirleyen sorular: not farklarının (toplam puan varyansının) ne kadarının hangi sorudan geldiği.
+- Kısmi puan profili (klasik): her soruda tam, kısmi, sıfır ve boş sayısı.
+- Okuma sırası etkisi (klasik): kâğıtların girildiği sıra ile puan arasındaki ilişki (okuyanın kayması).
 """
 from __future__ import annotations
 
@@ -560,3 +563,163 @@ def _dogal(s: str):
     import re
 
     return [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", s)]
+
+
+# ---------------------------------------------------------------- notu belirleyen sorular
+@dataclass
+class SoruKatkisi:
+    soru_no: int
+    puan_payi: float  # sorunun tam puanı / sınavın toplamı
+    katki_payi: float  # Cov(soru, toplam) / Var(toplam): not farklarının bu sorudan gelen payı (toplamı 1)
+    oran: float | None  # katki_payi / puan_payi
+    durum: str  # "fazla_belirleyici", "az_etkili" ya da ""
+
+
+@dataclass
+class NotBelirleyen:
+    sorular: list[SoruKatkisi]
+    yorum: str
+
+
+def notu_belirleyen_sorular(sonuc: SinavSonucu) -> NotBelirleyen | None:
+    """Toplam puanın varyansı soruların toplamla kovaryanslarına ayrılır: Var(T) = Σ Cov(x_i, T).
+
+    Bir sorunun payı, puanı sınavdaki ağırlığından çok daha büyükse (oran ≥ 1,5 ve pay ≥ %15) notu o soru
+    belirliyor demektir; çok küçükse (oran ≤ 0,5) soru öğrencileri ayırmıyor ya da öteki sorularla ters gidiyor.
+    """
+    ogr = sonuc.ogrenciler
+    tam = [float(p) for p in sonuc.soru_puanlari]
+    sec = [i for i, s in enumerate(sonuc.anahtar.sorular) if s.durum != SoruDurumu.IPTAL and tam[i] > 0]
+    if len(ogr) < 5 or len(sec) < 2:
+        return None
+    x = {i: [float(o.sorular[i].puan) for o in ogr] for i in sec}
+    t = [sum(x[i][j] for i in sec) for j in range(len(ogr))]
+    mt = statistics.fmean(t)
+    vt = sum((v - mt) ** 2 for v in t) / len(t)
+    if vt <= 1e-12:
+        return None
+    toplam_tam = sum(tam[i] for i in sec)
+    sorular = []
+    for i in sec:
+        mx = statistics.fmean(x[i])
+        kov = sum((a - mx) * (b - mt) for a, b in zip(x[i], t)) / len(t)
+        katki = kov / vt
+        pay = tam[i] / toplam_tam
+        oran = katki / pay if pay > 0 else None
+        durum = ("fazla_belirleyici" if oran is not None and oran >= 1.5 and katki >= 0.15
+                 else "az_etkili" if oran is not None and oran <= 0.5 else "")
+        sorular.append(SoruKatkisi(i + 1, pay, katki, oran, durum))
+    en = max(sorular, key=lambda k: k.katki_payi)
+    yorum = (f"Öğrenciler arasındaki not farklarına en büyük katkı {en.soru_no}. sorudan geliyor: farkların payı "
+             f"%{en.katki_payi * 100:.0f}, sorunun puan payı %{en.puan_payi * 100:.0f}.")
+    fazla = [str(k.soru_no) for k in sorular if k.durum == "fazla_belirleyici"]
+    az = [str(k.soru_no) for k in sorular if k.durum == "az_etkili"]
+    if fazla:
+        yorum += (f" Notu puanından çok daha fazla belirleyen {'soru' if len(fazla) == 1 else 'sorular'}: {', '.join(fazla)}. "
+                  "Sınav fiilen bu sorulara dayanıyor olabilir; puanı bölmek ya da benzer ağırlıkta başka sorular eklemek notu daha dengeli kılar.")
+    if az:
+        yorum += (f" Puanına göre not farklarına az katkı veren {'soru' if len(az) == 1 else 'sorular'}: {', '.join(az)}. "
+                  "Bu sorularda herkes benzer puan almış ya da soru öteki sorularla ters yönde gidiyor.")
+    if not fazla and not az:
+        yorum += " Soruların nota katkısı puan ağırlıklarıyla uyumlu."
+    return NotBelirleyen(sorular, yorum)
+
+
+# ---------------------------------------------------------------- kısmi puan profili (klasik)
+@dataclass
+class KismiProfil:
+    soru_no: int
+    tam: int
+    kismi: int
+    sifir: int
+    bos: int
+    ortalama_oran: float | None  # puanı girilenlerde ortalama puan / tam puan
+    notlar: list[str]
+
+
+def kismi_puan_profili(sonuc: SinavSonucu) -> list[KismiProfil] | None:
+    """Klasik sınavda her soru için tam, kısmi, sıfır ve boş sayısı.
+
+    Puanı girilenlerin en az %60'ı kısmi puan almışsa puanlama ölçütü belirsiz olabilir; kimse tam almadıysa
+    soru çok zor ya da tam puanın ölçütü ulaşılmaz olabilir; herkes tam aldıysa soru öğrencileri ayırmıyor.
+    """
+    if not sonuc.klasik or not sonuc.ogrenciler:
+        return None
+    tam_p = [float(p) for p in sonuc.soru_puanlari]
+    sonuclar = []
+    for i, s in enumerate(sonuc.anahtar.sorular):
+        d = [o.sorular[i].durum for o in sonuc.ogrenciler]
+        tam = sum(1 for x in d if x == SoruSonucuDurumu.DOGRU)
+        kismi = sum(1 for x in d if x == SoruSonucuDurumu.KISMI)
+        sifir = sum(1 for x in d if x == SoruSonucuDurumu.YANLIS)
+        bos = sum(1 for x in d if x == SoruSonucuDurumu.BOS)
+        girilen = tam + kismi + sifir
+        oranlar = [float(o.sorular[i].puan) / tam_p[i] for o in sonuc.ogrenciler
+                   if o.sorular[i].durum != SoruSonucuDurumu.BOS and tam_p[i] > 0]
+        notlar = []
+        if girilen:
+            if kismi / girilen >= 0.6:
+                notlar.append("çoğu kısmi puan almış: puanlama ölçütü belirsiz olabilir")
+            if tam == 0:
+                notlar.append("kimse tam puan almamış")
+            elif tam == girilen:
+                notlar.append("herkes tam puan almış: soru öğrencileri ayırmıyor")
+        sonuclar.append(KismiProfil(i + 1, tam, kismi, sifir, bos, statistics.fmean(oranlar) if oranlar else None, notlar))
+    return sonuclar
+
+
+# ---------------------------------------------------------------- okuma sırası etkisi (klasik)
+@dataclass
+class OkumaSirasi:
+    n: int
+    rho: float  # giriş sırası ile puan yüzdesi arasında Spearman sıra korelasyonu
+    p: float
+    ilk_ortalama: float  # ilk üçte birin ortalama puan yüzdesi
+    son_ortalama: float  # son üçte birin
+    yorum: str
+
+
+def _vir(x: float, n: int) -> str:
+    return f"{x:.{n}f}".replace(".", ",")
+
+
+def okuma_sirasi_etkisi(sonuc: SinavSonucu, giris_sirasi: list[str]) -> OkumaSirasi | None:
+    """Kâğıtların girildiği sıra ile puan arasındaki ilişki (en az 10 kâğıt).
+
+    Okuyan kişi yoruldukça ya da ölçütü kaydıkça puanlar sistematik olarak düşebilir ya da yükselebilir.
+    Kâğıtlar başarıya göre sıralanmışsa (örneğin numaraya göre ve numara başarıyla ilişkiliyse) ilişki okumadan
+    değil sıradan kaynaklanır; yorum bunu belirtir.
+    """
+    if not sonuc.klasik:
+        return None
+    toplam = float(sum(sonuc.soru_puanlari)) or 1.0
+    puan = {o.no: float(o.puan) / toplam * 100 for o in sonuc.ogrenciler}
+    sira, gorulen = [], set()
+    for no in giris_sirasi:
+        if no in puan and no not in gorulen:
+            sira.append(no)
+            gorulen.add(no)
+    n = len(sira)
+    if n < 10:
+        return None
+    y = [puan[no] for no in sira]
+    rho = spearman(list(range(1, n + 1)), y)
+    if rho is None:
+        return None
+    if abs(rho) >= 1 - 1e-12:
+        p = 0.0
+    else:
+        t = rho * math.sqrt((n - 2) / (1 - rho * rho))
+        p = t_iki_yonlu_p(t, n - 2)
+    u = max(1, n // 3)
+    ilk, son = statistics.fmean(y[:u]), statistics.fmean(y[-u:])
+    if p < 0.05 and abs(rho) >= 0.3:
+        yon = "düşüyor" if rho < 0 else "yükseliyor"
+        yorum = (f"Okuma ilerledikçe puanlar {yon}: ilk {u} kâğıdın ortalaması %{ilk:.0f}, son {u} kâğıdınki %{son:.0f} "
+                 f"(sıra korelasyonu {_vir(rho, 2)}, p = {_vir(p, 3)}). Okuyanın yorulması ya da puanlama ölçütünün kayması olabilir; "
+                 "ilk ve son kâğıtlardan birkaçını yeniden okumak yararlı olur. Kâğıtlar başarıya göre sıralıysa "
+                 "bu fark okumadan değil sıradan kaynaklanır.")
+    else:
+        yorum = (f"Okuma sırasına bağlı belirgin bir kayma yok (sıra korelasyonu {_vir(rho, 2)}, p = {_vir(p, 3)}; "
+                 f"ilk {u} kâğıt %{ilk:.0f}, son {u} kâğıt %{son:.0f}).")
+    return OkumaSirasi(n, rho, p, ilk, son, yorum)

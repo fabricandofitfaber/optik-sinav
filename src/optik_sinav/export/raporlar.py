@@ -187,7 +187,7 @@ def _not(ws, r, metin, sutun_sayisi=8):
 
 
 def madde_analizi_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, esikler: MaddeEsikleri | None = None,
-                      ara_agirlik: float = 40.0, arsiv: list | None = None, donem=None) -> Path:
+                      ara_agirlik: float = 40.0, arsiv: list | None = None, donem=None, giris_sirasi: list[str] | None = None) -> Path:
     """Grafikli istatistik raporu: özet ve yorum, puan dağılımı, madde analizi, çeldiriciler, beş grup, boş bırakma,
     kişi uyumu ve benzer yanlış örüntüsü."""
     from openpyxl.chart import BarChart, LineChart, Reference
@@ -405,7 +405,7 @@ def madde_analizi_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, 
               "Sınıf geneline göre olağandışı sayıda aynı yanlış şık işaretleyen öğrenci çifti bulunmadı.", 9)
 
     _ek_analizler_sayfasi(wb, sonuc, maddeler, genel, e, ara_agirlik, arsiv or [])
-    _yapi_sayfalari(wb, sonuc)
+    _yapi_sayfalari(wb, sonuc, giris_sirasi)
     if donem is not None:
         _donem_sayfasi(wb, donem)
 
@@ -576,7 +576,7 @@ def _ek_analizler_sayfasi(wb, sonuc, maddeler, genel, e, ara_agirlik, arsiv):
     sutun_genislikleri(ws, {1: 50, 2: 28, 3: 14, 4: 16, 5: 14, 6: 14})
 
 
-def _yapi_sayfalari(wb, sonuc):
+def _yapi_sayfalari(wb, sonuc, giris_sirasi=None):
     from ..core import ek_istatistik as E
 
     if not sonuc.klasik:
@@ -596,6 +596,7 @@ def _yapi_sayfalari(wb, sonuc):
                              "yanıltıyor olabilir: o iki sorunun ortak konusunu sınıfla yeniden ele almak yararlı olur. Fisher kesin "
                              "testinde p ≤ 0,01 olan çiftler listelenir." if k else
               "Sınıf geneline göre belirgin biçimde birlikte seçilen yanlış şık çifti bulunmadı.", 10)
+    _belirleyen_sayfasi(wb, sonuc, giris_sirasi)
     y = E.sinav_yapisi(sonuc)
     if y is None:
         return
@@ -633,6 +634,43 @@ def _yapi_sayfalari(wb, sonuc):
     for j, v in enumerate(y.ozdegerler, start=2):
         _sayi(ws, r, j, v)
     sutun_genislikleri(ws, {1: 44, 2: 22, 3: 44, 4: 12})
+
+
+def _belirleyen_sayfasi(wb, sonuc, giris_sirasi=None):
+    """Notu belirleyen sorular; klasik sınavda kısmi puan profili ve okuma sırası etkisi."""
+    from ..core import ek_istatistik as E
+
+    nb = E.notu_belirleyen_sorular(sonuc)
+    if nb is not None:
+        ws = wb.create_sheet("Notu Belirleyen Sorular")
+        baslik_satiri(ws, 1, ["Soru", "Puan payı", "Nota katkı payı", "Oran (katkı / puan payı)", "Değerlendirme"])
+        for r, k in enumerate(nb.sorular, start=2):
+            ws.cell(row=r, column=1, value=k.soru_no)
+            _sayi(ws, r, 2, k.puan_payi, "0%")
+            _sayi(ws, r, 3, k.katki_payi, "0%")
+            _sayi(ws, r, 4, k.oran, "0.00")
+            ad = {"fazla_belirleyici": "notu puanından fazla belirliyor", "az_etkili": "notu puanından az belirliyor"}.get(k.durum, "")
+            c = ws.cell(row=r, column=5, value=ad)
+            if ad:
+                c.fill = dolgu(RENK["uyari"])
+        _tablo_bitir(ws, 5, {1: 7, 2: 11, 3: 15, 4: 22, 5: 34})
+        _not(ws, len(nb.sorular) + 3, nb.yorum + " Nota katkı payı: öğrencilerin toplam puanları arasındaki farkların (varyansın) "
+                                                  "o sorudan gelen kısmı; paylar toplamı %100. Bir soru öteki sorularla ters yönde gidiyorsa payı eksi çıkar; o zaman başka bir sorunun payı %100'ü aşabilir.", 5)
+    kp = E.kismi_puan_profili(sonuc)
+    if kp is None:
+        return
+    ws = wb.create_sheet("Puanlama (Klasik)")
+    baslik_satiri(ws, 1, ["Soru", "Tam puan alan", "Kısmi puan alan", "Sıfır alan", "Boş", "Ortalama başarı", "Not"])
+    for r, k in enumerate(kp, start=2):
+        for j, v in enumerate([k.soru_no, k.tam, k.kismi, k.sifir, k.bos], start=1):
+            ws.cell(row=r, column=j, value=v)
+        _sayi(ws, r, 6, k.ortalama_oran, "0%")
+        if k.notlar:
+            c = ws.cell(row=r, column=7, value="; ".join(k.notlar))
+            c.fill = dolgu(RENK["uyari"])
+    _tablo_bitir(ws, 7, {1: 7, 2: 13, 3: 14, 4: 10, 5: 7, 6: 14, 7: 50})
+    ok = E.okuma_sirasi_etkisi(sonuc, giris_sirasi or [])
+    _not(ws, len(kp) + 3, "Okuma sırası etkisi: " + (ok.yorum if ok else "en az 10 kâğıdın girildiği sıra gerekir."), 7)
 
 
 def _donem_sayfasi(wb, d):
@@ -849,7 +887,8 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
                       akreditasyon_profili=None, not_giris_profili=None, sistem_sablonu: str | Path | None = None,
                       pdf: bool = True, kaynaklar: dict[str, str] | None = None,
                       cikti_aciklamalari: dict[str, str] | None = None, ara_agirlik: float = 40.0,
-                      arsiv_klasoru: str | Path | None = None, donem=None, karne: bool = True) -> TopluCikti:
+                      arsiv_klasoru: str | Path | None = None, donem=None, karne: bool = True,
+                      giris_sirasi: list[str] | None = None) -> TopluCikti:
     from .sablon_doldurucu import sablonu_doldur
     from .xlsx_yazici import aktarim_yaz, uzanti
 
@@ -877,7 +916,8 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
         _, genel = madde_analizi(sonuc, MaddeEsikleri(basari_esigi=esik, cikti_esigi=esik))
         E.arsive_yaz(Path(arsiv_klasoru), E.arsiv_kaydi_olustur(sonuc, sinav, genel, ogrenme_ciktisi_raporu(sonuc, esik)))
         arsiv = E.arsivi_oku(Path(arsiv_klasoru), sinav.ders_kodu)
-    t.dosyalar.append(madde_analizi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "istatistik"), ara_agirlik=ara_agirlik, arsiv=arsiv, donem=donem))
+    t.dosyalar.append(madde_analizi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "istatistik"), ara_agirlik=ara_agirlik, arsiv=arsiv, donem=donem,
+                                       giris_sirasi=giris_sirasi))
     if karne and sonuc.ogrenciler:
         from .karne import karne_yaz
 

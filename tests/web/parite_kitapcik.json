@@ -187,6 +187,7 @@
   "klasik_soru_sayisi": 5,
   "klasik_puanlar": {},
   "klasik_toplamlar": {},
+  "klasik_giris_sirasi": [],
   "final_puanlar": {},
   "harf_ayarlari": {}
  },
@@ -1541,6 +1542,83 @@
    [],
    "Sınav büyük ölçüde tek bir beceriyi ölçüyor (birinci bileşen ikinciden en az 3 kat güçlü); toplam puan anlamlı bir özet."
   ],
+  "belirleyen": [
+   [
+    [
+     1,
+     0.1,
+     0.09846368715083799,
+     0.9846368715083799,
+     ""
+    ],
+    [
+     2,
+     0.1,
+     0.09078212290502793,
+     0.9078212290502793,
+     ""
+    ],
+    [
+     3,
+     0.1,
+     0.0446927374301676,
+     0.44692737430167595,
+     "az_etkili"
+    ],
+    [
+     4,
+     0.1,
+     0.12569832402234637,
+     1.2569832402234637,
+     ""
+    ],
+    [
+     5,
+     0.1,
+     0.09287709497206706,
+     0.9287709497206705,
+     ""
+    ],
+    [
+     6,
+     0.1,
+     0.13337988826815644,
+     1.3337988826815643,
+     ""
+    ],
+    [
+     7,
+     0.1,
+     0.10055865921787711,
+     1.005586592178771,
+     ""
+    ],
+    [
+     8,
+     0.1,
+     0.07541899441340782,
+     0.7541899441340782,
+     ""
+    ],
+    [
+     9,
+     0.1,
+     0.1354748603351955,
+     1.3547486033519551,
+     ""
+    ],
+    [
+     10,
+     0.1,
+     0.1026536312849162,
+     1.0265363128491618,
+     ""
+    ]
+   ],
+   "Öğrenciler arasındaki not farklarına en büyük katkı 9. sorudan geliyor: farkların payı %14, sorunun puan payı %10. Puanına göre not farklarına az katkı veren soru: 3. Bu sorularda herkes benzer puan almış ya da soru öteki sorularla ters yönde gidiyor."
+  ],
+  "kismi": null,
+  "okuma": null,
   "donem": {
    "mutlak": [
     "mutlak",

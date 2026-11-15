@@ -79,6 +79,12 @@ def ciktilar(proje: SinavProjesi, sonuc, ders_kodlari=None) -> dict:
         "kavram": [[k.soru1, k.sik1, k.soru2, k.sik2, k.birlikte, k.secen1, k.secen2, k.kosullu, k.taban, k.phi, k.p] for k in E.kavram_yanilgilari(sonuc)],
         "yapi": None if (y := E.sinav_yapisi(sonuc)) is None else [y.sorular, y.ozdegerler, y.ilk_pay, y.oran_1_2, y.ortalama_korelasyon,
                                                                     {str(k): v for k, v in y.yukler.items()}, y.zayif_sorular, [list(u) for u in y.cikti_uyumu], y.yorum],
+        "belirleyen": None if (nb := E.notu_belirleyen_sorular(sonuc)) is None else [
+            [[k.soru_no, k.puan_payi, k.katki_payi, k.oran, k.durum] for k in nb.sorular], nb.yorum],
+        "kismi": None if (kp := E.kismi_puan_profili(sonuc)) is None else [
+            [k.soru_no, k.tam, k.kismi, k.sifir, k.bos, k.ortalama_oran, k.notlar] for k in kp],
+        "okuma": None if (ok := E.okuma_sirasi_etkisi(sonuc, proje.klasik_giris_sirasi)) is None else [
+            ok.n, ok.rho, ok.p, ok.ilk_ortalama, ok.son_ortalama, ok.yorum],
         "donem": {yon: _donem(sonuc, proje, yon) for yon in ("mutlak", "bagil")},
         "karne": [[k.no, k.sira, k.yuzdelik, k.ciktilar, k.guclu, k.gelismeli] for k in karneler(sonuc, rapor)],
     }
@@ -162,6 +168,7 @@ def main():
         p.klasik_puanlar[og.no] = [str(rnd.randint(0, 10)), f"{rnd.randint(0, 50) / 2:g}".replace(".", ","), None if i == 3 else str(rnd.randint(0, 25)), str(rnd.randint(0, 45))]
     nolar = list(p.klasik_puanlar)
     p.klasik_toplamlar = {nolar[0]: "999", nolar[1]: "abc"}
+    p.klasik_giris_sirasi = [o.no for o in sorted(lst.ogrenciler, key=lambda o: (int(o.no) * 7919) % 101)]
     sonuc = klasik_degerlendir(lst, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar)
     senaryolar.append({"ad": "klasik", "dat": None, "liste": str(liste.relative_to(KOK)), "proje": p.to_dict(), "ders_kodlari": None,
                        "beklenen": ciktilar(p, sonuc)})

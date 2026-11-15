@@ -270,6 +270,8 @@ class KontrolAdimi(Adim):
         for no, v in puanlar.items():
             if no in listede and any(x is not None for x in v):
                 self.durum.proje.klasik_puanlar[no] = v
+                if no not in self.durum.proje.klasik_giris_sirasi:
+                    self.durum.proje.klasik_giris_sirasi.append(no)  # Excel'deki satır sırası okuma sırası sayılır
         self.klasik_model.yenile()
         self.durum.degerlendir()
         mesaj = f"{sum(1 for no in puanlar if no in listede)} öğrencinin puanı alındı."

@@ -54,6 +54,9 @@ function hesapla(sen, proje, sonuc) {
     rasch: rs === null ? null : [mapObj(rs.soru_zorluklari), rs.en_iyi_olctugu, rs.en_iyi_puan, rs.disarida_kalan_ogrenci, rs.disarida_kalan_soru],
     kavram: OS.kavramYanilgilari(sonuc).map((k) => [k.soru1, k.sik1, k.soru2, k.sik2, k.birlikte, k.secen1, k.secen2, k.kosullu, k.taban, k.phi, k.p]),
     yapi: (() => { const y = OS.sinavYapisi(sonuc); return y === null ? null : [y.sorular, y.ozdegerler, y.ilk_pay, y.oran_1_2, y.ortalama_korelasyon, mapObj(y.yukler), y.zayif_sorular, y.cikti_uyumu, y.yorum]; })(),
+    belirleyen: (() => { const nb = OS.notuBelirleyenSorular(sonuc); return nb === null ? null : [nb.sorular.map((k) => [k.soru_no, k.puan_payi, k.katki_payi, k.oran, k.durum]), nb.yorum]; })(),
+    kismi: (() => { const kp = OS.kismiPuanProfili(sonuc); return kp === null ? null : kp.map((k) => [k.soru_no, k.tam, k.kismi, k.sifir, k.bos, k.ortalama_oran, k.notlar]); })(),
+    okuma: (() => { const ok = OS.okumaSirasiEtkisi(sonuc, proje.klasik_giris_sirasi); return ok === null ? null : [ok.n, ok.rho, ok.p, ok.ilk_ortalama, ok.son_ortalama, ok.yorum]; })(),
     donem: Object.fromEntries(["mutlak", "bagil"].map((yon) => {
       const fin = Object.fromEntries(sonuc.ogrenciler.map((o, i) => [o.no, i % 7 === 3 ? null : String((i * 37) % 101)]));
       const d = OS.donemSonu(sonuc, fin, 40, 50, 50, { yontem: yon, bagil_en_az: 3 });

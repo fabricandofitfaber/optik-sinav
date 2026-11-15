@@ -1,5 +1,6 @@
 /* Optik Sınav — tarayıcı sürümü: kavram yanılgıları, sınav yapısı, dönem sonu notu ve öğrenci karnesi.
- * Python karşılıkları: core/ek_istatistik.py (kavram_yanilgilari, sinav_yapisi), core/donem_sonu.py, export/karne.py.
+ * Python karşılıkları: core/ek_istatistik.py (kavram_yanilgilari, sinav_yapisi, notu_belirleyen_sorular, kismi_puan_profili,
+ * okuma_sirasi_etkisi), core/donem_sonu.py, export/karne.py.
  */
 (function (kok) {
   "use strict";
@@ -270,6 +271,93 @@ table.soru td,table.soru th{text-align:center} .soluk{color:#777} h3{margin:14px
 </style></head><body>${sayfalar.join("")}</body></html>`;
   }
 
+  // ------------------------------------------------------------------ notu belirleyen sorular
+  const py0 = (x) => OS.pyOndalik(x, 0);
+  /** Var(T) = Σ Cov(x_i, T): not farklarının hangi sorudan geldiği (Python: notu_belirleyen_sorular). */
+  function notuBelirleyenSorular(sonuc) {
+    const ogr = sonuc.ogrenciler;
+    const tam = sonuc.soru_puanlari.map((p) => p.sayi());
+    const sec = sonuc.anahtar.sorular.map((s, i) => i).filter((i) => sonuc.anahtar.sorular[i].durum !== "iptal" && tam[i] > 0);
+    if (ogr.length < 5 || sec.length < 2) return null;
+    const x = new Map(sec.map((i) => [i, ogr.map((o) => o.sorular[i].puan.sayi())]));
+    const t = ogr.map((_, j) => { let s = 0; for (const i of sec) s += x.get(i)[j]; return s; });
+    const mt = fmean(t);
+    let vt = 0;
+    for (const v of t) vt += (v - mt) ** 2;
+    vt /= t.length;
+    if (vt <= 1e-12) return null;
+    let toplamTam = 0;
+    for (const i of sec) toplamTam += tam[i];
+    const sorular = sec.map((i) => {
+      const xi = x.get(i);
+      const mx = fmean(xi);
+      let kov = 0;
+      for (let j = 0; j < xi.length; j++) kov += (xi[j] - mx) * (t[j] - mt);
+      kov /= t.length;
+      const katki = kov / vt, pay = tam[i] / toplamTam, oran = pay > 0 ? katki / pay : null;
+      const durum = oran !== null && oran >= 1.5 && katki >= 0.15 ? "fazla_belirleyici" : oran !== null && oran <= 0.5 ? "az_etkili" : "";
+      return { soru_no: i + 1, puan_payi: pay, katki_payi: katki, oran, durum };
+    });
+    let en = sorular[0];
+    for (const k of sorular) if (k.katki_payi > en.katki_payi) en = k;
+    let yorum = `Öğrenciler arasındaki not farklarına en büyük katkı ${en.soru_no}. sorudan geliyor: farkların payı %${py0(en.katki_payi * 100)}, sorunun puan payı %${py0(en.puan_payi * 100)}.`;
+    const fazla = sorular.filter((k) => k.durum === "fazla_belirleyici").map((k) => String(k.soru_no));
+    const az = sorular.filter((k) => k.durum === "az_etkili").map((k) => String(k.soru_no));
+    if (fazla.length) yorum += ` Notu puanından çok daha fazla belirleyen ${fazla.length === 1 ? "soru" : "sorular"}: ${fazla.join(", ")}. Sınav fiilen bu sorulara dayanıyor olabilir; puanı bölmek ya da benzer ağırlıkta başka sorular eklemek notu daha dengeli kılar.`;
+    if (az.length) yorum += ` Puanına göre not farklarına az katkı veren ${az.length === 1 ? "soru" : "sorular"}: ${az.join(", ")}. Bu sorularda herkes benzer puan almış ya da soru öteki sorularla ters yönde gidiyor.`;
+    if (!fazla.length && !az.length) yorum += " Soruların nota katkısı puan ağırlıklarıyla uyumlu.";
+    return { sorular, yorum };
+  }
+
+  // ------------------------------------------------------------------ kısmi puan profili (klasik)
+  function kismiPuanProfili(sonuc) {
+    if (!sonuc.klasik || !sonuc.ogrenciler.length) return null;
+    const tamP = sonuc.soru_puanlari.map((p) => p.sayi());
+    return sonuc.anahtar.sorular.map((s, i) => {
+      const d = sonuc.ogrenciler.map((o) => o.sorular[i].durum);
+      const say = (h) => d.filter((x) => x === h).length;
+      const tam = say("D"), kismi = say("K"), sifir = say("Y"), bos = say("B");
+      const girilen = tam + kismi + sifir;
+      const oranlar = sonuc.ogrenciler.filter((o) => o.sorular[i].durum !== "B" && tamP[i] > 0).map((o) => o.sorular[i].puan.sayi() / tamP[i]);
+      const notlar = [];
+      if (girilen) {
+        if (kismi / girilen >= 0.6) notlar.push("çoğu kısmi puan almış: puanlama ölçütü belirsiz olabilir");
+        if (tam === 0) notlar.push("kimse tam puan almamış");
+        else if (tam === girilen) notlar.push("herkes tam puan almış: soru öğrencileri ayırmıyor");
+      }
+      return { soru_no: i + 1, tam, kismi, sifir, bos, ortalama_oran: oranlar.length ? fmean(oranlar) : null, notlar };
+    });
+  }
+
+  // ------------------------------------------------------------------ okuma sırası etkisi (klasik)
+  function okumaSirasiEtkisi(sonuc, girisSirasi) {
+    if (!sonuc.klasik) return null;
+    const toplam = OS.topla(sonuc.soru_puanlari).sayi() || 1.0;
+    const puan = new Map(sonuc.ogrenciler.map((o) => [o.no, (o.puan.sayi() / toplam) * 100]));
+    const sira = [];
+    const gorulen = new Set();
+    for (const no of girisSirasi || []) if (puan.has(no) && !gorulen.has(no)) { sira.push(no); gorulen.add(no); }
+    const n = sira.length;
+    if (n < 10) return null;
+    const y = sira.map((no) => puan.get(no));
+    const rho = OS.spearman(Array.from({ length: n }, (_, i) => i + 1), y);
+    if (rho === null) return null;
+    let p;
+    if (Math.abs(rho) >= 1 - 1e-12) p = 0.0;
+    else { const t = rho * Math.sqrt((n - 2) / (1 - rho * rho)); p = OS.tIkiYonluP(t, n - 2); }
+    const u = Math.max(1, Math.floor(n / 3));
+    const ilk = fmean(y.slice(0, u)), son = fmean(y.slice(-u));
+    let yorum;
+    if (p < 0.05 && Math.abs(rho) >= 0.3) {
+      const yon = rho < 0 ? "düşüyor" : "yükseliyor";
+      yorum = `Okuma ilerledikçe puanlar ${yon}: ilk ${u} kâğıdın ortalaması %${py0(ilk)}, son ${u} kâğıdınki %${py0(son)} (sıra korelasyonu ${OS.pyOndalik(rho, 2).replace(".", ",")}, p = ${OS.pyOndalik(p, 3).replace(".", ",")}). Okuyanın yorulması ya da puanlama ölçütünün kayması olabilir; ilk ve son kâğıtlardan birkaçını yeniden okumak yararlı olur. Kâğıtlar başarıya göre sıralıysa bu fark okumadan değil sıradan kaynaklanır.`;
+    } else {
+      yorum = `Okuma sırasına bağlı belirgin bir kayma yok (sıra korelasyonu ${OS.pyOndalik(rho, 2).replace(".", ",")}, p = ${OS.pyOndalik(p, 3).replace(".", ",")}; ilk ${u} kâğıt %${py0(ilk)}, son ${u} kâğıt %${py0(son)}).`;
+    }
+    return { n, rho, p, ilk_ortalama: ilk, son_ortalama: son, yorum };
+  }
+
+  Object.assign(OS, { notuBelirleyenSorular, kismiPuanProfili, okumaSirasiEtkisi });
   Object.assign(OS, { fisherUst, kavramYanilgilari, sinavYapisi, harfAyarlari, tabloCoz, donemSonu, tablodanFinalPuanlari, karneler, karneHtml,
     ORNEK_MUTLAK, ORNEK_BAGIL });
 })(typeof globalThis !== "undefined" ? globalThis : window);

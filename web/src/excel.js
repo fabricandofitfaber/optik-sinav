@@ -265,6 +265,32 @@
       not(ws, kv.length + 3, kv.length ? "İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden yanıltıyor olabilir. Fisher kesin testinde p ≤ 0,01 olan çiftler listelenir." : "Belirgin biçimde birlikte seçilen yanlış şık çifti bulunmadı.", 10);
       bitir(ws, 10, { 1: 7, 2: 10, 3: 12, 4: 10, 5: 12, 6: 10, 7: 16, 8: 14 });
     }
+    const nb = OS.notuBelirleyenSorular(sonuc);
+    if (nb) {
+      ws = wb.addWorksheet("Notu Belirleyen Sorular");
+      baslik(ws, 1, ["Soru", "Puan payı", "Nota katkı payı", "Oran (katkı / puan payı)", "Değerlendirme"]);
+      const ad = { fazla_belirleyici: "notu puanından fazla belirliyor", az_etkili: "notu puanından az belirliyor" };
+      nb.sorular.forEach((k, i) => {
+        metin(ws, i + 2, 1, k.soru_no); sayi(ws, i + 2, 2, k.puan_payi, "0%"); sayi(ws, i + 2, 3, k.katki_payi, "0%"); sayi(ws, i + 2, 4, k.oran, "0.00");
+        if (ad[k.durum]) metin(ws, i + 2, 5, ad[k.durum]).fill = dolgu(RENK.uyari);
+      });
+      bitir(ws, 5, { 1: 7, 2: 11, 3: 15, 4: 22, 5: 34 });
+      not(ws, nb.sorular.length + 3, nb.yorum + " Nota katkı payı: öğrencilerin toplam puanları arasındaki farkların (varyansın) o sorudan gelen kısmı; paylar toplamı %100. Bir soru öteki sorularla ters yönde gidiyorsa payı eksi çıkar; o zaman başka bir sorunun payı %100'ü aşabilir.", 5);
+    }
+    const kp = OS.kismiPuanProfili(sonuc);
+    if (kp) {
+      ws = wb.addWorksheet("Puanlama (Klasik)");
+      baslik(ws, 1, ["Soru", "Tam puan alan", "Kısmi puan alan", "Sıfır alan", "Boş", "Ortalama başarı", "Not"]);
+      kp.forEach((k, i) => {
+        [k.soru_no, k.tam, k.kismi, k.sifir, k.bos].forEach((x, j) => metin(ws, i + 2, j + 1, x));
+        sayi(ws, i + 2, 6, k.ortalama_oran, "0%");
+        if (k.notlar.length) metin(ws, i + 2, 7, k.notlar.join("; ")).fill = dolgu(RENK.uyari);
+      });
+      bitir(ws, 7, { 1: 7, 2: 13, 3: 14, 4: 10, 5: 7, 6: 14, 7: 50 });
+      const sira = (window.UI && window.UI.D && window.UI.D.proje.klasik_giris_sirasi) || [];
+      const ok = OS.okumaSirasiEtkisi(sonuc, sira);
+      not(ws, kp.length + 3, "Okuma sırası etkisi: " + (ok ? ok.yorum : "en az 10 kâğıdın girildiği sıra gerekir."), 7);
+    }
     const y = OS.sinavYapisi(sonuc);
     if (y) {
       ws = wb.addWorksheet("Sınav Yapısı");
