@@ -138,6 +138,7 @@ class IstatistikAdimi(Adim):
         l.setWordWrap(True)
         v.addWidget(l)
         v.addWidget(self.uyum)
+        self.uyum_sayfa = w
         self.sekmeler.addTab(w, "Kişi uyumu")
         self.benzer = _tablo(["1. öğrenci", "2. öğrenci", "Aynı yanlış şık", "İkisinin de yanlışı", "Uzaklık (standart sapma)", "Sorular"])
         w = QWidget()
@@ -147,6 +148,7 @@ class IstatistikAdimi(Adim):
         l.setWordWrap(True)
         v.addWidget(l)
         v.addWidget(self.benzer)
+        self.benzer_sayfa = w
         self.sekmeler.addTab(w, "Benzer cevaplar")
         from PySide6.QtWidgets import QTextBrowser
 
@@ -164,11 +166,45 @@ class IstatistikAdimi(Adim):
         self.sekmeler.addTab(self.donem, "Dönem sonu notu")
         self.ek = QTextBrowser()
         self.sekmeler.addTab(self.ek, "Ek analizler")
+        # Sık bakılan üç sekme önde; ötekiler "Diğer analizler ▾" menüsünden açılır ve seçilen önde sekme olarak görünür.
+        self.sekmeler.tabBar().moveTab(self.sekmeler.indexOf(self.donem), 2)
+        self.ikincil = [self.uyum_sayfa, self.benzer_sayfa, self.kavram, self.yapi, self.belirleyen, self.puanlama, self.ek]
+        self.uygun = {id(w): True for w in self.ikincil}
+        for w in self.ikincil:
+            self.sekmeler.setTabVisible(self.sekmeler.indexOf(w), False)
+        from PySide6.QtWidgets import QMenu, QToolButton
+
+        self.diger_dugme = QToolButton()
+        self.diger_dugme.setText("Diğer analizler")
+        self.diger_dugme.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.diger_menu = QMenu(self.diger_dugme)
+        self.diger_menu.aboutToShow.connect(self._diger_menuyu_doldur)
+        self.diger_dugme.setMenu(self.diger_menu)
+        self.sekmeler.setCornerWidget(self.diger_dugme, Qt.Corner.TopRightCorner)
         self.duzen.addWidget(self.sekmeler, 1)
         self.not_ = QLabel("Bütün tablolar ve grafikler 6. adımdaki \"Tüm raporları klasöre yaz\" ile Excel'e (istatistik ve öğrenme çıktısı dosyaları) yazılır.")
         self.not_.setStyleSheet("color: gray")
         self.not_.setWordWrap(True)
         self.duzen.addWidget(self.not_)
+
+    def _diger_menuyu_doldur(self):
+        self.diger_menu.clear()
+        for w in self.ikincil:
+            if self.uygun[id(w)]:
+                e = self.diger_menu.addAction(self.sekmeler.tabText(self.sekmeler.indexOf(w)))
+                e.triggered.connect(lambda _x=False, w=w: self.analiz_ac(w))
+
+    def analiz_ac(self, w):
+        """Menüden seçilen analizi önde sekme olarak açar (önceki seçilen geri menüye döner)."""
+        for x in self.ikincil:
+            self.sekmeler.setTabVisible(self.sekmeler.indexOf(x), x is w)
+        self.sekmeler.setCurrentWidget(w)
+
+    def _uygunluk(self, w, uygun: bool):
+        """Analiz bu sınav biçiminde yoksa menüden kalkar; açıksa kapanır."""
+        self.uygun[id(w)] = uygun
+        if not uygun:
+            self.sekmeler.setTabVisible(self.sekmeler.indexOf(w), False)
 
     def girildi(self):
         if self.durum.sonuc is None:
@@ -243,8 +279,8 @@ class IstatistikAdimi(Adim):
         for i, k in enumerate(g.kisi_uyumu):
             for j, v in enumerate([k.no, k.ad, _v(k.puan), _v(k.indeks), ", ".join(map(str, k.beklenmedik))]):
                 _hucre(t, i, j, v, hiza=j not in (1, 4))
-        self.sekmeler.setTabText(2, f"Kişi uyumu ({len(g.kisi_uyumu)})")
-        self.sekmeler.setTabVisible(2, not s.klasik)
+        self.sekmeler.setTabText(self.sekmeler.indexOf(self.uyum_sayfa), f"Kişi uyumu ({len(g.kisi_uyumu)})")
+        self._uygunluk(self.uyum_sayfa, not s.klasik)
 
         t = self.benzer
         t.setRowCount(len(g.benzer_ciftler))
@@ -252,16 +288,15 @@ class IstatistikAdimi(Adim):
             for j, v in enumerate([f"{c.no1} {c.ad1}", f"{c.no2} {c.ad2}", c.ayni_yanlis, c.ikisi_yanlis, _v(c.z, 1),
                                    ", ".join(map(str, c.sorular))]):
                 _hucre(t, i, j, v, hiza=j not in (0, 1, 5))
-        self.sekmeler.setTabText(3, f"Benzer cevaplar ({len(g.benzer_ciftler)})")
-        self.sekmeler.setTabVisible(3, not s.klasik)
+        self.sekmeler.setTabText(self.sekmeler.indexOf(self.benzer_sayfa), f"Benzer cevaplar ({len(g.benzer_ciftler)})")
+        self._uygunluk(self.benzer_sayfa, not s.klasik)
         self.ek.setHtml(self._ek_html(s, maddeler, g, esik))
         self.kavram.setHtml(self._kavram_html(s))
         self.yapi.setHtml(self._yapi_html(s))
         self.belirleyen.setHtml(self._belirleyen_html(s))
         self.puanlama.setHtml(self._puanlama_html(s))
-        self.sekmeler.setTabVisible(self.sekmeler.indexOf(self.puanlama), s.klasik)
-        i = self.sekmeler.indexOf(self.kavram)
-        self.sekmeler.setTabVisible(i, not s.klasik)
+        self._uygunluk(self.puanlama, s.klasik)
+        self._uygunluk(self.kavram, not s.klasik)
         self.donem.yenile()
 
     def _kavram_html(self, s) -> str:

@@ -21,7 +21,7 @@ from ...core.modeller import SIKLAR, CevapAnahtari, PuanYontemi, SoruDurumu, esi
 from ...core.klasik import puan_listesi_coz
 from ...core.puanlama import anahtar_eksikleri, esit_soru_puanlari, sayi_yaz, soru_puanlari
 from ..tema import koyu_mu
-from .temel import Adim
+from .temel import Adim, menu_dugmesi
 
 
 # ---------------------------------------------------------------- çıktı metni
@@ -286,10 +286,14 @@ class AnahtarAdimi(Adim):
                                        "yapıştırılacak soru numarası, puan ve öğrenme çıktısı yüzdelerini panoya kopyalar.")
         self.sistem_dugmesi.setStyleSheet("font-weight: bold")
         self.sistem_dugmesi.clicked.connect(self._sisteme_kopyala)
-        s = QGridLayout()
-        for sira, x in enumerate((self.sistem_dugmesi, b1, b2, b3)):
-            s.addWidget(x, sira // 2, sira % 2)
-        s.setColumnStretch(2, 1)
+        s = QHBoxLayout()
+        s.addWidget(self.sistem_dugmesi)
+        s.addWidget(menu_dugmesi("Diğer işlemler", [
+            ("Bütün sorulara çıktıyı sırayla dağıt", self._sirayla_dagit, b1.toolTip()),
+            ("Ders eşlemesini kaydet", self._eslemeyi_kaydet, b2.toolTip()),
+            ("Kayıtlı ders eşlemesini yükle", self._eslemeyi_yukle, ""),
+        ], self))
+        s.addStretch(1)
         a.addLayout(s)
         self.duzen.addWidget(alt)
         durum.degisti.connect(self.durumdan_yukle)

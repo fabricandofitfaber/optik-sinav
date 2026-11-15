@@ -81,6 +81,7 @@ class KontrolAdimi(Adim):
             (("D", "doğru"), ("Y", "yanlış"), ("B", "boş"), ("I", "iptal"), ("uyari", "uyarılı satır")))
             + "  Numara, ad ya da tek bir cevabı düzeltmek için hücreye çift tıklayın. Özgün okuma silinmez.")
         aciklama.setWordWrap(True)
+        self.aciklama = aciklama  # optik sınava özgü; klasikte gizlenir
         self.duzen.addWidget(aciklama)
 
         self.sekmeler = QTabWidget()
@@ -94,7 +95,8 @@ class KontrolAdimi(Adim):
         s = QHBoxLayout()
         for metin, islev, ipucu in (
             ("Excel'den puan al…", self._excelden_al, "Öğrenci numarası ve S1, S2… sütunları olan bir Excel dosyasından puanları okur."),
-            ("Boş puan şablonu oluştur…", self._sablon_yaz, "Öğrenci listesi ve soru sütunları olan boş bir Excel üretir; doldurup geri alabilirsiniz."),
+            ("Puan tablosunu Excel'e kaydet…", self._sablon_yaz, "Aşağıdaki tabloyu (girilen puanlar, toplam ve Girmedi işaretiyle) Excel'e yazar. "
+             "Excel'de doldurup \"Excel'den puan al\" ile geri de yükleyebilirsiniz."),
         ):
             b = QPushButton(metin)
             b.setToolTip(ipucu)
@@ -103,7 +105,7 @@ class KontrolAdimi(Adim):
         s.addStretch(1)
         v.addLayout(s)
         v.addWidget(_sarili("Ya da tabloda hücreye tıklayıp yazın. Excel'den bir bloğu kopyalayıp seçili hücreye Ctrl+V (Mac'te Cmd+V) "
-                           "ile yapıştırabilirsiniz. Boş bırakılan öğrenci sınava girmemiş sayılır. \"Kâğıttaki toplam\" sütunu isteğe bağlıdır; "
+                           "ile yapıştırabilirsiniz. Sınava girmeyenleri en sağdaki \"Girmedi\" kutusuyla işaretleyin (hiç puanı girilmeyen öğrenci de girmemiş sayılır). \"Kâğıttaki toplam\" sütunu isteğe bağlıdır; "
                            "tutmazsa kırmızı görünür."))
         self.klasik_model = KlasikGirisModeli(self.durum, self)
         self.klasik_model.dataChanged.connect(lambda *_: self.durum.degerlendir())
@@ -135,6 +137,7 @@ class KontrolAdimi(Adim):
         v = QVBoxLayout(w)
         v.addWidget(_sarili("Birebir eşleşmeyen numaralar otomatik eşleştirilmez. Numarayı düzeltmek için satıra çift tıklayın."))
         v.addWidget(self.olmayan_tablo)
+        self.olmayan_sayfa = w
         self.sekmeler.addTab(w, "Listede olmayanlar")
         self.duzeltme_tablo = _salt_okunur_tablo(["Dosya satırı", "Alan", "Eski değer", "Yeni değer", "Kim", "Ne zaman"])
         self.sekmeler.addTab(self.duzeltme_tablo, "Düzeltme kaydı")
@@ -145,6 +148,11 @@ class KontrolAdimi(Adim):
         klasik = self.durum.proje.klasik
         i = self.sekmeler.indexOf(self.klasik_sayfa)
         self.sekmeler.setTabVisible(i, klasik)
+        # optik sınava özgü olanlar klasikte gizlenir (renk açıklaması, uyarı süzgeci, listede olmayanlar, düzeltme kaydı)
+        for w in (self.aciklama, self.yalniz_uyarili):
+            w.setVisible(not klasik)
+        for w in (self.olmayan_sayfa, self.duzeltme_tablo):
+            self.sekmeler.setTabVisible(self.sekmeler.indexOf(w), not klasik)
         if klasik:
             self.klasik_model.yenile()
             self.kagit.kur()
@@ -253,7 +261,7 @@ class KontrolAdimi(Adim):
 
     # ---------------------------------------------------------------- klasik sınav
     def _excelden_al(self):
-        from ...core.klasik import tablodan_klasik_puanlar
+        from ...core.klasik import tablodan_girmedi, tablodan_klasik_puanlar
         from ...io.liste_okuyucu import sayfa_sec, sayfalari_oku
 
         yol, _ = QFileDialog.getOpenFileName(self, "Puan dosyası", "", "Tablolar (*.xlsx *.xls *.csv *.txt)")
@@ -261,7 +269,9 @@ class KontrolAdimi(Adim):
             return
         try:
             sayfalar = sayfalari_oku(yol)
-            puanlar, notlar = tablodan_klasik_puanlar(sayfalar[sayfa_sec(sayfalar)], self.durum.proje.anahtar.soru_sayisi)
+            tablo = sayfalar[sayfa_sec(sayfalar)]
+            puanlar, notlar = tablodan_klasik_puanlar(tablo, self.durum.proje.anahtar.soru_sayisi)
+            girmeyenler = tablodan_girmedi(tablo)
         except Exception as e:  # noqa: BLE001
             QMessageBox.warning(self, "Okunamadı", str(e))
             return
@@ -272,9 +282,14 @@ class KontrolAdimi(Adim):
                 self.durum.proje.klasik_puanlar[no] = v
                 if no not in self.durum.proje.klasik_giris_sirasi:
                     self.durum.proje.klasik_giris_sirasi.append(no)  # Excel'deki satır sırası okuma sırası sayılır
+        for no in girmeyenler:
+            if no in listede:
+                self.durum.girmedi_isaretle(no, True)
         self.klasik_model.yenile()
         self.durum.degerlendir()
-        mesaj = f"{sum(1 for no in puanlar if no in listede)} öğrencinin puanı alındı."
+        mesaj = f"{sum(1 for no in puanlar if no in listede and no not in girmeyenler)} öğrencinin puanı alındı."
+        if girmeyenler:
+            mesaj += f" {sum(1 for no in girmeyenler if no in listede)} öğrenci sınava girmedi olarak işaretlendi."
         if yabanci:
             mesaj += f"\nListede olmayan numaralar alınmadı: {', '.join(yabanci[:10])}" + (" …" if len(yabanci) > 10 else "")
         if notlar:
@@ -287,24 +302,45 @@ class KontrolAdimi(Adim):
         from ...core.ciktilar import cikti_adi
         from ...export.xlsx_yazici import baslik_satiri
 
-        yol, _ = QFileDialog.getSaveFileName(self, "Boş puan şablonu", cikti_adi(self.durum.proje.sinav, "puan_girisi"), "Excel (*.xlsx)")
+        from ...core.klasik import puan_coz
+        from ...core.puanlama import sayi_yaz, soru_puanlari
+
+        yol, _ = QFileDialog.getSaveFileName(self, "Puan tablosunu Excel'e kaydet", cikti_adi(self.durum.proje.sinav, "puan_tablosu"), "Excel (*.xlsx)")
         if not yol:
             return
-        n = self.durum.proje.anahtar.soru_sayisi
+        p = self.durum.proje
+        n = p.anahtar.soru_sayisi
+        try:
+            tam = soru_puanlari(p.anahtar, p.ayarlar)
+        except Exception:  # noqa: BLE001
+            tam = [None] * n
         wb = Workbook()
         ws = wb.active
         ws.title = "Puanlar"
-        baslik_satiri(ws, 1, [M.SUTUN["no"], M.SUTUN["ad"]] + [f"S{k}" for k in range(1, n + 1)])
+        baslik_satiri(ws, 1, [M.SUTUN["no"], M.SUTUN["ad"]]
+                      + [f"S{k} ({sayi_yaz(tam[k - 1], 2).rstrip('0').rstrip(',')})" if tam[k - 1] is not None else f"S{k}" for k in range(1, n + 1)]
+                      + ["Toplam", "Girmedi"])
         for r, o in enumerate(self.klasik_model.ogrenciler, start=2):
             ws.cell(row=r, column=1, value=o.no).number_format = "@"
             ws.cell(row=r, column=2, value=o.ad)
-            for k, v in enumerate(self.durum.proje.klasik_puanlar.get(o.no) or [], start=3):
-                ws.cell(row=r, column=k, value=v)
+            toplam, girildi = 0, False
+            for k, v in enumerate((p.klasik_puanlar.get(o.no) or [])[:n], start=3):
+                try:
+                    x = puan_coz(v)
+                except (ValueError, ArithmeticError):
+                    x = None
+                ws.cell(row=r, column=k, value=float(x) if x is not None else v)
+                if x is not None:
+                    toplam, girildi = toplam + x, True
+            if o.no in p.klasik_girmedi:
+                ws.cell(row=r, column=n + 4, value="girmedi")
+            elif girildi:
+                ws.cell(row=r, column=n + 3, value=float(toplam))
         ws.column_dimensions["A"].width = 14
         ws.column_dimensions["B"].width = 28
         ws.freeze_panes = "C2"
         wb.save(yol)
-        QMessageBox.information(self, "Şablon", f"Yazıldı:\n{yol}\n\nDoldurduktan sonra \"Excel'den puan al\" ile geri yükleyin.")
+        QMessageBox.information(self, "Puan tablosu", f"Yazıldı:\n{yol}\n\nExcel'de değiştirirseniz \"Excel'den puan al\" ile geri yükleyebilirsiniz.")
 
     def eksikler(self):
         if self.durum.proje.klasik and self.durum.sonuc is not None and not self.durum.sonuc.ogrenciler:

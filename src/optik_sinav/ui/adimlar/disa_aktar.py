@@ -20,7 +20,7 @@ from ...export.raporlar import tum_raporlari_yaz
 from ...export.sablon_doldurucu import numara_sirasi, sablondan_profil_oner, sablonu_doldur
 from ...export.xlsx_yazici import aktarim_yaz, uzanti
 from ...kaynaklar import kullanici_klasoru
-from .temel import Adim
+from .temel import Adim, menu_dugmesi
 
 
 class ProfilOnayi(QDialog):
@@ -89,19 +89,29 @@ class DisaAktarAdimi(Adim):
         self.duzen.addWidget(self.onizleme_secim)
         self.duzen.addWidget(self.onizleme, 1)
 
-        s = QGridLayout()
-        for sira, (metin, islev, ipucu) in enumerate((
-            ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon profiline göre dosya yazar."),
-            ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş profiline göre dosya yazar."),
-            ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
-            ("Panoya kopyala…", self._panoya, "Seçili sütunları sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalar."),
+        from .dosyalar import VURGULU_DUGME
+
+        s = QHBoxLayout()
+        b = QPushButton("Tüm raporları klasöre yaz…")
+        b.setToolTip("Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları.")
+        b.setStyleSheet(VURGULU_DUGME)
+        b.setMinimumHeight(38)
+        b.clicked.connect(self._hepsi)
+        s.addWidget(b)
+        for metin, islev, ipucu in (
             ("Öğrenci karneleri…", self._karneler, "Her öğrenciye bir sayfa: puan, sıra, öğrenme çıktıları ve soru soru sonuç. Tarayıcıda açılır, yazdırılır."),
-            ("Tüm raporları klasöre yaz…", self._hepsi, "Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları."),
-        )):
+            ("Panoya kopyala…", self._panoya, "Seçili sütunları sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalar."),
+        ):
             b = QPushButton(metin)
             b.setToolTip(ipucu)
             b.clicked.connect(islev)
-            s.addWidget(b, sira // 3, sira % 3)
+            s.addWidget(b)
+        s.addWidget(menu_dugmesi("Tek tek kaydet", [
+            ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon profiline göre dosya yazar."),
+            ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş profiline göre dosya yazar."),
+            ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
+        ], self))
+        s.addStretch(1)
         self.duzen.addLayout(s)
         self.bilgi = QLabel()
         self.bilgi.setWordWrap(True)

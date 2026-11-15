@@ -57,9 +57,23 @@
     const satir = (og, i) => {
       const d = D.proje.klasik_puanlar[og.no] || [];
       const kt = (D.proje.klasik_toplamlar || {})[og.no];
-      return `<tr data-no="${e(og.no)}"><td>${i + 1}</td><td>${e(og.no)}</td><td class="sol">${e(og.ad)}</td>${Array.from({ length: n }, (_, k) => `<td class="${hucreSinifi(d[k], tam[k])}"><input class="hucre" data-k="${k}" value="${e(d[k] ?? "")}" inputmode="decimal"></td>`).join("")}<td class="kalin toplam">${klasikToplam(d)}</td><td class="${toplamSinifi(d, kt)}"><input class="hucre kagit" value="${e(kt ?? "")}" inputmode="decimal" title="Kâğıdın üstüne yazdığınız toplam (isteğe bağlı, kontrol için)"></td></tr>`;
+      const gm = girmediMi(og.no);
+      return `<tr data-no="${e(og.no)}" class="${gm ? "girmedi" : ""}"><td>${i + 1}</td><td>${e(og.no)}</td><td class="sol">${e(og.ad)}</td>${Array.from({ length: n }, (_, k) => `<td class="${hucreSinifi(d[k], tam[k])}"><input class="hucre" data-k="${k}" value="${e(d[k] ?? "")}" inputmode="decimal"></td>`).join("")}<td class="kalin toplam">${klasikToplam(d)}</td><td class="${toplamSinifi(d, kt)}"><input class="hucre kagit" value="${e(kt ?? "")}" inputmode="decimal" title="Kâğıdın üstüne yazdığınız toplam (isteğe bağlı, kontrol için)"></td><td><input type="checkbox" class="girmediKutu" ${gm ? "checked" : ""} title="İşaretlerseniz öğrenci sınava girmemiş sayılır; girilmiş puanları silinmez, hesaba katılmaz."></td></tr>`;
     };
-    return `<div class="tablo-kap"><table class="veri" id="klasikTablo"><thead><tr><th>Sıra</th><th>Öğrenci No</th><th class="sol">Ad Soyad</th>${Array.from({ length: n }, (_, k) => `<th>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</th>`).join("")}<th>Toplam</th><th title="Kâğıdın üstündeki toplam; tutmazsa kırmızı">Kâğıttaki toplam</th></tr></thead><tbody>${L.map(satir).join("")}</tbody></table></div>`;
+    return `<div class="tablo-kap"><table class="veri" id="klasikTablo"><thead><tr><th>Sıra</th><th>Öğrenci No</th><th class="sol">Ad Soyad</th>${Array.from({ length: n }, (_, k) => `<th>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</th>`).join("")}<th>Toplam</th><th title="Kâğıdın üstündeki toplam; tutmazsa kırmızı">Kâğıttaki toplam</th><th title="Sınava girmeyen öğrenciyi işaretleyin">Girmedi</th></tr></thead><tbody>${L.map(satir).join("")}</tbody></table></div>`;
+  }
+  const girmediMi = (no) => (D.proje.klasik_girmedi || []).includes(no);
+  function girmediIsaretle(no, isaret) {
+    const g = (D.proje.klasik_girmedi = D.proje.klasik_girmedi || []);
+    const i = g.indexOf(no);
+    if (isaret && i < 0) g.push(no);
+    else if (!isaret && i >= 0) g.splice(i, 1);
+  }
+  function ilerlemeMetni() {
+    const L = D.liste ? D.liste.ogrenciler : [];
+    const gm = L.filter((o) => girmediMi(o.no)).length;
+    const gi = L.filter((o) => !girmediMi(o.no) && (D.proje.klasik_puanlar[o.no] || []).some((x) => x !== null && x !== "")).length;
+    return `Girilen: ${gi} · Girmedi: ${gm} · Kalan: ${L.length - gi - gm}`;
   }
   function toplamSinifi(d, kt) {
     if (kt === null || kt === undefined || kt === "") return "";
@@ -72,14 +86,14 @@
     let tam = [];
     try { tam = OS.soruPuanlari(a, D.proje.ayarlar); } catch (_) { tam = []; }
     const L = D.liste ? D.liste.ogrenciler : [];
-    const girilen = L.filter((o) => (D.proje.klasik_puanlar[o.no] || []).some((x) => x !== null && x !== "")).length;
     return `<div class="kutu" id="kagitPaneli"><h3>Kâğıt sırasıyla giriş</h3>
       <div class="satir"><label>Öğrenci</label><input type="text" id="kagitAra" placeholder="Numaranın ya da adın birkaç harfi, sonra Enter" style="width:300px" autocomplete="off">
-        <span id="kagitKim" class="kalin"></span><span id="kagitKalan" class="soluk">Girilen kâğıt: ${girilen} / ${L.length}</span></div>
+        <span id="kagitKim" class="kalin"></span><span id="kagitKalan" class="soluk">${ilerlemeMetni()}</span></div>
       <div id="kagitOneri" class="satir" style="min-height:8px"></div>
       <div class="satir" id="kagitKutular">${Array.from({ length: n }, (_, k) => `<label>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</label><input type="text" class="kagitPuan" data-k="${k}" style="width:62px" inputmode="decimal" disabled>`).join("")}
         <label>Kâğıttaki toplam</label><input type="text" id="kagitToplam" style="width:70px" inputmode="decimal" disabled title="İsteğe bağlı: kâğıdın üstüne yazdığınız toplam; tutmazsa uyarılır">
-        <button id="kagitKaydet" class="ana" disabled>Kaydet, sonraki kâğıt</button></div>
+        <button id="kagitKaydet" class="ana" disabled>Kaydet, sonraki kâğıt</button>
+        <button id="kagitGirmedi" disabled title="Seçili öğrenciyi sınava girmedi diye işaretler ve sonraki kâğıda geçer">Sınava girmedi</button></div>
       <p class="soluk" style="margin:4px 0 0">Kâğıtlar elinizdeki sırayla gelsin: öğrenciyi bulun, puanları yazın (Enter bir sonraki kutuya geçer), son kutuda Enter kaydeder ve yeni kâğıda hazırlar.</p></div>`;
   }
   function hucreSinifi(x, tam) {
@@ -94,7 +108,7 @@
   function klasikToplam(d) {
     let t = OS.Kesir.SIFIR, var_ = false;
     for (const x of d || []) { let p; try { p = OS.puanCoz(x); } catch (_) { return "hata"; } if (p !== null) { t = t.ekle(p); var_ = true; } }
-    return var_ ? OS.sayiYaz(t, 2) : '<span class="soluk">girmedi</span>';
+    return var_ ? OS.sayiYaz(t, 2) : '<span class="soluk" title="henüz girilmedi">—</span>';
   }
   function klasikYaz(no, k, deger) {
     const p = D.proje.klasik_puanlar;
@@ -124,8 +138,8 @@
       const sek = !s ? [["giris", "Puan girişi"]] : [...(kl ? [["giris", "Puan girişi"]] : []), ["sonuc", "Sonuçlar"], ["girmeyen", `Sınava girmeyenler (${s.girmeyenler.length})`],
         ...(kl ? [] : [["olmayan", `Listede olmayanlar (${s.listede_olmayanlar.length})`], ["duzeltme", `Düzeltme kaydı (${D.proje.duzeltmeler.length})`]])];
       let icerik = "";
-      if (K.sekme === "giris") icerik = `${kagitPaneli()}<div class="satir"><button id="exceldenAl">Excel'den puan al…</button><button id="sablonIndir">Boş puan şablonu indir</button>
-          <span class="soluk">Ya da tabloda hücreye tıklayıp yazın (Enter alttaki öğrenciye geçer; soru soru puanlamaya uygun). Excel'den bir bloğu kopyalayıp bir hücreye yapıştırabilirsiniz. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.</span></div>${klasikTablo()}`;
+      if (K.sekme === "giris") icerik = `${kagitPaneli()}<div class="satir"><button id="exceldenAl">Excel'den puan al…</button><button id="sablonIndir" title="Aşağıdaki tabloyu (girilen puanlar, toplam ve Girmedi işaretiyle) Excel'e yazar; Excel'de doldurup geri de yükleyebilirsiniz">Puan tablosunu Excel'e kaydet</button>
+          <span class="soluk">Ya da tabloda hücreye tıklayıp yazın (Enter alttaki öğrenciye geçer; soru soru puanlamaya uygun). Excel'den bir bloğu kopyalayıp bir hücreye yapıştırabilirsiniz. Sınava girmeyenleri en sağdaki "Girmedi" kutusuyla işaretleyin (hiç puanı girilmeyen öğrenci de girmemiş sayılır).</span></div>${klasikTablo()}`;
       else if (K.sekme === "sonuc") icerik = `<div class="satir"><label><input type="checkbox" id="yalnizUyarili" ${K.yalnizUyarili ? "checked" : ""}> Yalnızca uyarılıları göster</label>
           <span class="efsane"><span style="background:var(--dogru)">doğru</span><span style="background:var(--yanlis)">yanlış</span><span style="background:var(--bos)">boş</span><span style="background:var(--iptal)">iptal</span>${kl ? '<span style="background:var(--kismi)">kısmi</span>' : ""}<span style="background:var(--uyari)">uyarılı</span></span>
           <span class="soluk">${kl ? "Puanı değiştirmek için Puan girişi sekmesini kullanın." : "Numara, ad, tek bir cevap ya da kitapçığı düzeltmek için hücreye tıklayın. Özgün okuma silinmez."} Sütun başlığına tıklayarak sıralayın.</span></div>${sonucTablosu(s)}`;
@@ -166,7 +180,7 @@
     const ara = $("#kagitAra", k);
     if (!ara) return;
     const L = D.liste ? D.liste.ogrenciler : [];
-    const kutular = $$(".kagitPuan", k), toplam = $("#kagitToplam", k), kaydet = $("#kagitKaydet", k);
+    const kutular = $$(".kagitPuan", k), toplam = $("#kagitToplam", k), kaydet = $("#kagitKaydet", k), girmediB = $("#kagitGirmedi", k);
     let secili = null;
     const sadeAd = (x) => String(x || "").toLocaleLowerCase("tr").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i");
     const bul = (m) => {
@@ -178,12 +192,13 @@
     const sec = (o) => {
       secili = o;
       const d = D.proje.klasik_puanlar[o.no] || [];
-      $("#kagitKim", k).textContent = `${o.no} ${o.ad}${d.some((x) => x !== null && x !== "") ? " (daha önce girilmiş; üzerine yazılır)" : ""}`;
+      $("#kagitKim", k).textContent = `${o.no} ${o.ad}${girmediMi(o.no) ? " (sınava girmedi işaretli; puan kaydederseniz işaret kalkar)" : d.some((x) => x !== null && x !== "") ? " (daha önce girilmiş; üzerine yazılır)" : ""}`;
       $("#kagitOneri", k).innerHTML = "";
       kutular.forEach((b) => { b.disabled = false; b.value = d[Number(b.dataset.k)] ?? ""; });
       toplam.disabled = false;
       toplam.value = (D.proje.klasik_toplamlar || {})[o.no] ?? "";
       kaydet.disabled = false;
+      girmediB.disabled = false;
       kutular[0].focus();
       kutular[0].select();
     };
@@ -192,7 +207,7 @@
       ara.value = "";
       $("#kagitKim", k).textContent = "";
       kutular.forEach((b) => { b.value = ""; b.disabled = true; });
-      toplam.value = ""; toplam.disabled = true; kaydet.disabled = true;
+      toplam.value = ""; toplam.disabled = true; kaydet.disabled = true; girmediB.disabled = true;
       ara.focus();
     };
     const oneriGoster = () => {
@@ -206,6 +221,7 @@
     const kaydetVeSonraki = () => {
       if (!secili) return;
       kutular.forEach((b) => klasikYaz(secili.no, Number(b.dataset.k), b.value));
+      if (kutular.some((b) => b.value.trim())) girmediIsaretle(secili.no, false);
       const t = (D.proje.klasik_toplamlar = D.proje.klasik_toplamlar || {});
       if (toplam.value.trim()) t[secili.no] = toplam.value.trim(); else delete t[secili.no];
       const tr = $(`#klasikTablo tr[data-no="${CSS.escape(secili.no)}"]`, k);
@@ -214,6 +230,8 @@
         $$("input.hucre:not(.kagit)", tr).forEach((i) => (i.value = d[Number(i.dataset.k)] ?? ""));
         const kg = $("input.kagit", tr);
         if (kg) kg.value = t[secili.no] ?? "";
+        const gk = $("input.girmediKutu", tr);
+        if (gk) gk.checked = girmediMi(secili.no);
         satirGuncelle(tr);
       }
       klasikOzetGuncelle();
@@ -221,8 +239,17 @@
       const o = s && s.ogrenciler.find((x) => x.no === secili.no);
       const uy = o ? o.uyarilar.filter((u) => /toplam|büyük|eksi|sayı/.test(u.mesaj)).map((u) => u.mesaj) : [];
       bildir(uy.length ? `${secili.ad}: kaydedildi, ama dikkat: ${uy.join("; ")}` : `${secili.ad}: kaydedildi (${o ? OS.sayiYaz(o.puan, 2) : "-"} puan).`, uy.length ? 7000 : 2500);
-      const girilen = L.filter((x) => (D.proje.klasik_puanlar[x.no] || []).some((y) => y !== null && y !== "")).length;
-      $("#kagitKalan", k).textContent = `Girilen kâğıt: ${girilen} / ${L.length}`;
+      $("#kagitKalan", k).textContent = ilerlemeMetni();
+      temizle();
+    };
+    girmediB.onclick = () => {
+      if (!secili) return;
+      girmediIsaretle(secili.no, true);
+      const tr = $(`#klasikTablo tr[data-no="${CSS.escape(secili.no)}"]`, k);
+      if (tr) { const gk = $("input.girmediKutu", tr); if (gk) gk.checked = true; satirGuncelle(tr); }
+      klasikOzetGuncelle();
+      bildir(`${secili.ad}: sınava girmedi olarak işaretlendi.`, 2500);
+      $("#kagitKalan", k).textContent = ilerlemeMetni();
       temizle();
     };
     kutular.forEach((b, j) => (b.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); (kutular[j + 1] || toplam).focus(); (kutular[j + 1] || toplam).select(); } }));
@@ -267,14 +294,19 @@
       const no = tr.dataset.no;
       const d = D.proje.klasik_puanlar[no] || [];
       $$("input.hucre", tr).forEach((i) => (i.parentElement.className = hucreSinifi(d[Number(i.dataset.k)], tam[Number(i.dataset.k)])));
-      $(".toplam", tr).innerHTML = klasikToplam(d);
+      $(".toplam", tr).innerHTML = girmediMi(no) ? '<span class="soluk">sınava girmedi</span>' : klasikToplam(d);
       const kg = $("input.kagit", tr);
       if (kg) kg.parentElement.className = toplamSinifi(d, (D.proje.klasik_toplamlar || {})[no]);
+      tr.classList.toggle("girmedi", girmediMi(no));
     };
     const yaz = (i) => { const tr = i.closest("tr"); klasikYaz(tr.dataset.no, Number(i.dataset.k), i.value); satirGuncelle(tr); klasikOzetGuncelle(); };
     $$("input.kagit", tablo).forEach((i) => {
       i.onchange = () => { const tr = i.closest("tr"); const t = (D.proje.klasik_toplamlar = D.proje.klasik_toplamlar || {}); const x = i.value.trim(); if (x) t[tr.dataset.no] = x; else delete t[tr.dataset.no]; satirGuncelle(tr); klasikOzetGuncelle(); };
     });
+    $$("input.girmediKutu", tablo).forEach((c) => {
+      c.onchange = () => { const tr = c.closest("tr"); girmediIsaretle(tr.dataset.no, c.checked); satirGuncelle(tr); klasikOzetGuncelle(); if ($("#kagitKalan", k)) $("#kagitKalan", k).textContent = ilerlemeMetni(); };
+    });
+    $$("#klasikTablo tr[data-no]", k).forEach((tr) => { if (girmediMi(tr.dataset.no)) $(".toplam", tr).innerHTML = '<span class="soluk">sınava girmedi</span>'; });
     kagitOlaylari(k, satirGuncelle);
     $$("input.hucre:not(.kagit)", tablo).forEach((i) => {
       i.onchange = () => yaz(i);
@@ -307,17 +339,21 @@
       if (!f) return;
       try {
         const sayfalar = OS.sayfalariOku(window.XLSX, await baytOku(f), f.name);
-        const [p, notlar] = OS.tablodanKlasikPuanlar(sayfalar[OS.sayfaSec(sayfalar)], D.proje.anahtar.sorular.length);
+        const tablo = sayfalar[OS.sayfaSec(sayfalar)];
+        const [p, notlar] = OS.tablodanKlasikPuanlar(tablo, D.proje.anahtar.sorular.length);
+        const girmeyen = OS.tablodanGirmedi(tablo);
         const listede = new Set(D.liste.ogrenciler.map((o) => o.no));
         const yabanci = Object.keys(p).filter((x) => !listede.has(x));
         const g = (D.proje.klasik_giris_sirasi = D.proje.klasik_giris_sirasi || []);
         for (const [no, d] of Object.entries(p)) if (listede.has(no) && d.some((x) => x !== null)) { D.proje.klasik_puanlar[no] = d; if (!g.includes(no)) g.push(no); }
+        const gIsaret = girmeyen.filter((x) => listede.has(x));
+        gIsaret.forEach((x) => girmediIsaretle(x, true));
         UI.degerlendir();
         UI.ciz();
-        bilgi("Excel'den puan", `${Object.keys(p).filter((x) => listede.has(x)).length} öğrencinin puanı alındı.${yabanci.length ? `\nListede olmayan numaralar alınmadı: ${yabanci.slice(0, 10).join(", ")}` : ""}${notlar.length ? "\n" + notlar.join("\n") : ""}`);
+        bilgi("Excel'den puan", `${Object.keys(p).filter((x) => listede.has(x) && !gIsaret.includes(x)).length} öğrencinin puanı alındı.${gIsaret.length ? ` ${gIsaret.length} öğrenci sınava girmedi olarak işaretlendi.` : ""}${yabanci.length ? `\nListede olmayan numaralar alınmadı: ${yabanci.slice(0, 10).join(", ")}` : ""}${notlar.length ? "\n" + notlar.join("\n") : ""}`);
       } catch (h) { bilgi("Okunamadı", h.message || String(h)); }
     };
-    $("#sablonIndir", k).onclick = async () => indir(await UI.excel.klasikSablon(D.liste.ogrenciler, D.proje.anahtar.sorular.length, D.proje.klasik_puanlar), OS.ciktiAdi(D.proje.sinav, "puan_girisi"));
+    $("#sablonIndir", k).onclick = async () => indir(await UI.excel.klasikSablon(D.liste.ogrenciler, D.proje.anahtar.sorular.length, D.proje.klasik_puanlar, D.proje.klasik_girmedi || [], (() => { try { return OS.soruPuanlari(D.proje.anahtar, D.proje.ayarlar); } catch (_) { return []; } })()), OS.ciktiAdi(D.proje.sinav, "puan_tablosu"));
   }
 
   // ------------------------------------------------------------------ grafikler (SVG)
@@ -396,6 +432,16 @@
     return `<p class="soluk">İki farklı sorunun yanlış şıklarını birlikte seçen öğrenciler. Aynı yanlış düşünce iki soruda birden yanıltıyor olabilir; o iki sorunun ortak konusunu sınıfla yeniden ele almak yararlı olur. Yalnızca şansla açıklanamayacak (Fisher kesin testi, p ≤ 0,01) çiftler listelenir.</p>
       <ul class="yorum">${k.map((x) => `<li><b>${x.soru1}. sorunun ${x.sik1} şıkkını</b> seçen ${x.secen1} öğrencinin <b>${pct(x.kosullu)}</b>'i <b>${x.soru2}. sorunun ${x.sik2} şıkkını</b> da seçmiş (sınıfın tamamında bu oran ${pct(x.taban)}).</li>`).join("")}</ul>` +
       basitTablo(["Soru", "Yanlış şık", "Birlikte seçilen soru", "Yanlış şık", "Birlikte seçen", "Phi", "p değeri"], k.map((x) => [x.soru1, x.sik1, x.soru2, x.sik2, x.birlikte, sayi(x.phi), v(x.p, 4)]));
+  }
+  // 5. adım: sık bakılan üç sekme önde; öteki analizler "Diğer analizler" menüsünde (seçilen, önde sekme olarak görünür)
+  const ANA_SEKMELER = ["madde", "cikti", "donem"];
+  function sekmeCubugu(sek) {
+    const ad = new Map(sek);
+    const dugme = (id) => `<button data-ist="${id}" class="${I.sekme === id ? "secili" : ""}">${ad.get(id)}</button>`;
+    const diger = sek.filter(([id]) => !ANA_SEKMELER.includes(id));
+    const secili = diger.find(([id]) => id === I.sekme);
+    return ANA_SEKMELER.filter((id) => ad.has(id)).map(dugme).join("") + (secili ? dugme(secili[0]) : "")
+      + `<span class="bosluk"></span>` + UI.acilirMenu("Diğer analizler", diger.map(([id, t]) => `<button data-ist="${id}">${t}</button>`));
   }
   function belirleyenHtml(s) {
     const nb = OS.notuBelirleyenSorular(s);
@@ -547,7 +593,7 @@
         <div class="ist-ust"><div class="kartlar">${kart(sayi(g.ortalama, 1), "Ortalama")}${kart(sayi(g.medyan, 1), "Ortanca")}${kart(sayi(g.standart_sapma, 1), "Standart sapma")}${kart(pct(g.basari_orani), `${esik} ve üstü alan`)}
           ${kart(sayi(r), "Güvenirlik (alfa)")}${kart(sayi(g.olcme_hatasi, 1), "Ölçme hatası (±puan)")}${kart(sayi(g.ortalama_guclik), "Ortalama güçlük")}${kart(sayi(g.ortalama_ayirt_edicilik), "Ortalama ayırt edicilik")}</div>
           <div class="kutu" style="margin:0"><b>Puan dağılımı</b> <span class="soluk">(kırmızı: eşiğin altı)</span>${histogramSvg(s.ogrenciler.map((o) => o.puan.sayi()), ust, esik)}</div></div>
-        <div class="sekmeler" style="margin-top:14px">${sek.map(([id, t]) => `<button data-ist="${id}" class="${I.sekme === id ? "secili" : ""}">${t}</button>`).join("")}</div>
+        <div class="sekmeler" style="margin-top:14px">${sekmeCubugu(sek)}</div>
         <div>${icerik}</div>
         <p class="soluk">Tablolar 6. adımdaki istatistik Excel dosyasına, grafikler yazdırılabilir rapora girer.</p>`;
       $$("[data-ist]", k).forEach((b) => (b.onclick = () => { I.sekme = b.dataset.ist; UI.ciz(); }));
@@ -588,9 +634,9 @@
       if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara aktarım dosyalarına yazılmaz.`);
       k.innerHTML = `<h2>6. Dışa aktar</h2>
         <div class="kutu"><h3>Dosyalar</h3>
-          <div class="satir"><button class="ana" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri (her öğrenciye bir sayfa)</button></div>
-          <div class="satir"><button data-dosya="sonuc">Sonuç</button><button data-dosya="istatistik">İstatistik</button><button data-dosya="cikti">Öğrenme çıktısı</button>
-            <button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button><button data-dosya="not">Not girişi</button></div>
+          <div class="satir"><button class="ana buyuk" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button>
+            ${UI.acilirMenu("Tek tek indir", ['<button data-dosya="sonuc">Sonuç</button>', '<button data-dosya="istatistik">İstatistik</button>',
+              '<button data-dosya="cikti">Öğrenme çıktısı</button>', '<button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button>', '<button data-dosya="not">Not girişi</button>'])}</div>
           <p class="soluk">Sonuç: soru bazlı puanlar, cevaplar, uyarılar, düzeltme kaydı. İstatistik: özet ve yorum, madde analizi, çeldiriciler, beş grup, boş bırakma, kişi uyumu, benzer cevaplar, ek analizler, standart puanlar. Öğrenme çıktısı: soru-çıktı eşlemesi, sisteme aktarım tablosu, sınav dağılımı, sınıf ve öğrenci başarısı.</p>
           ${notlar.map((x) => `<p class="kirmizi">${e(x)}</p>`).join("")}</div>
         <div class="kutu"><h3>Akademik Bilgi Sistemi'ne aktarım</h3>

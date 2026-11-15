@@ -201,7 +201,7 @@
       ayarlar: yeniAyarlar(), okuyucu: yeniOkuyucu(), dat_yolu: "", liste_yolu: "",
       liste_esleme: { sayfa: null, baslik_satiri: null, no_sutun: null, ad_sutun: null, soyad_sutun: null },
       duzeltmeler: [], profil_akreditasyon: "akreditasyon_soru_bazli_varsayilan", profil_not_giris: "not_giris_varsayilan",
-      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, klasik_giris_sirasi: [], final_puanlar: {}, harf_ayarlari: {},
+      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, klasik_girmedi: [], klasik_giris_sirasi: [], final_puanlar: {}, harf_ayarlari: {},
     };
   }
   /** Masaüstü programın kaydettiği .osd dosyasını eksik alanları tamamlayarak yükler. */
@@ -217,6 +217,7 @@
     p.final_puanlar = d.final_puanlar || {};
     p.klasik_toplamlar = d.klasik_toplamlar || {};
     p.klasik_giris_sirasi = (d.klasik_giris_sirasi || []).map(String);
+    p.klasik_girmedi = (d.klasik_girmedi || []).map(String);
     p.harf_ayarlari = d.harf_ayarlari || {};
     return p;
   }
@@ -733,13 +734,15 @@
     if (x.q === 1n) return String(x.p);
     return sayiYaz(x, 2).replace(/0+$/, "").replace(/,$/, "");
   }
-  function klasikDegerlendir(liste, anahtar, ayar, puanlar, toplamlar = {}) {
+  function klasikDegerlendir(liste, anahtar, ayar, puanlar, toplamlar = {}, girmedi = []) {
     toplamlar = toplamlar || {};
+    const girmediK = new Set(girmedi || []);
     const enFazla = soruPuanlari(anahtar, ayar);
     const n = anahtar.sorular.length;
     const ogrenciler = [], girmeyenler = [];
     liste.ogrenciler.forEach((og, idx) => {
       const sira = idx + 1;
+      if (girmediK.has(og.no)) { girmeyenler.push(og); return; }  // "sınava girmedi" işareti puanlardan önce gelir
       const satir = [...(puanlar[og.no] || [])];
       while (satir.length < n) satir.push(null);
       const degerler = [], uyarilar = [];
@@ -782,6 +785,21 @@
         kaynak_soru: Array.from({ length: n }, (_, i) => i + 1) });
     });
     return { ogrenciler, girmeyenler, listede_olmayanlar: [], soru_puanlari: enFazla, anahtar, ayarlar: ayar, liste_var: true, liste, klasik: true };
+  }
+  /** Excel'den puan alırken "Girmedi" sütunu doluysa o öğrenci sınava girmedi sayılır (Python: tablodan_girmedi). */
+  function tablodanGirmedi(tablo) {
+    const e = eslemeTahminEt(tablo);
+    if (e.no_sutun === null || !e.baslik_satiri) return [];
+    const baslik = tablo[e.baslik_satiri - 1].map(sade);
+    const j = baslik.findIndex((h) => ["girmedi", "sinavagirmedi", "girmeyen"].includes(h));
+    if (j < 0) return [];
+    const sonuc = [];
+    for (const satir of tablo.slice(e.baslik_satiri)) {
+      const no = numaraNormalle(e.no_sutun - 1 < satir.length ? satir[e.no_sutun - 1] : null);
+      const v = j < satir.length ? satir[j] : null;
+      if (no && /^\d+$/.test(no) && v !== null && v !== undefined && String(v).trim()) sonuc.push(no);
+    }
+    return sonuc;
   }
   function tablodanKlasikPuanlar(tablo, soruSayisi) {
     const e = eslemeTahminEt(tablo);
@@ -877,6 +895,6 @@
     baytlariCoz, metinDosyasiOku, satirlaraBol, alanlar, satiriCoz, satirlariOku, soruSayisiOner, sablonOner,
     sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe, pdfHucrelerindenTablo,
     duzeltilmisDegerler, duzeltilmisKitapcik, duzeltmeOlustur, numaraOnerileri, sinaviDegerlendir,
-    puanCoz, puanListesiCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, dersPaketiCoz, dogalKarsilastir,
+    puanCoz, puanListesiCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, tablodanGirmedi, dersPaketiCoz, dogalKarsilastir,
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

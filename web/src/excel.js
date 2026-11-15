@@ -426,11 +426,23 @@
     genislik(ws, Object.fromEntries(bas.map((b, j) => [j + 1, /^ad/i.test(b) ? 30 : /no/i.test(b) ? 14 : Math.max(8, Math.min(40, b.length + 2))])));
     return kitabe(wb);
   };
-  X.klasikSablon = async function (ogrenciler, n, puanlar) {
+  /** Puan tablosu: girilen puanlar (sayı olarak), toplam ve "Girmedi" işareti. "Excel'den puan al" ile geri okunur. */
+  X.klasikSablon = async function (ogrenciler, n, puanlar, girmedi = [], tam = []) {
     const wb = yeni();
     const ws = wb.addWorksheet("Puanlar");
-    baslik(ws, 1, ["Öğrenci No", "Ad Soyad", ...Array.from({ length: n }, (_, k) => `S${k + 1}`)]);
-    ogrenciler.forEach((o, i) => { no(ws, i + 2, 1, o.no); metin(ws, i + 2, 2, o.ad); (puanlar[o.no] || []).forEach((x, k) => metin(ws, i + 2, 3 + k, x)); });
+    baslik(ws, 1, ["Öğrenci No", "Ad Soyad", ...Array.from({ length: n }, (_, k) => (tam[k] ? `S${k + 1} (${OS.klasikYaz(tam[k])})` : `S${k + 1}`)), "Toplam", "Girmedi"]);
+    const gm = new Set(girmedi);
+    ogrenciler.forEach((o, i) => {
+      no(ws, i + 2, 1, o.no); metin(ws, i + 2, 2, o.ad);
+      let t = OS.Kesir.SIFIR, var_ = false;
+      (puanlar[o.no] || []).slice(0, n).forEach((x, k) => {
+        let p = null;
+        try { p = OS.puanCoz(x); } catch (_) { p = null; }
+        if (p !== null) { sayi(ws, i + 2, 3 + k, p.sayi(), "General"); t = t.ekle(p); var_ = true; } else if (x !== null && x !== undefined) metin(ws, i + 2, 3 + k, x);
+      });
+      if (gm.has(o.no)) metin(ws, i + 2, n + 4, "girmedi");
+      else if (var_) sayi(ws, i + 2, n + 3, t.sayi(), "General");
+    });
     ws.views = [{ state: "frozen", xSplit: 2, ySplit: 1 }];
     genislik(ws, { 1: 14, 2: 28 }, 7);
     return kitabe(wb);

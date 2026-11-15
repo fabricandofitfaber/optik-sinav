@@ -64,14 +64,20 @@ def puan_listesi_coz(metin: str) -> list[str]:
 
 
 def klasik_degerlendir(liste: OgrenciListesi, anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari,
-                       puanlar: dict[str, list[str | None]], toplamlar: dict[str, str | None] | None = None) -> SinavSonucu:
-    """`toplamlar`: kâğıdın üstüne yazılan toplam (isteğe bağlı); soru puanlarının toplamıyla tutmazsa uyarı verilir."""
+                       puanlar: dict[str, list[str | None]], toplamlar: dict[str, str | None] | None = None,
+                       girmedi: list[str] | set[str] | None = None) -> SinavSonucu:
+    """`toplamlar`: kâğıdın üstüne yazılan toplam (isteğe bağlı); soru puanlarının toplamıyla tutmazsa uyarı verilir.
+    `girmedi`: "sınava girmedi" diye işaretlenen öğrenci numaraları; puanları girilmiş olsa bile hesaba katılmaz."""
     toplamlar = toplamlar or {}
+    girmedi = set(girmedi or ())
     en_fazla = soru_puanlari(anahtar, ayarlar)
     n = anahtar.soru_sayisi
     ogrenciler: list[OgrenciSonucu] = []
     girmeyenler = []
     for sira, ogr in enumerate(liste.ogrenciler, start=1):
+        if ogr.no in girmedi:
+            girmeyenler.append(ogr)
+            continue
         satir = list(puanlar.get(ogr.no) or [])
         satir += [None] * (n - len(satir))
         degerler: list[Fraction | None] = []
@@ -143,6 +149,26 @@ def _yaz(x: Fraction | None) -> str:
     from .puanlama import sayi_yaz
 
     return sayi_yaz(x, 2).rstrip("0").rstrip(",")
+
+
+def tablodan_girmedi(tablo: list[list[object]]) -> list[str]:
+    """Excel'den puan alırken "Girmedi" sütunu doluysa (herhangi bir işaret) o öğrenci sınava girmedi sayılır."""
+    from ..io.liste_okuyucu import _sade, esleme_tahmin_et, numara_normalle
+
+    e = esleme_tahmin_et(tablo)
+    if e.no_sutun is None or not e.baslik_satiri:
+        return []
+    baslik = [_sade(h) for h in tablo[e.baslik_satiri - 1]]
+    j = next((i for i, h in enumerate(baslik) if h in ("girmedi", "sinavagirmedi", "girmeyen")), None)
+    if j is None:
+        return []
+    sonuc = []
+    for satir in tablo[e.baslik_satiri:]:
+        no = numara_normalle(satir[e.no_sutun - 1] if e.no_sutun - 1 < len(satir) else None)
+        v = satir[j] if j < len(satir) else None
+        if no and no.isdigit() and v not in (None, "") and str(v).strip():
+            sonuc.append(no)
+    return sonuc
 
 
 def tablodan_klasik_puanlar(tablo: list[list[object]], soru_sayisi: int) -> tuple[dict[str, list[str | None]], list[str]]:

@@ -148,7 +148,7 @@ def test_klasik_sinav_arayuzu(pencere, fix, tmp_path):
     pencere.sonraki.click()
     k = pencere.adimlar[3]
     m = k.klasik_model
-    assert m.rowCount() == len(d.liste.ogrenciler) and m.columnCount() == 3 + 4 + 2
+    assert m.rowCount() == len(d.liste.ogrenciler) and m.columnCount() == 3 + 4 + 3  # + Toplam, Kâğıttaki toplam, Girmedi
     assert not _hazir(pencere)  # puan yok
     m.setData(m.index(0, 3), "10")
     m.setData(m.index(0, 4), "12,5")
@@ -212,7 +212,7 @@ def test_kagit_sirasiyla_giris(pencere, fix):
     panel.kaydet()
     o = d.sonuc.no_ile()[hedef.no]
     assert float(o.puan) == 60.5 and any("tutmuyor" in u.mesaj for u in o.uyarilar)
-    assert panel.secili is None and "Girilen kâğıt: 1" in panel.kalan.text()
+    assert panel.secili is None and "Girilen: 1 ·" in panel.kalan.text()
     m = k.klasik_model
     assert m.data(m.index(2, 3 + 3 + 1)) == "61"
 
@@ -355,6 +355,59 @@ def test_klasik_yeni_istatistik_sekmeleri(pencere, fix):
     pencere.adim_listesi.setCurrentRow(4)
     ist = pencere.adimlar[4]
     assert "en büyük katkı 1. sorudan" in ist.belirleyen.toPlainText()
-    assert ist.sekmeler.isTabVisible(ist.sekmeler.indexOf(ist.puanlama))
+    assert ist.uygun[id(ist.puanlama)] and not ist.uygun[id(ist.kavram)]  # klasikte menüde puanlama var, kavram yok
+    ist._diger_menuyu_doldur()
+    assert "Puanlama (klasik)" in [e.text() for e in ist.diger_menu.actions()]
+    ist.analiz_ac(ist.puanlama)
+    assert ist.sekmeler.currentWidget() is ist.puanlama and ist.sekmeler.isTabVisible(ist.sekmeler.indexOf(ist.puanlama))
+    assert [ist.sekmeler.tabText(i) for i in range(3)] == ["Madde analizi", "Öğrenme çıktıları", "Dönem sonu notu"]
     metin = ist.puanlama.toPlainText()
     assert "Okuma ilerledikçe puanlar düşüyor" in metin and "Kısmi puan profili" in metin
+
+
+def test_sinava_girmedi_isareti(pencere, fix, tmp_path, monkeypatch):
+    """Puan tablosunda "Girmedi" kutusu; işaretli öğrenci puanı olsa bile girmeyen sayılır, Excel'e yazılır ve geri okunur."""
+    import openpyxl
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QFileDialog, QMessageBox
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    d.klasik_puanlarini_yaz(["50", "50"])
+    pencere.adim_listesi.setCurrentRow(3)
+    k = pencere.adimlar[3]
+    m = k.klasik_model
+    no0, no1 = d.liste.ogrenciler[0].no, d.liste.ogrenciler[1].no
+    m.setData(m.index(0, 3), "40")
+    m.setData(m.index(1, 3), "30")
+    assert m.data(m.index(2, 3 + 2)) == "—"  # henüz girilmedi
+    m.setData(m.index(1, m.girmedi_sutunu), Qt.CheckState.Checked.value, Qt.ItemDataRole.CheckStateRole)
+    assert d.proje.klasik_girmedi == [no1]
+    assert m.data(m.index(1, 3 + 2)) == "sınava girmedi"
+    for j in range(m.columnCount()):  # gri satırın bütün hücreleri hatasız çizilebilmeli
+        m.data(m.index(1, j), Qt.ItemDataRole.BackgroundRole)
+        m.data(m.index(1, j), Qt.ItemDataRole.ForegroundRole)
+    assert m.data(m.index(1, 0), Qt.ItemDataRole.BackgroundRole) is not None
+    assert no1 in [g.no for g in d.sonuc.girmeyenler] and [o.no for o in d.sonuc.ogrenciler] == [no0]
+    assert d.proje.klasik_puanlar[no1][0] == "30"  # puan silinmedi
+    # kâğıt paneliyle işaretleme
+    panel = k.kagit
+    panel.sec(d.liste.ogrenciler[2])
+    panel.girmedi()
+    assert d.liste.ogrenciler[2].no in d.proje.klasik_girmedi and "Girmedi: 2" in panel.kalan.text()
+    # Excel'e kaydet ve geri oku
+    yol = tmp_path / "puanlar.xlsx"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **kw: (str(yol), "")))
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *a, **kw: (str(yol), "")))
+    monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **kw: None))
+    k._sablon_yaz()
+    ws = openpyxl.load_workbook(yol).active
+    basliklar = [c.value for c in ws[1]]
+    assert basliklar[-2:] == ["Toplam", "Girmedi"] and basliklar[2] == "S1 (50)"
+    assert ws.cell(row=2, column=3).value == 40 and ws.cell(row=2, column=5).value == 40
+    assert ws.cell(row=3, column=6).value == "girmedi"
+    d.proje.klasik_girmedi.clear()
+    k._excelden_al()
+    assert sorted(d.proje.klasik_girmedi) == sorted([no1, d.liste.ogrenciler[2].no])

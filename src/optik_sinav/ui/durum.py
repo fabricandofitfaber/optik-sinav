@@ -93,6 +93,14 @@ class Durum(QObject):
         self.sonuc = None
         self.degisti.emit()
 
+    def girmedi_isaretle(self, no: str, girmedi: bool) -> None:
+        """Klasik sınavda öğrenciyi "sınava girmedi" diye işaretler ya da işareti kaldırır (girilmiş puanlar silinmez)."""
+        g = self.proje.klasik_girmedi
+        if girmedi and no not in g:
+            g.append(no)
+        elif not girmedi and no in g:
+            g.remove(no)
+
     def puanli_ogrenci_sayisi(self, k: int) -> int:
         """Klasik sınavda k. soruya (0'dan) puanı girilmiş öğrenci sayısı."""
         return sum(1 for d in self.proje.klasik_puanlar.values() if k < len(d) and d[k] not in (None, ""))
@@ -184,7 +192,8 @@ class Durum(QObject):
         if self.hesap_eksikleri():
             self.sonuc = None
         elif self.proje.klasik:
-            self.sonuc = (klasik_degerlendir(self.liste, self.proje.anahtar, self.proje.ayarlar, self.proje.klasik_puanlar, self.proje.klasik_toplamlar)
+            self.sonuc = (klasik_degerlendir(self.liste, self.proje.anahtar, self.proje.ayarlar, self.proje.klasik_puanlar, self.proje.klasik_toplamlar,
+                                              self.proje.klasik_girmedi)
                           if self.liste is not None else None)
         elif self.okuma is None:
             self.sonuc = None

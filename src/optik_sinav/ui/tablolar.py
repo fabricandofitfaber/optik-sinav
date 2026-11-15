@@ -1,6 +1,7 @@
 """Kontrol ve düzeltme adımındaki tablo modelleri."""
 from __future__ import annotations
 
+from PySide6.QtGui import QColor
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
 
 from .. import metinler as M
@@ -130,7 +131,8 @@ class UyariSuzgeci(QSortFilterProxyModel):
 
 
 class KlasikGirisModeli(QAbstractTableModel):
-    """Klasik sınav puan girişi: satırlar öğrenci listesi, sütunlar soru puanları (düzenlenebilir) ve toplam."""
+    """Klasik sınav puan girişi: satırlar öğrenci listesi, sütunlar soru puanları (düzenlenebilir), toplam,
+    kâğıttaki toplam ve "Girmedi" işaret kutusu."""
 
     def __init__(self, durum, parent=None):
         super().__init__(parent)
@@ -152,7 +154,14 @@ class KlasikGirisModeli(QAbstractTableModel):
         return 0 if parent.isValid() else len(self.ogrenciler)
 
     def columnCount(self, parent=QModelIndex()):
-        return 0 if parent.isValid() else 3 + self.n + 2
+        return 0 if parent.isValid() else 3 + self.n + 3
+
+    @property
+    def girmedi_sutunu(self) -> int:
+        return 3 + self.n + 2
+
+    def _girmedi(self, satir) -> bool:
+        return self.ogrenciler[satir].no in self.durum.proje.klasik_girmedi
 
     def _kagit(self, satir):
         return (self.durum.proje.klasik_toplamlar or {}).get(self.ogrenciler[satir].no)
@@ -184,7 +193,7 @@ class KlasikGirisModeli(QAbstractTableModel):
         if bolum < 3 + self.n:
             tam = self._tam()[bolum - 3]
             return f"S{bolum - 2}" + (f" ({sayi_yaz(tam, 2).rstrip('0').rstrip(',')})" if tam is not None else "")
-        return "Toplam" if bolum == 3 + self.n else "Kâğıttaki toplam"
+        return {3 + self.n: "Toplam", 3 + self.n + 1: "Kâğıttaki toplam"}.get(bolum, "Girmedi")
 
     def _deger(self, satir, k):
         v = self.durum.proje.klasik_puanlar.get(self.ogrenciler[satir].no) or []
@@ -192,6 +201,8 @@ class KlasikGirisModeli(QAbstractTableModel):
 
     def flags(self, ix):
         f = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        if ix.column() == self.girmedi_sutunu:
+            return f | Qt.ItemFlag.ItemIsUserCheckable
         if 3 <= ix.column() < 3 + self.n or ix.column() == 3 + self.n + 1:
             f |= Qt.ItemFlag.ItemIsEditable
         return f
@@ -203,7 +214,20 @@ class KlasikGirisModeli(QAbstractTableModel):
 
         o = self.ogrenciler[ix.row()]
         j = ix.column()
+        girmedi = self._girmedi(ix.row())
+        if j == self.girmedi_sutunu:
+            if rol == Qt.ItemDataRole.CheckStateRole:
+                return Qt.CheckState.Checked if girmedi else Qt.CheckState.Unchecked
+            if rol == Qt.ItemDataRole.ToolTipRole:
+                return "İşaretlerseniz öğrenci sınava girmemiş sayılır; girilmiş puanları silinmez, hesaba katılmaz."
+            return None
+        if girmedi and rol == Qt.ItemDataRole.ForegroundRole and j >= 3:
+            return QColor("gray")
+        if girmedi and rol == Qt.ItemDataRole.BackgroundRole:
+            return renk("I")  # gri: sınava girmedi
         if rol in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
+            if j == 3 + self.n and girmedi and rol == Qt.ItemDataRole.DisplayRole:
+                return "sınava girmedi"
             if j == 0:
                 return ix.row() + 1
             if j == 1:
@@ -224,7 +248,7 @@ class KlasikGirisModeli(QAbstractTableModel):
                 if p is not None:
                     toplam += p
                     girildi = True
-            return sayi_yaz(toplam, 2) if girildi else "girmedi"
+            return sayi_yaz(toplam, 2) if girildi else "—"  # henüz girilmedi
         if rol == Qt.ItemDataRole.BackgroundRole and j == 3 + self.n + 1:
             kt = self._kagit(ix.row())
             if not kt:
@@ -252,6 +276,12 @@ class KlasikGirisModeli(QAbstractTableModel):
         return None
 
     def setData(self, ix, deger, rol=Qt.ItemDataRole.EditRole):
+        if ix.column() == self.girmedi_sutunu and rol == Qt.ItemDataRole.CheckStateRole:
+            isaret = deger in (Qt.CheckState.Checked, Qt.CheckState.Checked.value, 2, True)
+            self.durum.girmedi_isaretle(self.ogrenciler[ix.row()].no, isaret)
+            self.durum.degerlendir()
+            self.dataChanged.emit(self.index(ix.row(), 0), self.index(ix.row(), self.columnCount() - 1))
+            return True
         if rol != Qt.ItemDataRole.EditRole:
             return False
         if ix.column() == 3 + self.n + 1:

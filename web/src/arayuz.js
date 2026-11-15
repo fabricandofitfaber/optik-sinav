@@ -87,7 +87,14 @@
     yaz(u8) { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); },
     oku(t) { const s = atob(t); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; },
   };
-  Object.assign(UI, { e, $, $$, bildir, pencere, bilgi, onay, dosyaSec, baytOku, indir, kopyala, yerel, b64 });
+  /** Açılır menü: sık kullanılmayan işlemler için. ogeler: hazır <button> HTML'leri. */
+  const acilirMenu = (etiket, ogeler, id = "") => `<details class="acilir"${id ? ` id="${id}"` : ""}><summary>${etiket} ▾</summary><div class="menu">${ogeler.join("")}</div></details>`;
+  document.addEventListener("click", (ev) => {
+    for (const d of document.querySelectorAll("details.acilir[open]")) {
+      if (!d.contains(ev.target) || (ev.target.closest(".menu button"))) d.removeAttribute("open");
+    }
+  });
+  Object.assign(UI, { e, $, $$, bildir, pencere, bilgi, onay, dosyaSec, baytOku, indir, kopyala, yerel, b64, acilirMenu });
 
   // ------------------------------------------------------------------ durum
   const D = (UI.D = {
@@ -155,7 +162,7 @@
   UI.degerlendir = function () {
     const p = D.proje;
     if (UI.hesapEksikleri().length) D.sonuc = null;
-    else if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar) : null;
+    else if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar, p.klasik_girmedi) : null;
     else D.sonuc = D.okuma ? OS.sinaviDegerlendir(D.okuma.kayitlar, p.anahtar, p.ayarlar, D.liste, p.duzeltmeler) : null;
     return D.sonuc;
   };
@@ -703,8 +710,9 @@
         <p class="soluk">${kl ? "Puanı değiştirmek için kutuya tıklayıp yazın ya da yukarıdaki satıra bütün puanları sırayla yazın. " : "Klavye: tabloya bir kez tıklayın, sonra A-E harflerine basın; her harf o sorunun şıkkını seçip sonraki soruya geçer (Boşluk ya da Sil temizler, oklar soru değiştirir). "}${kodlar.length ? `Dersin öğrenme çıktıları: ${kodlar.join(", ")}. Çıktı sütununa yalnızca numara yazabilirsiniz: "1, 3" yazmak Ö01 ve Ö03'e yarı yarıya demektir.` : "Ders bilgi paketini 1. adımda yüklerseniz çıktılar açıklamalarıyla seçilebilir."}</p>
         ${ana ? `<div class="kutu ozet-panel"><div id="anahtarOzet">${anahtarOzetHtml()}</div>
           <div class="satir" style="margin-top:8px"><button class="ana" id="sistemeKopyala" title="Sınav Akreditasyon İşlemleri > Toplu Aktarım Yap > Aktarım Kutusu'na yapıştırılır">Soru tanımını sistem için kopyala</button>
-          <button id="esitDagit">Puanları eşit dağıt</button><button id="siraylaDagit">Çıktıları sorulara sırayla dağıt</button>
-          <button id="eslemeKaydet">Ders eşlemesini kaydet</button><button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button></div></div>` : ""}`;
+          <button id="esitDagit">Puanları eşit dağıt</button>
+          ${UI.acilirMenu("Diğer işlemler", ['<button id="siraylaDagit">Çıktıları sorulara sırayla dağıt</button>',
+            '<button id="eslemeKaydet">Ders eşlemesini kaydet</button>', '<button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button>'])}</div></div>` : ""}`;
       UI.anahtarOlaylari(k, st);
     },
   };

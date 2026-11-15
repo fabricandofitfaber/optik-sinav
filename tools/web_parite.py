@@ -169,7 +169,8 @@ def main():
     nolar = list(p.klasik_puanlar)
     p.klasik_toplamlar = {nolar[0]: "999", nolar[1]: "abc"}
     p.klasik_giris_sirasi = [o.no for o in sorted(lst.ogrenciler, key=lambda o: (int(o.no) * 7919) % 101)]
-    sonuc = klasik_degerlendir(lst, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar)
+    p.klasik_girmedi = [nolar[2]]  # puanı girilmiş ama "girmedi" işaretli öğrenci
+    sonuc = klasik_degerlendir(lst, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar, p.klasik_girmedi)
     senaryolar.append({"ad": "klasik", "dat": None, "liste": str(liste.relative_to(KOK)), "proje": p.to_dict(), "ders_kodlari": None,
                        "beklenen": ciktilar(p, sonuc)})
 

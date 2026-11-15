@@ -120,3 +120,20 @@ ul.yorum { margin: 4px 0 0; padding-left: 20px; } ul.yorum li { margin: 3px 0; }
   .kutu { box-shadow: none; break-inside: avoid; }
   body { background: #fff; color: #000; }
 }
+
+/* klasik puan tablosu: sınava girmedi işaretli satır */
+#klasikTablo tr.girmedi td { background: var(--iptal); color: var(--soluk); }
+#klasikTablo tr.girmedi input.hucre { color: var(--soluk); text-decoration: line-through; }
+
+/* açılır menü (sık kullanılmayan işlemler) */
+details.acilir { position: relative; display: inline-block; }
+details.acilir > summary { list-style: none; cursor: pointer; padding: 6px 12px; border: 1px solid var(--cizgi); border-radius: 6px; background: var(--kart); color: var(--yazi); user-select: none; white-space: nowrap; }
+details.acilir > summary::-webkit-details-marker { display: none; }
+details.acilir[open] > summary { border-color: var(--vurgu); color: var(--vurgu); }
+details.acilir .menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 240px; display: flex; flex-direction: column; padding: 4px;
+  background: var(--kart); border: 1px solid var(--cizgi); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+details.acilir .menu button { text-align: left; border: none; background: none; border-radius: 5px; padding: 8px 12px; margin: 0; font-weight: 400; color: var(--yazi); }
+details.acilir .menu button:hover { background: var(--vurgu-acik); color: var(--vurgu); }
+.sekmeler .bosluk { flex: 1; }
+.sekmeler details.acilir > summary { border: none; background: none; padding: 7px 12px; color: var(--soluk); }
+button.buyuk { padding: 10px 20px; font-size: 15px; }

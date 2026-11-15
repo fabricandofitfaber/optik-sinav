@@ -60,6 +60,10 @@ class KagitPaneli(QGroupBox):
         self.kaydet_dugmesi = QPushButton("Kaydet, sonraki kâğıt")
         self.kaydet_dugmesi.clicked.connect(self.kaydet)
         self.alt_satir.addWidget(self.kaydet_dugmesi)
+        self.girmedi_dugmesi = QPushButton("Sınava girmedi")
+        self.girmedi_dugmesi.setToolTip("Seçili öğrenciyi sınava girmedi diye işaretler ve sonraki kâğıda geçer.")
+        self.girmedi_dugmesi.clicked.connect(self.girmedi)
+        self.alt_satir.addWidget(self.girmedi_dugmesi)
         self.alt_satir.addStretch(1)
         v.addLayout(self.alt_satir)
         self.durum_etiketi = QLabel()
@@ -117,7 +121,9 @@ class KagitPaneli(QGroupBox):
         self.secili = o
         d = self.durum.proje.klasik_puanlar.get(o.no) or []
         once = any(x not in (None, "") for x in d)
-        self.kim.setText(f"{o.no} {o.ad}" + (" (daha önce girilmiş; üzerine yazılır)" if once else ""))
+        isaretli = o.no in self.durum.proje.klasik_girmedi
+        self.kim.setText(f"{o.no} {o.ad}" + (" (sınava girmedi işaretli; puan kaydederseniz işaret kalkar)" if isaretli else
+                                             " (daha önce girilmiş; üzerine yazılır)" if once else ""))
         self.oneriler.setText("")
         for k, e in enumerate(self.kutular):
             e.setEnabled(True)
@@ -125,6 +131,7 @@ class KagitPaneli(QGroupBox):
         self.toplam.setEnabled(True)
         self.toplam.setText(self.durum.proje.klasik_toplamlar.get(o.no) or "")
         self.kaydet_dugmesi.setEnabled(True)
+        self.girmedi_dugmesi.setEnabled(True)
         if self.kutular:
             self.kutular[0].setFocus()
             self.kutular[0].selectAll()
@@ -141,6 +148,8 @@ class KagitPaneli(QGroupBox):
             return
         for k, e in enumerate(self.kutular):
             self.durum.klasik_puan_yaz(o.no, k, e.text())
+        if any(e.text().strip() for e in self.kutular):
+            self.durum.girmedi_isaretle(o.no, False)
         x = self.toplam.text().strip()
         if x:
             self.durum.proje.klasik_toplamlar[o.no] = x
@@ -157,6 +166,16 @@ class KagitPaneli(QGroupBox):
             self.durum_etiketi.setText(f"<b>{o.ad}:</b> kaydedildi ({sayi_yaz(sonuc.puan, 2) if sonuc else '-'} puan).")
         self._temizle()
 
+    def girmedi(self):
+        o = self.secili
+        if o is None:
+            return
+        self.durum.girmedi_isaretle(o.no, True)
+        self.durum.degerlendir()
+        self.kontrol.klasik_model.yenile()
+        self.durum_etiketi.setText(f"<b>{o.ad}:</b> sınava girmedi olarak işaretlendi.")
+        self._temizle()
+
     def _temizle(self):
         self.secili = None
         self.ara.clear()
@@ -168,6 +187,11 @@ class KagitPaneli(QGroupBox):
             self.toplam.clear()
             self.toplam.setEnabled(False)
             self.kaydet_dugmesi.setEnabled(False)
-        girilen = sum(1 for o in self._liste() if any(x not in (None, "") for x in (self.durum.proje.klasik_puanlar.get(o.no) or [])))
-        self.kalan.setText(f"Girilen kâğıt: {girilen} / {len(self._liste())}")
+            self.girmedi_dugmesi.setEnabled(False)
+        p = self.durum.proje
+        girmedi = sum(1 for o in self._liste() if o.no in p.klasik_girmedi)
+        girilen = sum(1 for o in self._liste() if o.no not in p.klasik_girmedi
+                      and any(x not in (None, "") for x in (p.klasik_puanlar.get(o.no) or [])))
+        kalan = len(self._liste()) - girilen - girmedi
+        self.kalan.setText(f"Girilen: {girilen} · Girmedi: {girmedi} · Kalan: {kalan}")
         self.ara.setFocus(Qt.FocusReason.OtherFocusReason)
