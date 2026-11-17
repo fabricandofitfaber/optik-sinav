@@ -586,7 +586,29 @@ def test_bonus_soru_numarayla(pencere, fix):
     a.bonus.setText("10")
     a._bonus_degisti()
     assert d.proje.anahtar.sorular[9].durum == SoruDurumu.BONUS and len(d.proje.anahtar.aktarim_sorulari()) == 9
-    assert a.satirlar[9].durum.currentData() == "bonus" and "bonus" in pencere.kimlik.text().lower()
+    assert a.satirlar[9].durum.deger() == "bonus" and "bonus" in pencere.kimlik.text().lower()
     a.bonus.setText("")
     a._bonus_degisti()
     assert all(s.durum == SoruDurumu.NORMAL for s in d.proje.anahtar.sorular)
+
+
+def test_soru_durumu_dugmesi(pencere, fix):
+    """Soru durumu açılır liste değil, tıkladıkça değişen düğme (macOS'ta görünmeyen açılır liste sorunu)."""
+    from optik_sinav.core.modeller import SoruDurumu
+
+    d = pencere.durum
+    pencere.adimlar[0]._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    b = a.satirlar[3].durum
+    assert b.text() == "Normal"
+    sira = []
+    for _ in range(4):
+        b = a.satirlar[3].durum
+        b.click()
+        sira.append(d.proje.anahtar.sorular[3].durum)
+    assert sira == [SoruDurumu.IPTAL, SoruDurumu.COKLU, SoruDurumu.BONUS, SoruDurumu.NORMAL]
+    a.satirlar[3].durum.click()
+    assert a.satirlar[3].durum.text().startswith("İptal")

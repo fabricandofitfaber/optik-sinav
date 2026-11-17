@@ -178,11 +178,42 @@ class Izgara(QWidget):
             super().keyPressEvent(e)
 
 
+class DurumDugmesi(QPushButton):
+    """Soru durumu: açılır liste yerine tıkladıkça sıradakine geçen düğme (Normal → İptal → Birden fazla doğru → Bonus).
+    macOS'un yeni sürümlerinde açılır kutuların listesi ekrana çizilmediği için (kullanıcı bildirimi, 17 Kasım 2026)."""
+
+    degisti = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._sira = [d.value for d in SoruDurumu]
+        self._deger = SoruDurumu.NORMAL.value
+        self.setToolTip("Tıkladıkça değişir: " + " → ".join(M.SORU_DURUMU_ADI[d] for d in self._sira) + ".")
+        self.clicked.connect(self._sonraki)
+        self._yaz()
+
+    def _yaz(self):
+        self.setText(M.SORU_DURUMU_ADI[self._deger])
+        self.setStyleSheet("" if self._deger == SoruDurumu.NORMAL.value else "font-weight: bold; color: #2F5597")
+
+    def _sonraki(self):
+        self._deger = self._sira[(self._sira.index(self._deger) + 1) % len(self._sira)]
+        self._yaz()
+        self.degisti.emit()
+
+    def deger(self) -> str:
+        return self._deger
+
+    def deger_yaz(self, deger: str):
+        self._deger = deger
+        self._yaz()
+
+
 class SoruSatiri:
     def __init__(self):
         self.no: QLabel | None = None
         self.kabarciklar: dict[str, Kabarcik] = {}
-        self.durum: QComboBox | None = None
+        self.durum: DurumDugmesi | None = None
         self.puan: QDoubleSpinBox | None = None
         self.oc: QLineEdit | None = None
         self.oc_dugme: QToolButton | None = None
@@ -544,10 +575,8 @@ class AnahtarAdimi(Adim):
                 j += 1
             if self.ana_mi:
                 if not self.klasik:
-                    r.durum = QComboBox()
-                    for d in SoruDurumu:
-                        r.durum.addItem(M.SORU_DURUMU_ADI[d.value], d.value)
-                    r.durum.currentIndexChanged.connect(lambda _x, i=i: self._durum_degisti(i))
+                    r.durum = DurumDugmesi()
+                    r.durum.degisti.connect(lambda i=i: self._durum_degisti(i))
                     self.izgara_duzen.addWidget(r.durum, i + 1, j)
                     j += 1
                 r.puan = QDoubleSpinBox(decimals=2, minimum=0, maximum=1000, singleStep=1)
@@ -637,9 +666,7 @@ class AnahtarAdimi(Adim):
                 k.setChecked(harf in dogrular)
                 k.setEnabled(s.durum != SoruDurumu.IPTAL or not self.ana_mi)
             if r.durum is not None:
-                r.durum.blockSignals(True)
-                r.durum.setCurrentIndex(r.durum.findData(s.durum.value))
-                r.durum.blockSignals(False)
+                r.durum.deger_yaz(s.durum.value)
             if r.puan is not None:
                 r.puan.blockSignals(True)
                 r.puan.setValue(float(puanlar[i]) if puanlar else 0.0)
@@ -788,7 +815,7 @@ class AnahtarAdimi(Adim):
             return
         r = self.satirlar[i]
         s = self.anahtar.sorular[i]
-        s.durum = SoruDurumu(r.durum.currentData())
+        s.durum = SoruDurumu(r.durum.deger())
         if s.durum != SoruDurumu.COKLU and len(s.dogru) > 1:
             s.dogru = s.dogru[:1]
         self.durumdan_yukle()
