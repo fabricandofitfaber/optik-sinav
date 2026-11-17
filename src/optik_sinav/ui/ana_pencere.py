@@ -117,10 +117,20 @@ class AnaPencere(QMainWindow):
         self.durum.sonuc_degisti.connect(self._dugmeleri_guncelle)
         self._dugmeleri_guncelle()
         # Otomatik kayıt: iki saniyede bir, yalnızca değişiklik varsa yazar (puan girişi dahil her şey)
+        self.kayit_etiketi = QLabel()
+        self.statusBar().addPermanentWidget(self.kayit_etiketi)
+        self.durum.kaydedildi.connect(self._kayit_etiketini_yaz)
+        self._kayit_etiketini_yaz()
         self.kayit_zamanlayici = QTimer(self)
         self.kayit_zamanlayici.setInterval(2000)
         self.kayit_zamanlayici.timeout.connect(self.otomatik_kaydet)
         self.kayit_zamanlayici.start()
+
+    def _kayit_etiketini_yaz(self):
+        metin, kalici = self.durum.kayit_ozeti()
+        self.kayit_etiketi.setText(metin.split(" (")[0].split(". Kalıcı")[0])
+        self.kayit_etiketi.setStyleSheet("color: #1e7b34" if kalici else "color: #9a5b00")
+        self.kayit_etiketi.setToolTip(metin)
 
     def otomatik_kaydet(self):
         try:

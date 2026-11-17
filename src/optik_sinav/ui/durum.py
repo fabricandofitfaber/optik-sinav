@@ -29,6 +29,7 @@ def ayarlar() -> QSettings:
 class Durum(QObject):
     degisti = Signal()  # proje, okuma ya da liste değişti
     sonuc_degisti = Signal()
+    kaydedildi = Signal()  # otomatik ya da elle kayıt yapıldı (kayıt göstergeleri için)
 
     def __init__(self):
         super().__init__()
@@ -296,6 +297,8 @@ class Durum(QObject):
         yaz_atomik(hedef, self.kayit_verisi())
         self.proje_yolu = hedef
         son_acilanlara_ekle(str(hedef))
+        self.son_kayit = time.strftime("%H:%M:%S")
+        self.kaydedildi.emit()
         return hedef
 
     # ---------------------------------------------------------- otomatik kayıt
@@ -323,6 +326,18 @@ class Durum(QObject):
         return not (p.dat_yolu or p.liste_yolu or p.klasik_puanlar or p.final_puanlar
                     or any(s.dogru for s in p.anahtar.sorular))
 
+    son_kayit: str = ""
+
+    def kayit_ozeti(self) -> tuple[str, bool]:
+        """(gösterge metni, kalıcı sınav dosyası var mı)."""
+        if self.proje_yolu is not None:
+            zaman = f" {self.son_kayit}" if self.son_kayit else ""
+            return f"✓ Kaydedildi{zaman} · {self.proje_yolu.name} (her değişiklik 2 saniye içinde kendiliğinden kaydedilir)", True
+        if self.son_kayit:
+            return (f"✓ Kurtarma kopyasına kaydedildi {self.son_kayit}. Kalıcı bir sınav dosyası için \"Kaydet\"e basın; "
+                    "sonra her değişiklik o dosyaya da kendiliğinden yazılır."), False
+        return "Henüz kaydedilmedi. \"Kaydet\" ile bir sınav dosyası oluşturun.", False
+
     def otomatik_kaydet(self) -> bool:
         """Değişiklik varsa kurtarma dosyasına ve (açık bir sınav dosyası varsa) ona yazar. Yazdıysa True."""
         if self.bos_mu():
@@ -335,6 +350,8 @@ class Durum(QObject):
         yaz_atomik(kurtarma_yolu(), kurtarma)
         if self.proje_yolu is not None:
             yaz_atomik(self.proje_yolu, veri)
+        self.son_kayit = time.strftime("%H:%M:%S")
+        self.kaydedildi.emit()
         self._son_ozet = ozet
         return True
 

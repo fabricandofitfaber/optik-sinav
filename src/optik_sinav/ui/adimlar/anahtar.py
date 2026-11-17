@@ -252,6 +252,7 @@ class AnahtarAdimi(Adim):
         s.addWidget(self.hizli_etiket)
         self.hizli = QLineEdit()
         self.hizli.returnPressed.connect(self._hizli_uygula)
+        self.hizli.editingFinished.connect(self._klasik_odaktan_cikinca)
         s.addWidget(self.hizli, 1)
         b = QPushButton("Uygula")
         b.clicked.connect(self._hizli_uygula)
@@ -769,6 +770,14 @@ class AnahtarAdimi(Adim):
         """Klasik sınavda üstteki satır, o anki soru puanlarını gösterir (doğrudan düzenlenebilir)."""
         if self.klasik and not self.hizli.hasFocus():
             self.hizli.setText(" ".join((s.puan or "?").replace(".", ",") for s in self.anahtar.sorular))
+
+    def _klasik_odaktan_cikinca(self):
+        """Klasikte puanlar yazılıp Enter'a basılmadan başka yere geçilirse de uygulanır (değiştiyse)."""
+        if not self.klasik or self._yukleniyor:
+            return
+        simdiki = " ".join((s.puan or "?").replace(".", ",") for s in self.anahtar.sorular)
+        if self.hizli.text().strip() and self.hizli.text().split() != simdiki.split():
+            self._klasik_puanlari_uygula()
 
     def _klasik_puanlari_uygula(self):
         try:

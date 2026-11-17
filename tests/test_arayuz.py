@@ -647,3 +647,32 @@ def test_sistemden_liste_ve_otomatik_numara(pencere, fix, monkeypatch):
     k._otomatigi_geri_al()
     assert o.kayit.satir_no in d.proje.otomatik_kapali
     assert next(x for x in d.sonuc.ogrenciler if x.kayit.ogrenci_no == "990000088").no == "990000088"
+
+
+def test_puan_girisinde_kayit_gostergesi_ve_soru_puanlari(pencere, fix, tmp_path, monkeypatch):
+    """Klasik 3. adım: kayıt durumu görünür (kalıcı dosya yoksa uyarır, Kaydet düğmesi), soru puanları buradan da değişir."""
+    from PySide6.QtWidgets import QFileDialog
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(2)
+    k = pencere.adimlar[2]
+    assert k.puan_uyari.isVisibleTo(k)  # puanlar girilmediği için eşit dağıtıldı uyarısı
+    pencere.otomatik_kaydet()
+    assert "Kurtarma kopyasına kaydedildi" in k.kayit_bilgi.text() and "oluştur" in k.kaydet_dugmesi.text()
+    k.soru_puanlari.setText("5 5 5 5 20 60")
+    k._soru_puanlarini_uygula()
+    assert [s.puan for s in d.proje.anahtar.sorular] == ["5", "5", "5", "5", "20", "60"] and not k.puan_uyari.isVisibleTo(k)
+    yol = tmp_path / "klasik.osd"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *x, **kw: (str(yol), ""))
+    k.kaydet_dugmesi.click()
+    assert yol.exists() and "Kaydedildi" in k.kayit_bilgi.text() and "klasik.osd" in k.kayit_bilgi.text()
+    assert "Kaydedildi" in pencere.kayit_etiketi.text() and k.kaydet_dugmesi.text() == "Kaydet"
+    # 2. adımda Enter'a basmadan başka yere geçince de uygulanır
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("10 10 80")
+    a.hizli.editingFinished.emit()
+    assert [s.puan for s in d.proje.anahtar.sorular] == ["10", "10", "80"]

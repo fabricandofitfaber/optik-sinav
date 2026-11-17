@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QGroupBox,
     QCheckBox, QFileDialog, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTableView,
-    QTableWidget, QTableWidgetItem, QTabWidget, QWidget, QVBoxLayout,
+    QLineEdit, QTableWidget, QTableWidgetItem, QTabWidget, QWidget, QVBoxLayout,
 )
 
 from ... import metinler as M
@@ -116,6 +116,32 @@ class KontrolAdimi(Adim):
         v = QVBoxLayout(self.klasik_sayfa)
         from .kagit import KagitPaneli
 
+        # Kayıt durumu her zaman görünür; kalıcı dosya yoksa Kaydet düğmesi öne çıkar
+        s = QHBoxLayout()
+        self.kayit_bilgi = QLabel()
+        self.kayit_bilgi.setWordWrap(True)
+        s.addWidget(self.kayit_bilgi, 1)
+        self.kaydet_dugmesi = QPushButton("Kaydet")
+        self.kaydet_dugmesi.setToolTip("Sınavı bir dosyaya kaydeder (Cmd+S ya da Ctrl+S). Sonra her değişiklik o dosyaya kendiliğinden yazılır.")
+        self.kaydet_dugmesi.clicked.connect(lambda: getattr(self.window(), "kaydet", lambda: None)())
+        s.addWidget(self.kaydet_dugmesi, 0, Qt.AlignmentFlag.AlignTop)
+        v.addLayout(s)
+        self.durum.kaydedildi.connect(self._kayit_bilgisini_yaz)
+        # Soru puanları: 2. adıma dönmeden görülür ve değiştirilir
+        s = QHBoxLayout()
+        s.addWidget(QLabel("Soru puanları:"))
+        self.soru_puanlari = QLineEdit()
+        self.soru_puanlari.setToolTip("Boşlukla ayırarak yazıp Enter'a basın, örneğin 5 5 5 5 20 60. Soru sayısı da buna göre ayarlanır.")
+        self.soru_puanlari.returnPressed.connect(self._soru_puanlarini_uygula)
+        s.addWidget(self.soru_puanlari, 1)
+        b = QPushButton("Uygula")
+        b.clicked.connect(self._soru_puanlarini_uygula)
+        s.addWidget(b)
+        v.addLayout(s)
+        self.puan_uyari = QLabel()
+        self.puan_uyari.setWordWrap(True)
+        self.puan_uyari.setStyleSheet("color: #9a5b00")
+        v.addWidget(self.puan_uyari)
         self.kagit = KagitPaneli(self.durum, self)
         v.addWidget(self.kagit)
         s = QHBoxLayout()
@@ -181,6 +207,8 @@ class KontrolAdimi(Adim):
         for w in (self.olmayan_sayfa, self.duzeltme_tablo):
             self.sekmeler.setTabVisible(self.sekmeler.indexOf(w), not klasik)
         if klasik:
+            self._kayit_bilgisini_yaz()
+            self._soru_puanlarini_yaz()
             self.klasik_model.yenile()
             self.kagit.kur()
             h = self.klasik_tablo.horizontalHeader()
@@ -251,6 +279,35 @@ class KontrolAdimi(Adim):
         self.duzeltilecek_kutusu.setTitle(f"Düzeltilmesi gerekenler ({n})")
         self.duzeltilecek_kutusu.setVisible(n > 0)
         self.temiz_etiketi.setVisible(n == 0)
+
+    def _kayit_bilgisini_yaz(self):
+        metin, kalici = self.durum.kayit_ozeti()
+        self.kayit_bilgi.setText(metin)
+        self.kayit_bilgi.setStyleSheet("color: #1e7b34" if kalici else "color: #9a5b00; font-weight: bold")
+        self.kaydet_dugmesi.setText("Kaydet" if kalici else "Kaydet… (sınav dosyası oluştur)")
+
+    def _soru_puanlarini_yaz(self):
+        a = self.durum.proje.anahtar
+        if not self.soru_puanlari.hasFocus():
+            self.soru_puanlari.setText(" ".join((s.puan or "?").replace(".", ",") for s in a.sorular))
+        from ...core.puanlama import esit_soru_puanlari
+
+        # program kendiliğinden eşit dağıttıysa (hoca puan girmeden geçtiyse) uyarılır
+        esit = a.soru_sayisi > 1 and [s.puan for s in a.sorular] == list(esit_soru_puanlari(self.durum.proje.ayarlar.toplam_puan, a.soru_sayisi))
+        self.puan_uyari.setText("Soru puanları eşit dağıtılmış görünüyor. Sorularınızın puanları farklıysa yukarıya yazıp Enter'a basın "
+                                "(örneğin 5 5 5 5 20 60)." if esit else "")
+        self.puan_uyari.setVisible(esit)
+
+    def _soru_puanlarini_uygula(self):
+        """2. adımdaki soru puanı satırıyla aynı işi görür (soru sayısı azalırken onay dahil)."""
+        anahtar_adimi = getattr(self.window(), "adimlar", [None, None])[1]
+        if anahtar_adimi is None:
+            return
+        anahtar_adimi.hizli.setText(self.soru_puanlari.text())
+        anahtar_adimi._klasik_puanlari_uygula()
+        self.soru_puanlari.clearFocus()
+        self.durum.degerlendir()
+        self.girildi()
 
     def _otomatigi_geri_al(self):
         it = self.duzeltilecekler.currentItem()
