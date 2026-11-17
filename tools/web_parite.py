@@ -247,6 +247,9 @@ def main():
     from optik_sinav.io.liste_okuyucu import pdf_hucrelerinden_tablo, pdf_satirlari
 
     pdf_ornekleri = [
+        # sütunları "|" ile ayrılmış liste (sistemin "öğrenci listesi" çıktısı)
+        [["Sıra", "Öğrenci No", "Adı", "Soyadı", "Not"], ["1", "|990000001", "|ÇİĞDEM", "|ÖZTÜRK", "|", "|"],
+         ["2", "|990000002", "|ŞÜKRÜ\xa0CAN", "|IŞIK", "|", "|"], ["│ 3 │", "│ 990000003 │", "│ EMRE │", "│ ŞAHİN │"]],
         pdf_satirlari(F / "uydurma_liste.pdf"),
         [["No", "Öğrenci No", "Adı", "Soyadı", "Bölüm"], ["1", "220101001", "Ayşe", "Yılmaz", "İşletme"],
          ["2", "220101002", "Mehmet Ali", "Kaya", "İktisat"], ["3", "220101001", "Ayşe", "Yılmaz", "İşletme"]],

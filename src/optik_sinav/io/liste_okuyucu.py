@@ -201,6 +201,9 @@ def pdf_satirlari(yol: str | Path) -> list[list[str]]:
     return satirlar
 
 
+_CIZGI = "|│┃¦┆┊║"
+
+
 def pdf_hucrelerinden_tablo(satirlar: list[list[str]]) -> Tablo:
     """PDF satırlarından (hücre listeleri) ["Öğrenci No", "Adı Soyadı"] tablosu kurar.
 
@@ -212,7 +215,9 @@ def pdf_hucrelerinden_tablo(satirlar: list[list[str]]) -> Tablo:
     tablo: Tablo = [["Öğrenci No", "Adı Soyadı"]]
     gorulen: set[str] = set()
     for ham in satirlar:
-        hucreler = [re.sub(r"\s+", " ", str(h)).strip() for h in ham if h is not None and str(h).strip()]
+        # tablo çizgileri ("|204705031", "│ AD") hücreden ayıklanır
+        hucreler = [re.sub(r"\s+", " ", str(h)).strip().strip(_CIZGI).strip() for h in ham if h is not None]
+        hucreler = [h for h in hucreler if h]
         if not hucreler:
             continue
         numarali = [i for i, h in enumerate(hucreler) if _NUMARA.fullmatch(h)]

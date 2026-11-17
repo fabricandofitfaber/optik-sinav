@@ -538,7 +538,9 @@
     const tablo = [["Öğrenci No", "Adı Soyadı"]];
     const gorulen = new Set();
     for (const ham of satirlar) {
-      const hucreler = ham.filter((h) => h !== null && h !== undefined && String(h).trim()).map((h) => String(h).replace(/\s+/g, " ").trim());
+      // tablo çizgileri ("|204705031", "│ AD") hücreden ayıklanır (Python: _CIZGI)
+      const hucreler = ham.filter((h) => h !== null && h !== undefined)
+        .map((h) => String(h).replace(/\s+/g, " ").trim().replace(/^[|│┃¦┆┊║]+|[|│┃¦┆┊║]+$/g, "").trim()).filter(Boolean);
       if (!hucreler.length) continue;
       const numarali = hucreler.map((h, i) => (NUMARA.test(h) ? i : -1)).filter((i) => i >= 0);
       let no, ad;
