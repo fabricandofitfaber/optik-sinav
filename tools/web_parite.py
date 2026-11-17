@@ -24,7 +24,10 @@ from optik_sinav.core.donem_sonu import HarfAyarlari, donem_sonu, karneler  # no
 from optik_sinav.core.modeller import CevapAnahtari, PuanlamaAyarlari  # noqa: E402
 from optik_sinav.core.proje import SinavProjesi  # noqa: E402
 from optik_sinav.core.puanlama import anahtar_eksikleri  # noqa: E402
+from optik_sinav.export.profil import hucre_metni, profil_bul, tablo_uret  # noqa: E402
 from optik_sinav.export.soru_tanimi import soru_tanimi_metni  # noqa: E402
+
+PR = profil_bul("akreditasyon_soru_bazli_varsayilan")
 from optik_sinav.io.dat_okuyucu import dat_oku, sablon_oner  # noqa: E402
 from optik_sinav.io.kodlama import metin_dosyasi_oku  # noqa: E402
 from optik_sinav.io.liste_okuyucu import liste_oku  # noqa: E402
@@ -50,7 +53,10 @@ def ciktilar(proje: SinavProjesi, sonuc, ders_kodlari=None) -> dict:
             "durum": "".join(s.durum.value for s in o.sorular), "cevaplar": o.cevaplar, "dogru": o.dogru, "yanlis": o.yanlis,
             "bos": o.bos, "kitapcik": o.kitapcik, "kaynak": o.kaynak_soru, "listede": o.listede, "oneriler": o.oneriler,
             "uyarilar": [[u.tur.value, u.mesaj] for u in o.uyarilar],
+            "bonus_ile": [i + 1 for i, s in enumerate(o.sorular) if getattr(s, "bonus_ile", False)],
         } for o in sonuc.ogrenciler],
+        "aktarim": [[hucre_metni(h, PR) for h in satir] for satir in tablo_uret(PR, sonuc)[2]],
+        "aktarim_basliklar": tablo_uret(PR, sonuc)[1],
         "girmeyenler": [x.no for x in sonuc.girmeyenler],
         "soru_puanlari": [kesir(p) for p in sonuc.soru_puanlari],
         "maddeler": [{
@@ -146,6 +152,16 @@ def main():
     p.anahtar.sorular[5].durum = p.anahtar.sorular[5].durum.__class__("coklu")
     p.anahtar.sorular[5].dogru = "AB"
     senaryolar.append(optik_senaryo("soru_bazli_ceza", dat, liste, p))
+
+    # 2b) Bonus soru: 10. soru bonus; eşit puan ve yanlış cezasıyla (bir yanlışı ya da boşu doğru sayar, aktarıma girmez)
+    for ad, ceza in (("bonus", False), ("bonus_ceza", True)):
+        p = SinavProjesi()
+        p.anahtar = anahtar_kur("ABCDEABCDE", 10)
+        p.anahtar.sorular[9].durum = p.anahtar.sorular[9].durum.__class__("bonus")
+        p.ayarlar = PuanlamaAyarlari.from_dict({"yanlis_cezasi": ceza, "ceza_orani": 4})
+        for s, c in zip(p.anahtar.sorular, oc):
+            s.ogrenme_ciktilari = list(c)
+        senaryolar.append(optik_senaryo(ad, dat, liste, p, None, ["Ö01", "Ö02", "Ö03", "Ö04", "Ö05"]))
 
     # 3) Kitapçık: B ters sırada, bazı öğrenciler B
     p = SinavProjesi()

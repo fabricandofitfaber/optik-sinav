@@ -88,7 +88,7 @@ class SonucModeli(QAbstractTableModel):
             return self.data(ix)
         if rol == Qt.ItemDataRole.BackgroundRole:
             if tur == "soru":
-                return renk(o.sorular[k].durum.value)
+                return renk("K") if getattr(o.sorular[k], "bonus_ile", False) else renk(o.sorular[k].durum.value)
             if o.uyarili and tur in ("sira", "no", "ad", "uyari"):
                 return renk("uyari")
         if rol == Qt.ItemDataRole.TextAlignmentRole and tur not in ("ad", "uyari"):
@@ -98,6 +98,8 @@ class SonucModeli(QAbstractTableModel):
                 s = o.sorular[k]
                 kendi = o.kaynak_soru[k] if o.kaynak_soru else k + 1
                 yer = f" ({o.kitapcik} kitapçığında {kendi}. soru)" if kendi != k + 1 else ""
+                if getattr(s, "bonus_ile", False):
+                    return f"{k + 1}. soru{yer}: bonus soru sayesinde doğru sayıldı (öğrencinin işareti: {s.isaret.strip() or 'boş'})"
                 return f"{k + 1}. soru{yer}: {M.DURUM_ADI[s.durum.value]}, işaret {s.isaret!r}, puan {sayi_yaz(s.puan, 2)}"
             if tur == "ad" and o.okunan_ad != o.ad:
                 return f"Optik dosyada okunan: {o.okunan_ad}"

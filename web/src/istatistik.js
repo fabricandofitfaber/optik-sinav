@@ -313,7 +313,7 @@
   function ciktiDenetimi(anahtar, dersCiktilari = null) {
     const hatalar = [], bilgiler = [];
     if (!anahtar.sorular.some((s) => (s.ogrenme_ciktilari || []).length)) return [hatalar, bilgiler];
-    const ciktisiz = anahtar.sorular.filter((s) => !(s.ogrenme_ciktilari || []).length && s.durum !== "iptal").map((s) => s.no);
+    const ciktisiz = anahtar.sorular.filter((s) => !(s.ogrenme_ciktilari || []).length && s.durum !== "iptal" && s.durum !== "bonus").map((s) => s.no);
     if (ciktisiz.length) hatalar.push("Öğrenme çıktısı seçilmemiş sorular: " + ciktisiz.join(", "));
     const yuzEtmeyen = [];
     for (const s of anahtar.sorular) {
@@ -339,6 +339,7 @@
     for (const [tur, alan] of [["Öğrenme çıktısı", "ogrenme_ciktilari"], ["Program çıktısı", "program_ciktilari"]]) {
       const ag = new Map();
       sonuc.anahtar.sorular.forEach((s, i) => {
+        if (s.durum === "bonus") return;  // bonus soru çıktı başarısına girmez
         if (alan === "ogrenme_ciktilari") {
           for (const [kod, y] of OS.ciktiDagilimi(s)) { if (!ag.has(kod)) ag.set(kod, new Map()); ag.get(kod).set(i, new Kesir(BigInt(y), 100n)); }
         } else for (let kod of s.program_ciktilari || []) { kod = kod.trim(); if (kod) { if (!ag.has(kod)) ag.set(kod, new Map()); ag.get(kod).set(i, new Kesir(1n)); } }

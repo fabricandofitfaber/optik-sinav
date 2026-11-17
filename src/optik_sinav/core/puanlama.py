@@ -6,6 +6,8 @@ Kurallar (PROJE_TANIMI.md bölüm 8):
 - İptal soru: herkese tam puan, doğru sayılır.
 - Yanlış cezası: net = doğru - yanlış / oran; ceza soru puanlarına dağıtılmaz, puan sıfırın altına inmez.
 - Çift işaret: varsayılan boş; ayarla yanlış sayılabilir.
+- Bonus soru: puanı öteki sorularla aynıdır ama toplama girmez. Doğru cevaplanırsa öğrencinin bir yanlışını (yoksa bir
+  boşunu) doğru sayar; öğrencinin bütün soruları doğruysa etkisizdir, puan toplamı aşamaz. Sistem aktarımına girmez.
 """
 from __future__ import annotations
 
@@ -50,8 +52,12 @@ def soru_puanlari(anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari) -> list[Fra
     if n == 0:
         return []
     if ayarlar.yontem == PuanYontemi.ESIT:
-        return [fraction_decimal(ayarlar.toplam_puan) / n] * n
-    return [fraction_decimal(s.puan) if s.puan not in (None, "") else Fraction(0) for s in anahtar.sorular]
+        n_toplama = sum(1 for s in anahtar.sorular if s.durum != SoruDurumu.BONUS) or n
+        birim = fraction_decimal(ayarlar.toplam_puan) / n_toplama
+        # bonusun kendi tam puanı 0: toplama girmez; doğruysa düzelttiği soru kendi puanını alır
+        return [Fraction(0) if s.durum == SoruDurumu.BONUS else birim for s in anahtar.sorular]
+    return [Fraction(0) if s.durum == SoruDurumu.BONUS else fraction_decimal(s.puan) if s.puan not in (None, "") else Fraction(0)
+            for s in anahtar.sorular]
 
 
 def soru_degerlendir(isaret: str, soru: Soru, ayarlar: PuanlamaAyarlari) -> SoruSonucuDurumu:
@@ -80,10 +86,16 @@ def ogrenci_puanla(cevaplar: list[str], anahtar: CevapAnahtari, ayarlar: Puanlam
     dogru = yanlis = bos = 0
     ham = Fraction(0)
     ceza = Fraction(0)
+    bonus_dogru = 0
     for i, soru in enumerate(anahtar.sorular):
         isaret = cevaplar[i] if i < len(cevaplar) else " "
         durum = soru_degerlendir(isaret, soru, ayarlar)
         p = Fraction(0)
+        if soru.durum == SoruDurumu.BONUS:
+            # bonus kendisi puan, ceza ve doğru/yanlış/boş sayısına girmez; doğruysa aşağıda bir yanlışı siler
+            bonus_dogru += durum == SoruSonucuDurumu.DOGRU
+            sonuclar.append(SoruSonucu(isaret=isaret, durum=durum, puan=p))
+            continue
         if durum in (SoruSonucuDurumu.DOGRU, SoruSonucuDurumu.IPTAL):
             dogru += 1
             p = puanlar[i]
@@ -95,6 +107,28 @@ def ogrenci_puanla(cevaplar: list[str], anahtar: CevapAnahtari, ayarlar: Puanlam
             bos += 1
         ham += p
         sonuclar.append(SoruSonucu(isaret=isaret, durum=durum, puan=p))
+    cezali = ayarlar.yanlis_cezasi and ayarlar.ceza_orani > 0
+    for _ in range(bonus_dogru):
+        # en çok kazandıran kaçırılmış soru: yanlışta puan + cezası, boşta puan; eşitlikte ilk soru
+        adaylar = [(puanlar[i] + (puanlar[i] / ayarlar.ceza_orani if cezali and r.durum == SoruSonucuDurumu.YANLIS else 0), -i)
+                   for i, r in enumerate(sonuclar)
+                   if anahtar.sorular[i].durum != SoruDurumu.BONUS and not r.bonus_ile
+                   and r.durum in (SoruSonucuDurumu.YANLIS, SoruSonucuDurumu.BOS)]
+        if not adaylar:
+            break  # öteki soruların hepsi doğru: bonus sayılmaz
+        _, eksi_i = max(adaylar)
+        i = -eksi_i
+        r = sonuclar[i]
+        if r.durum == SoruSonucuDurumu.YANLIS:
+            yanlis -= 1
+            if cezali:
+                ceza -= puanlar[i] / ayarlar.ceza_orani
+        else:
+            bos -= 1
+        dogru += 1
+        ham += puanlar[i]
+        r.puan = puanlar[i]
+        r.bonus_ile = True
     puan = max(Fraction(0), ham - ceza)
     return sonuclar, dogru, yanlis, bos, ham, ceza, puan
 
@@ -126,7 +160,7 @@ def anahtar_eksikleri(anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari, klasik:
         if puansiz:
             eksik.append(M.EKSIK["soru_puan_eksik"].format(sorular=", ".join(map(str, puansiz))))
         else:
-            toplam = sum(soru_puanlari(anahtar, ayarlar), Fraction(0))
+            toplam = sum((p for s, p in zip(anahtar.sorular, soru_puanlari(anahtar, ayarlar)) if s.durum != SoruDurumu.BONUS), Fraction(0))
             beklenen = fraction_decimal(ayarlar.toplam_puan)
             if toplam != beklenen:
                 eksik.append(M.EKSIK["soru_puan_toplam"].format(toplam=sayi_yaz(toplam), beklenen=sayi_yaz(beklenen)))

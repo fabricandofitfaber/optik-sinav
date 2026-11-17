@@ -30,12 +30,13 @@
     return s.replace(".", ayirici);
   }
   function soruTanimiSatirlari(anahtar, ayar, dersKodlari = null, ayirici = ",") {
-    const n = anahtar.sorular.length;
+    const sorular = OS.aktarimSorulari(anahtar).map((i) => anahtar.sorular[i]);  // bonus soru sisteme gitmez
+    const n = sorular.length;
     let puanlar;
     if (ayar.yontem === "esit") puanlar = OS.esitSoruPuanlari(ayar.toplam_puan, n);
-    else { puanlar = anahtar.sorular.map((s) => s.puan || "0"); OS.soruPuanlari(anahtar, ayar); }
-    return anahtar.sorular.map((s, i) => {
-      const satir = [String(s.no), puanMetni(puanlar[i], ayirici), `Soru ${s.no}`];
+    else { puanlar = sorular.map((s) => s.puan || "0"); OS.soruPuanlari(anahtar, ayar); }
+    return sorular.map((s, i) => {
+      const satir = [String(i + 1), puanMetni(puanlar[i], ayirici), `Soru ${i + 1}`];
       for (const [kod, y] of OS.ciktiDagilimi(s)) satir.push(ciktiSirasi(kod, dersKodlari), String(y));
       return satir;
     });
@@ -60,7 +61,7 @@
   function ogrenciHucreleri(profil, o, og, sonuc) {
     const no = o ? o.no : og.no;
     const ad = (o ? o.ad : og.ad) || "";
-    const n = sonuc.anahtar.sorular.length;
+    const sira = OS.aktarimSorulari(sonuc.anahtar);  // bonus soru aktarımda görünmez
     const sayi = (d) => ({ deger: OS.yuvarla(d, profil.ondalik_basamak, profil.yuvarlama), tur: "sayi", ondalik: profil.ondalik_basamak });
     const girmedi = { deger: profil.girmedi_gosterimi, tur: "girmedi" };
     const h = [];
@@ -68,7 +69,7 @@
       const a = s.alan;
       if (a === "ogrenci_no") h.push({ deger: no, tur: "metin" });
       else if (a === "ad_soyad") h.push({ deger: ad, tur: "metin" });
-      else if (a === "soru_puanlari") for (let k = 0; k < n; k++) h.push(o ? sayi(o.sorular[k].puan) : girmedi);
+      else if (a === "soru_puanlari") for (const k of sira) h.push(o ? sayi(o.sorular[k].puan) : girmedi);
       else if (!o) h.push(girmedi);
       else if (a === "puan") h.push(sayi(o.puan));
       else if (["dogru", "yanlis", "bos"].includes(a)) h.push({ deger: o[a], tur: "tamsayi" });
@@ -92,7 +93,7 @@
     return r;
   }
   function tabloUret(profil, sonuc, sira = null) {
-    return [basliklar(profil, sonuc.anahtar.sorular.length), ogrenciSirasi(profil, sonuc, sira).map(([o, og]) => ogrenciHucreleri(profil, o, og, sonuc))];
+    return [basliklar(profil, OS.aktarimSorulari(sonuc.anahtar).length), ogrenciSirasi(profil, sonuc, sira).map(([o, og]) => ogrenciHucreleri(profil, o, og, sonuc))];
   }
   function hucreMetni(h, profil) {
     if (h.tur === "sayi") return OS.ondalikMetni(h.deger, profil.ondalik_ayirici);

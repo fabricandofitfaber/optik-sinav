@@ -37,7 +37,7 @@
         if (t === "sira") return `<td class="${uy}">${i + 1}</td>`;
         if (t === "no") return `<td class="tik${uy}" data-alan="no" title="Dosya satırı ${o.kayit.satir_no}. Düzeltmek için tıklayın.">${e(o.no)}</td>`;
         if (t === "ad") return `<td class="sol tik${uy}" data-alan="ad" title="${o.okunan_ad !== o.ad ? "Optik dosyada okunan: " + e(o.okunan_ad) : ""}">${e(o.ad)}</td>`;
-        if (t === "soru") { const q = o.sorular[kk]; return `<td class="${q.durum} tik" data-alan="soru" data-k="${kk}" title="${kk + 1}. soru: ${OS.DURUM_ADI[q.durum]}, puan ${OS.sayiYaz(q.puan, 2)}">${e(String(q.isaret).trim())}</td>`; }
+        if (t === "soru") { const q = o.sorular[kk]; return `<td class="${q.bonus_ile ? "K" : q.durum} tik" data-alan="soru" data-k="${kk}" title="${kk + 1}. soru: ${q.bonus_ile ? "bonus soru sayesinde doğru sayıldı" : OS.DURUM_ADI[q.durum]}, puan ${OS.sayiYaz(q.puan, 2)}">${e(String(q.isaret).trim())}</td>`; }
         if (t === "puan") return `<td class="kalin">${OS.sayiYaz(o.puan, ondalik)}</td>`;
         if (t === "kitapcik") return `<td class="tik" data-alan="kitapcik">${e(o.kitapcik)}</td>`;
         if (t === "uyari") return `<td class="sol uzun${uy}">${e(o.uyarilar.map((u) => u.mesaj).join("; "))}</td>`;
@@ -141,7 +141,7 @@
       if (K.sekme === "giris") icerik = `${kagitPaneli()}<div class="satir"><button id="exceldenAl">Excel'den puan al…</button><button id="sablonIndir" title="Aşağıdaki tabloyu (girilen puanlar, toplam ve Girmedi işaretiyle) Excel'e yazar; Excel'de doldurup geri de yükleyebilirsiniz">Puan tablosunu Excel'e kaydet</button>
           <span class="soluk">Ya da tabloda hücreye tıklayıp yazın (Enter alttaki öğrenciye geçer; soru soru puanlamaya uygun). Excel'den bir bloğu kopyalayıp bir hücreye yapıştırabilirsiniz. Sınava girmeyenleri en sağdaki "Girmedi" kutusuyla işaretleyin (hiç puanı girilmeyen öğrenci de girmemiş sayılır).</span></div>${klasikTablo()}`;
       else if (K.sekme === "sonuc") icerik = `<div class="satir"><label><input type="checkbox" id="yalnizUyarili" ${K.yalnizUyarili ? "checked" : ""}> Yalnızca uyarılıları göster</label>
-          <span class="efsane"><span style="background:var(--dogru)">doğru</span><span style="background:var(--yanlis)">yanlış</span><span style="background:var(--bos)">boş</span><span style="background:var(--iptal)">iptal</span>${kl ? '<span style="background:var(--kismi)">kısmi</span>' : ""}<span style="background:var(--uyari)">uyarılı</span></span>
+          <span class="efsane"><span style="background:var(--dogru)">doğru</span><span style="background:var(--yanlis)">yanlış</span><span style="background:var(--bos)">boş</span><span style="background:var(--iptal)">iptal</span>${kl ? '<span style="background:var(--kismi)">kısmi</span>' : D.proje.anahtar.sorular.some((x) => x.durum === "bonus") ? '<span style="background:var(--kismi)">bonusla doğru</span>' : ""}<span style="background:var(--uyari)">uyarılı</span></span>
           <span class="soluk">${kl ? "Puanı değiştirmek için Puan girişi sekmesini kullanın." : "Numara, ad, tek bir cevap ya da kitapçığı düzeltmek için hücreye tıklayın. Özgün okuma silinmez."} Sütun başlığına tıklayarak sıralayın.</span></div>${sonucTablosu(s)}`;
       else if (K.sekme === "girmeyen") icerik = basitTablo(["Öğrenci No", "Ad Soyad", "Listedeki satır"], s.girmeyenler.map((g) => [e(g.no), e(g.ad), g.kaynak_satir]));
       else if (K.sekme === "olmayan") icerik = `<p class="soluk">Birebir eşleşmeyen numaralar otomatik eşleştirilmez. Numarayı düzeltmek için satıra tıklayın.</p>` +

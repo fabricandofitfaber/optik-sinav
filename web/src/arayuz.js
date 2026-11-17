@@ -628,6 +628,7 @@
       <td><button class="kucuk ciktiSec">Seç…</button></td>
       <td><input type="text" class="pc" placeholder="P02, P07" value="${e((s.program_ciktilari || []).join(", "))}"></td></tr>`;
   }
+  const BONUS_NOTU = "Bonus soru {no}: doğru cevaplayan öğrencinin bir yanlışını (yoksa bir boşunu) doğru sayar; bütün soruları doğru olan öğrencide sayılmaz, puan toplamı geçmez. Akademik Bilgi Sistemi'ne gönderilen soru tanımında ve aktarım dosyasında bonus görünmez; öteki sorular 1'den yeniden numaralanır.";
   function anahtarOzetHtml() {
     const p = D.proje, a = p.anahtar, kl = p.bicim === "klasik";
     let puanlar = [], toplam = OS.Kesir.SIFIR;
@@ -651,6 +652,8 @@
     } else m += `<div><b>Öğrenme çıktıları:</b> <span class="soluk">henüz girilmedi (Akademik Bilgi Sistemi'ne soru tanımı aktarmak için gerekir).</span></div>`;
     for (const h of hatalar) m += `<div class="kirmizi">${e(h)}</div>`;
     for (const b of bilgiler) m += `<div class="soluk">${e(b)}</div>`;
+    const bonuslar = a.sorular.filter((s) => s.durum === "bonus").map((s) => s.no);
+    if (bonuslar.length && !kl) m += `<div style="color:var(--vurgu);margin-top:6px">${e(BONUS_NOTU.replace("{no}", bonuslar.join(", ")))}</div>`;
     return m;
   }
   const klasikPuanMetni = (a) => a.sorular.map((s) => (s.puan === null || s.puan === undefined || s.puan === "" ? "?" : String(s.puan).replace(".", ","))).join(" ");

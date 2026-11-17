@@ -177,7 +177,9 @@
     coklu_tek: "'Birden fazla doğru' seçilen sorularda en az iki şık işaretlenmeli: {sorular}",
   };
   const DURUM_ADI = { D: "Doğru", Y: "Yanlış", B: "Boş", I: "İptal", "-": "Anahtarsız", K: "Kısmi puan" };
-  const SORU_DURUMU_ADI = { normal: "Normal", iptal: "İptal (herkese tam puan)", coklu: "Birden fazla doğru" };
+  const SORU_DURUMU_ADI = { normal: "Normal", iptal: "İptal (herkese tam puan)", coklu: "Birden fazla doğru", bonus: "Bonus (bir yanlışı siler)" };
+  /** Akademik Bilgi Sistemi'ne giden sorular (0'dan sıra): bonus hariç; aktarımda 1'den yeniden numaralanır (Python: aktarim_sorulari). */
+  const aktarimSorulari = (a) => a.sorular.map((s, i) => [s, i]).filter(([s]) => s.durum !== "bonus").map(([, i]) => i);
   const bicimle = (s, d) => s.replace(/\{(\w+)\}/g, (_, k) => (k in d ? String(d[k]) : `{${k}}`));
   const pyRepr = (s) => (s.includes("'") && !s.includes('"') ? `"${s}"` : `'${s.replace(/'/g, "\\'")}'`);
 
@@ -231,7 +233,7 @@
   const dogruKume = (s) => new Set([...String(s.dogru || "").toUpperCase()].filter((c) => SIKLAR.includes(c)));
   function ciktiDagilimi(s) {
     const kodlar = (s.ogrenme_ciktilari || []).filter((k) => k);
-    if (!kodlar.length) return new Map();
+    if (!kodlar.length || s.durum === "bonus") return new Map();  // bonus soru öğrenme çıktısına sayılmaz
     const y = s.cikti_yuzdeleri || {};
     const yk = Object.keys(y);
     if (yk.length && yk.length === new Set(kodlar).size && kodlar.every((k) => k in y)) return new Map(kodlar.map((k) => [k, parseInt(y[k], 10)]));
@@ -293,8 +295,13 @@
   function soruPuanlari(a, ayar) {
     const n = a.sorular.length;
     if (!n) return [];
-    if (ayar.yontem === "esit") return Array(n).fill(Kesir.ondaliktan(ayar.toplam_puan).bol(n));
-    return a.sorular.map((s) => (s.puan === null || s.puan === undefined || s.puan === "" ? Kesir.SIFIR : Kesir.ondaliktan(s.puan)));
+    // bonusun kendi tam puanı 0: toplama girmez; doğruysa düzelttiği soru kendi puanını alır
+    if (ayar.yontem === "esit") {
+      const nt = a.sorular.filter((s) => s.durum !== "bonus").length || n;
+      const birim = Kesir.ondaliktan(ayar.toplam_puan).bol(nt);
+      return a.sorular.map((s) => (s.durum === "bonus" ? Kesir.SIFIR : birim));
+    }
+    return a.sorular.map((s) => (s.durum === "bonus" || s.puan === null || s.puan === undefined || s.puan === "" ? Kesir.SIFIR : Kesir.ondaliktan(s.puan)));
   }
   function esitSoruPuanlari(toplam, n, basamak = 2) {
     if (n <= 0) return [];
@@ -320,17 +327,35 @@
   function ogrenciPuanla(cevaplar, a, ayar, puanlar) {
     puanlar = puanlar || soruPuanlari(a, ayar);
     const sonuclar = [];
-    let dogru = 0, yanlis = 0, bos = 0, ham = Kesir.SIFIR, ceza = Kesir.SIFIR;
+    let dogru = 0, yanlis = 0, bos = 0, ham = Kesir.SIFIR, ceza = Kesir.SIFIR, bonusDogru = 0;
     a.sorular.forEach((soru, i) => {
       const isaret = i < cevaplar.length ? cevaplar[i] : " ";
       const durum = soruDegerlendir(isaret, soru, ayar);
       let p = Kesir.SIFIR;
+      if (soru.durum === "bonus") { if (durum === "D") bonusDogru++; sonuclar.push({ isaret, durum, puan: p, bonus_ile: false }); return; }
       if (durum === "D" || durum === "I") { dogru++; p = puanlar[i]; }
       else if (durum === "Y") { yanlis++; if (ayar.yanlis_cezasi && ayar.ceza_orani > 0) ceza = ceza.ekle(puanlar[i].bol(ayar.ceza_orani)); }
       else if (durum === "B") bos++;
       ham = ham.ekle(p);
-      sonuclar.push({ isaret, durum, puan: p });
+      sonuclar.push({ isaret, durum, puan: p, bonus_ile: false });
     });
+    // bonus: her doğru bonus en çok kazandıran kaçırılmış soruyu (yanlışta puan + cezası, boşta puan) doğru sayar
+    const cezali = ayar.yanlis_cezasi && ayar.ceza_orani > 0;
+    for (let b = 0; b < bonusDogru; b++) {
+      let enI = -1, enK = null;
+      sonuclar.forEach((r, i) => {
+        if (a.sorular[i].durum === "bonus" || r.bonus_ile || !(r.durum === "Y" || r.durum === "B")) return;
+        const k = cezali && r.durum === "Y" ? puanlar[i].ekle(puanlar[i].bol(ayar.ceza_orani)) : puanlar[i];
+        if (enK === null || k.kars(enK) > 0) { enK = k; enI = i; }
+      });
+      if (enI < 0) break;  // öteki soruların hepsi doğru: bonus sayılmaz
+      const r = sonuclar[enI];
+      if (r.durum === "Y") { yanlis--; if (cezali) ceza = ceza.cikar(puanlar[enI].bol(ayar.ceza_orani)); } else bos--;
+      dogru++;
+      ham = ham.ekle(puanlar[enI]);
+      r.puan = puanlar[enI];
+      r.bonus_ile = true;
+    }
     const fark = ham.cikar(ceza);
     return { sonuclar, dogru, yanlis, bos, ham, ceza, puan: fark.kars(0) < 0 ? Kesir.SIFIR : fark };
   }
@@ -888,7 +913,7 @@
   Object.assign(OS, {
     Kesir, topla, yuvarla, ondalikMetni, ondalikSayi, sayiYaz, pyOndalik, v, kesirYuvarlaCift,
     fmean, pvariance, variance, pstdev, stdev, median, ceyrekler,
-    SIKLAR, CIFT, BOZUK, UYARI, EKSIK, DURUM_ADI, SORU_DURUMU_ADI, bicimle,
+    SIKLAR, CIFT, BOZUK, UYARI, EKSIK, DURUM_ADI, SORU_DURUMU_ADI, aktarimSorulari, bicimle,
     yeniOkuyucu, yeniSoru, yeniAyarlar, yeniProje, projeyiTamamla,
     esitYuzdeler, dogruKume, ciktiDagilimi, kitapciklar, esleme, eslemeSorunlari, kitapcikIcin, anahtarMetinden, anahtarMetne,
     soruPuanlari, esitSoruPuanlari, soruDegerlendir, ogrenciPuanla, net, anahtarEksikleri,

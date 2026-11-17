@@ -113,8 +113,9 @@ def sablonu_doldur(sablon_yolu: str | Path, profil: Profil, sonuc: SinavSonucu, 
         o = okunan.get(no)
         if o is None:
             rapor.girmedi.append(no)
+        sira = sonuc.anahtar.aktarim_sorulari()  # şablondaki k. soru = bonus dışı k. soru
         for k, j in sb.soru_sutunlari.items():
-            yaz(r, j, o.sorular[k - 1].puan if o and k - 1 < len(o.sorular) else None)
+            yaz(r, j, o.sorular[sira[k - 1]].puan if o and k - 1 < len(sira) else None)
         if sb.puan_sutunu:
             yaz(r, sb.puan_sutunu, o.puan if o else None)
         if o is not None:

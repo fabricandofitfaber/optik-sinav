@@ -144,6 +144,7 @@ class SoruDurumu(str, Enum):
     NORMAL = "normal"
     IPTAL = "iptal"
     COKLU = "coklu"  # birden fazla doğru şık
+    BONUS = "bonus"  # doğru cevaplanırsa öğrencinin bir yanlışını (yoksa bir boşunu) doğru sayar; kendisi puana ve aktarıma girmez
 
 
 @dataclass
@@ -163,7 +164,7 @@ class Soru:
     def cikti_dagilimi(self) -> dict[str, int]:
         """Sorunun öğrenme çıktılarına yüzde dağılımı. Girilmemişse eşit dağıtılır, toplam tam 100 olur."""
         kodlar = [k for k in self.ogrenme_ciktilari if k]
-        if not kodlar:
+        if not kodlar or self.durum == SoruDurumu.BONUS:  # bonus soru öğrenme çıktısına sayılmaz
             return {}
         if self.cikti_yuzdeleri and set(self.cikti_yuzdeleri) == set(kodlar):
             return {k: int(self.cikti_yuzdeleri[k]) for k in kodlar}
@@ -189,6 +190,10 @@ class CevapAnahtari:
     ana_kitapcik: str = "A"
     # Diğer kitapçıkların cevap anahtarı, o kitapçığın kendi soru sırasıyla: {"B": "CADBE..."}
     kitapcik_anahtarlari: dict[str, str] = field(default_factory=dict)
+
+    def aktarim_sorulari(self) -> list[int]:
+        """Akademik Bilgi Sistemi'ne giden sorular (0'dan sıra): bonus sorular hariç. Aktarımda 1'den yeniden numaralanır."""
+        return [i for i, s in enumerate(self.sorular) if s.durum != SoruDurumu.BONUS]
 
     def kitapciklar(self) -> list[str]:
         return [self.ana_kitapcik] + sorted(k for k in self.kitapcik_anahtarlari if k != self.ana_kitapcik)
@@ -392,6 +397,7 @@ class SoruSonucu:
     isaret: str
     durum: SoruSonucuDurumu
     puan: Fraction  # bu sorudan alınan ham puan (ceza dağıtılmaz)
+    bonus_ile: bool = False  # yanlış ya da boş iken bonus soru sayesinde doğru sayıldı (durum özgün kalır)
 
 
 @dataclass

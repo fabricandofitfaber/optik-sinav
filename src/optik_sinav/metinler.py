@@ -25,7 +25,8 @@ UYARI = {
 }
 
 DURUM_ADI = {"D": "Doğru", "Y": "Yanlış", "B": "Boş", "I": "İptal", "-": "Anahtarsız", "K": "Kısmi puan"}
-SORU_DURUMU_ADI = {"normal": "Normal", "iptal": "İptal (herkese tam puan)", "coklu": "Birden fazla doğru"}
+SORU_DURUMU_ADI = {"normal": "Normal", "iptal": "İptal (herkese tam puan)", "coklu": "Birden fazla doğru",
+                   "bonus": "Bonus (bir yanlışı siler)"}
 CIFT_ISARET_ADI = {"bos": "Boş say", "yanlis": "Yanlış say"}
 YUVARLAMA_ADI = {"yarim_yukari": "Yarım yukarı", "asagi": "Aşağı", "yukari": "Yukarı"}
 YONTEM_ADI = {"esit": "Eşit puan", "soru_bazli": "Soru bazlı puan"}

@@ -78,7 +78,7 @@ class KontrolAdimi(Adim):
         self.duzen.addLayout(ust)
         aciklama = QLabel(" ".join(
             f'<span style="background:{renk(k).name()}">&nbsp;{v}&nbsp;</span>' for k, v in
-            (("D", "doğru"), ("Y", "yanlış"), ("B", "boş"), ("I", "iptal"), ("uyari", "uyarılı satır")))
+            (("D", "doğru"), ("Y", "yanlış"), ("B", "boş"), ("I", "iptal"), ("K", "bonusla doğru"), ("uyari", "uyarılı satır")))
             + "  Numara, ad ya da tek bir cevabı düzeltmek için hücreye çift tıklayın. Özgün okuma silinmez.")
         aciklama.setWordWrap(True)
         self.aciklama = aciklama  # optik sınava özgü; klasikte gizlenir

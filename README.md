@@ -102,7 +102,8 @@ Kabul edilen öğrenci listeleri: Akademik Bilgi Sistemi'nden indirilen Excel li
 
 ![Puanlama](docs/ekran/3_puanlama.png)
 
-- **Eşit puan:** soru puanı = toplam / soru sayısı (iptal sorular dahil). Puanlar kesir olarak tutulur, **yuvarlama yalnızca en sonda** yapılır; 15 doğru tam 100 eder.
+- **Bonus soru (yalnızca optik sınav):** 2. adımda sorunun durumunu "Bonus" yapın. Bonusun puanı öteki sorularla aynıdır ama toplama girmez: doğru cevaplayan öğrencinin bir yanlışı (yanlışı yoksa bir boşu) doğru sayılır; bütün soruları doğru olan öğrencide bonus sayılmaz, puan hiçbir zaman toplamı (100'ü) geçmez. Yanlış cezası açıksa önce yanlış düzeltilir, cezası da kalkar. Akademik Bilgi Sistemi'ne gönderilen soru tanımında ve aktarım dosyalarında bonus görünmez; öteki sorular 1'den yeniden numaralanır (17 soru, sonuncusu bonus ise sistem 16 soru × 6,25 görür). Madde analizi öğrencinin gerçek cevabıyla yapılır; bonusla düzelen hücre sonuç tablosunda mavidir.
+- **Eşit puan:** soru puanı = toplam / soru sayısı (iptal sorular dahil, bonus sorular hariç). Puanlar kesir olarak tutulur, **yuvarlama yalnızca en sonda** yapılır; 15 doğru tam 100 eder.
 - **Soru bazlı puan:** her sorunun puanı 2. adımdaki soru satırında girilir, toplamın tam puana eşitliği denetlenir.
 - **Başarı eşiği** (varsayılan 50): istatistiklerde bu puan ve üstü başarılı, öğrenme çıktısında bu yüzde ve üstü "ulaştı" sayılır.
 - **Yanlışlar doğruyu götürsün** (varsayılan kapalı): net = doğru - yanlış / oran; puan sıfırın altına düşmez. Ceza soru puanlarına dağıtılmaz; akreditasyon dosyasında soru bazında ham puan kullanılır.

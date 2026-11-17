@@ -520,7 +520,7 @@ def cikti_denetimi(anahtar, ders_ciktilari: list[str] | None = None) -> tuple[li
     hatalar, bilgiler = [], []
     if not any(s.ogrenme_ciktilari for s in anahtar.sorular):
         return hatalar, bilgiler
-    ciktisiz = [s.no for s in anahtar.sorular if not s.ogrenme_ciktilari and s.durum != SoruDurumu.IPTAL]
+    ciktisiz = [s.no for s in anahtar.sorular if not s.ogrenme_ciktilari and s.durum not in (SoruDurumu.IPTAL, SoruDurumu.BONUS)]
     if ciktisiz:
         hatalar.append("Öğrenme çıktısı seçilmemiş sorular: " + ", ".join(map(str, ciktisiz)))
     yuz_etmeyen = []
@@ -557,6 +557,8 @@ def ogrenme_ciktisi_raporu(sonuc: SinavSonucu, esik: float = 50.0, aciklamalar: 
     for tur, alan in (("Öğrenme çıktısı", "ogrenme_ciktilari"), ("Program çıktısı", "program_ciktilari")):
         agirlik: dict[str, dict[int, Fraction]] = {}
         for i, s in enumerate(sonuc.anahtar.sorular):
+            if s.durum == SoruDurumu.BONUS:
+                continue  # bonus soru çıktı başarısına girmez
             if alan == "ogrenme_ciktilari":
                 for kod, y in s.cikti_dagilimi().items():
                     agirlik.setdefault(kod, {})[i] = Fraction(y, 100)

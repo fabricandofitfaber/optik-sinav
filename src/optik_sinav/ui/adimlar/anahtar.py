@@ -23,6 +23,8 @@ from ...core.puanlama import anahtar_eksikleri, esit_soru_puanlari, sayi_yaz, so
 from ..tema import koyu_mu
 from .temel import Adim, menu_dugmesi
 
+BONUS_NOTU = ("Bonus soru {no}: doğru cevaplayan öğrencinin bir yanlışını (yoksa bir boşunu) doğru sayar; bütün soruları doğru olan öğrencide sayılmaz, puan toplamı geçmez. Akademik Bilgi Sistemi'ne gönderilen soru tanımında ve aktarım dosyasında bonus görünmez; öteki sorular 1'den yeniden numaralanır.")
+
 
 # ---------------------------------------------------------------- çıktı metni
 def kod_normalle(ham: str, bilinen: list[str], onek: str) -> str:
@@ -819,8 +821,12 @@ class AnahtarAdimi(Adim):
         bos = [str(s.no) for s in a.sorular if s.puan in (None, "")] if (self.klasik or p.ayarlar.yontem != PuanYontemi.ESIT) else []
         if bos:
             neden = f"puanı girilmemiş soru: {', '.join(bos)}"
+        bonuslar = [str(s.no) for s in a.sorular if s.durum == SoruDurumu.BONUS]
+        bonus_notu = ("<br><span style='color:#2F5597'>" + BONUS_NOTU.format(no=", ".join(bonuslar)) + "</span>") if bonuslar and not self.klasik else ""
+        self.puan_ozeti.setWordWrap(True)
         self.puan_ozeti.setText(f"<b>Soru puanlarının toplamı:</b> {sayi_yaz(toplam, 2)} / {hedef} ({yontem})"
-                                + (" ✓" if dogru and not bos else f"  <span style='color:#C0504D'><b>toplam tutmuyor{': ' + neden if neden else ''}</b></span>"))
+                                + (" ✓" if dogru and not bos else f"  <span style='color:#C0504D'><b>toplam tutmuyor{': ' + neden if neden else ''}</b></span>")
+                                + bonus_notu)
         hatalar, bilgiler = cikti_denetimi(a, self.durum.ogrenme_kodlari() or None)
         if any(s.ogrenme_ciktilari for s in a.sorular) and puanlar:
             dag = cikti_dagilimi(a, puanlar)

@@ -30,15 +30,16 @@ def _puan_metni(deger: str, ayirici: str) -> str:
 def soru_tanimi_satirlari(anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari, ders_kodlari: list[str] | None = None,
                           ondalik_ayirici: str = ",") -> list[list[str]]:
     """Sistemin toplu aktarım tablosu: [Soru No, Soru Puan, Soru metni, DÇ Sıra, Etki Oran, ...]."""
-    n = anahtar.soru_sayisi
+    sorular = [anahtar.sorular[i] for i in anahtar.aktarim_sorulari()]  # bonus soru sisteme gitmez
+    n = len(sorular)
     if ayarlar.yontem == PuanYontemi.ESIT:
         puanlar = esit_soru_puanlari(ayarlar.toplam_puan, n)  # iki ondalıklı, toplamı tam 100
     else:
-        puanlar = [s.puan or "0" for s in anahtar.sorular]
+        puanlar = [s.puan or "0" for s in sorular]
         soru_puanlari(anahtar, ayarlar)  # geçersiz değer varsa burada hata verir
     satirlar = []
-    for s, p in zip(anahtar.sorular, puanlar):
-        satir = [str(s.no), _puan_metni(p, ondalik_ayirici), f"Soru {s.no}"]
+    for no, (s, p) in enumerate(zip(sorular, puanlar), start=1):
+        satir = [str(no), _puan_metni(p, ondalik_ayirici), f"Soru {no}"]
         for kod, yuzde in s.cikti_dagilimi().items():
             satir += [_cikti_sirasi(kod, ders_kodlari), str(yuzde)]
         satirlar.append(satir)

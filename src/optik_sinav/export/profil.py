@@ -157,7 +157,7 @@ def ogrenci_hucreleri(profil: Profil, o: OgrenciSonucu | None, ogrenci: Ogrenci 
     """Bir öğrenci için profil sütunlarının değerleri. `o` None ise öğrenci sınava girmemiştir."""
     no = o.no if o else ogrenci.no
     ad = (o.ad if o else ogrenci.ad) or ""
-    n = sonuc.anahtar.soru_sayisi
+    sira = sonuc.anahtar.aktarim_sorulari()  # bonus soru aktarımda görünmez
     yuv = profil.yuvarlama
 
     def sayi(deger) -> Hucre:
@@ -178,12 +178,12 @@ def ogrenci_hucreleri(profil: Profil, o: OgrenciSonucu | None, ogrenci: Ogrenci 
         elif a == "sabit":
             hucreler.append(Hucre(s.deger))
         elif a == "soru_puanlari":
-            hucreler.extend(sayi(o.sorular[k].puan) if o else girmedi for k in range(n))
+            hucreler.extend(sayi(o.sorular[k].puan) if o else girmedi for k in sira)
         elif a.startswith("soru:"):
-            k = int(a.split(":")[1]) - 1
+            k = sira[int(a.split(":")[1]) - 1]
             hucreler.append(sayi(o.sorular[k].puan) if o else girmedi)
         elif a.startswith("cevap:"):
-            k = int(a.split(":")[1]) - 1
+            k = sira[int(a.split(":")[1]) - 1]
             hucreler.append(Hucre(o.cevaplar[k].strip() if o else ""))
         elif o is None:
             hucreler.append(girmedi)
@@ -241,7 +241,7 @@ def _yer_tutucu(metin: str, degerler: dict) -> str:
 def tablo_uret(profil: Profil, sonuc: SinavSonucu, sinav: SinavBilgisi | None = None, sira: list[str] | None = None):
     """(üst satırlar, başlıklar, veri satırları) döndürür. Veri satırları `Hucre` listesidir."""
     ust = ust_satirlari_doldur(profil, sinav)
-    basliklar = basliklari_genislet(profil, sonuc.anahtar.soru_sayisi)
+    basliklar = basliklari_genislet(profil, len(sonuc.anahtar.aktarim_sorulari()))
     veri = [ogrenci_hucreleri(profil, o, og, sonuc) for o, og in ogrenci_sirasi(profil, sonuc, sira)]
     return ust, basliklar, veri
 

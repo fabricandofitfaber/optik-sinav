@@ -229,7 +229,8 @@
       "cevapta_gecersiz",
       "Kâğıttaki toplam (999) soru puanlarının toplamıyla (62,5) tutmuyor"
      ]
-    ]
+    ],
+    "bonus_ile": []
    },
    {
     "no": "990000002",
@@ -261,7 +262,8 @@
       "cevapta_gecersiz",
       "Kâğıttaki toplam sayı değil: 'abc'"
      ]
-    ]
+    ],
+    "bonus_ile": []
    },
    {
     "no": "990000004",
@@ -293,7 +295,8 @@
       "cevapta_gecersiz",
       "Puanı girilmemiş soru: 3 (sıfır sayıldı)"
      ]
-    ]
+    ],
+    "bonus_ile": []
    },
    {
     "no": "990000005",
@@ -320,7 +323,8 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [],
+    "bonus_ile": []
    },
    {
     "no": "990000006",
@@ -347,7 +351,8 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [],
+    "bonus_ile": []
    },
    {
     "no": "990000007",
@@ -374,7 +379,8 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [],
+    "bonus_ile": []
    },
    {
     "no": "990000008",
@@ -401,7 +407,8 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [],
+    "bonus_ile": []
    },
    {
     "no": "990000009",
@@ -428,7 +435,8 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [],
+    "bonus_ile": []
    },
    {
     "no": "990000010",
@@ -455,8 +463,115 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": []
+    "uyarilar": [],
+    "bonus_ile": []
    }
+  ],
+  "aktarim": [
+   [
+    "990000001",
+    "ÇİĞDEM ÖZTÜRK",
+    "5,00",
+    "4,50",
+    "12,00",
+    "41,00"
+   ],
+   [
+    "990000002",
+    "ŞÜKRÜ IŞIK",
+    "0,00",
+    "2,00",
+    "17,00",
+    "6,00"
+   ],
+   [
+    "990000003",
+    "AYŞE GÜNEŞ",
+    "G",
+    "G",
+    "G",
+    "G"
+   ],
+   [
+    "990000004",
+    "MEHMET ÇAKIR",
+    "3,00",
+    "1,00",
+    "0,00",
+    "5,00"
+   ],
+   [
+    "990000005",
+    "BURAK ERDOĞAN",
+    "6,00",
+    "13,00",
+    "2,00",
+    "15,00"
+   ],
+   [
+    "990000006",
+    "ZEYNEP DEMİR",
+    "1,00",
+    "17,50",
+    "13,00",
+    "3,00"
+   ],
+   [
+    "990000007",
+    "ALİ VELİ",
+    "9,00",
+    "3,50",
+    "7,00",
+    "40,00"
+   ],
+   [
+    "990000008",
+    "HASAN KAYA",
+    "10,00",
+    "18,50",
+    "1,00",
+    "36,00"
+   ],
+   [
+    "990000009",
+    "FATMA YILDIZ",
+    "9,00",
+    "12,50",
+    "1,00",
+    "14,00"
+   ],
+   [
+    "990000010",
+    "EMRE ŞAHİN",
+    "0,00",
+    "17,50",
+    "4,00",
+    "18,00"
+   ],
+   [
+    "990000011",
+    "GÜL ÖZDEMİR",
+    "G",
+    "G",
+    "G",
+    "G"
+   ],
+   [
+    "990000012",
+    "İSMAİL KOÇ",
+    "G",
+    "G",
+    "G",
+    "G"
+   ]
+  ],
+  "aktarim_basliklar": [
+   "Öğrenci No",
+   "Ad Soyad",
+   "S1",
+   "S2",
+   "S3",
+   "S4"
   ],
   "girmeyenler": [
    "990000003",

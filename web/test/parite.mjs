@@ -30,7 +30,10 @@ function hesapla(sen, proje, sonuc) {
   return {
     ogrenciler: sonuc.ogrenciler.map((o) => ({ no: o.no, ad: o.ad, puan: kesir(o.puan), ham: kesir(o.ham_puan), ceza: kesir(o.ceza),
       durum: o.sorular.map((s) => s.durum).join(""), cevaplar: o.cevaplar, dogru: o.dogru, yanlis: o.yanlis, bos: o.bos, kitapcik: o.kitapcik,
-      kaynak: o.kaynak_soru, listede: o.listede, oneriler: o.oneriler, uyarilar: o.uyarilar.map((u) => [u.tur, u.mesaj]) })),
+      kaynak: o.kaynak_soru, listede: o.listede, oneriler: o.oneriler, uyarilar: o.uyarilar.map((u) => [u.tur, u.mesaj]),
+      bonus_ile: o.sorular.map((s, i) => (s.bonus_ile ? i + 1 : 0)).filter(Boolean) })),
+    aktarim: OS.tabloUret(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, sonuc)[1].map((r) => r.map((h) => OS.hucreMetni(h, OS.PROFILLER.akreditasyon_soru_bazli_varsayilan))),
+    aktarim_basliklar: OS.tabloUret(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, sonuc)[0],
     girmeyenler: sonuc.girmeyenler.map((x) => x.no),
     soru_puanlari: sonuc.soru_puanlari.map(kesir),
     maddeler: m.map((x) => ({ soru_no: x.soru_no, analiz_disi: x.analiz_disi, guclik: x.guclik, ayirt: x.ayirt_edicilik, r: x.nokta_cift_serili,
