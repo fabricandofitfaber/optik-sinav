@@ -744,3 +744,32 @@ def test_kalanlar_ve_toplu_girmedi(pencere, fix, monkeypatch):
     assert "Kalan: 0" in k.kagit.kalan.text()
     s = d.degerlendir()
     assert {g.no for g in s.girmeyenler} == {o.no for o in kalanlar}
+
+
+def test_kagit_arama_dugmeleri_ve_tablo(pencere, fix):
+    """Kâğıt panelinde arama: birden çok öğrenci tıklanabilir düğme olur, tek öğrenci kalınca kendiliğinden seçilir;
+    seçilen ve kaydedilen öğrenci alttaki tabloda seçili olur, puanlar tabloya da yazılır."""
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(2)
+    g = pencere.adimlar[2].kagit
+    g.ara.setText("99000000")
+    g._oneri("99000000")
+    assert g.secili is None and len(g.oneri_dugmeleri) == 6
+    g.oneri_dugmeleri[2].click()
+    o = g.secili
+    assert o is not None and all(e.isEnabled() for e in g.kutular)
+    tablo = pencere.adimlar[2].klasik_tablo
+    satir = next(i for i, x in enumerate(d.liste.ogrenciler) if x.no == o.no)
+    assert tablo.selectionModel().isRowSelected(satir)
+    for e in g.kutular:
+        e.setText("1")
+    g.kaydet()
+    assert d.proje.klasik_puanlar[o.no][:len(g.kutular)] == ["1"] * len(g.kutular)
+    m = pencere.adimlar[2].klasik_model
+    assert m.data(m.index(satir, 3)) in ("1", 1)
+    # adın birkaç harfi tek öğrenciye inince kendiliğinden seçilir
+    g._oneri("burak")
+    assert g.secili is not None and "BURAK" in g.secili.ad and g.kutular[0].hasFocus() in (True, False)

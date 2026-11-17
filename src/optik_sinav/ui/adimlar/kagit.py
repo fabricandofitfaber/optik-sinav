@@ -49,9 +49,16 @@ class KagitPaneli(QGroupBox):
         self.kalanlar_dugmesi.clicked.connect(self.kalanlari_goster)
         s.addWidget(self.kalanlar_dugmesi)
         v.addLayout(s)
-        self.oneriler = QLabel()
+        # bulunan öğrenciler tıklanabilir düğmeler; tek öğrenci kalınca kendiliğinden seçilir
+        self.oneriler = QLabel("Numarasını ya da adının birkaç harfini yazın; çıkan öğrenciye tıklayın ya da Enter'a basın.")
         self.oneriler.setStyleSheet("color: gray")
+        self.oneriler.setWordWrap(True)
         v.addWidget(self.oneriler)
+        self.oneri_kabi = QWidget()
+        self.oneri_duzen = QGridLayout(self.oneri_kabi)  # üçerli satırlar: dar pencerede de yatay taşmaz
+        self.oneri_duzen.setContentsMargins(0, 0, 0, 0)
+        self.oneri_dugmeleri: list[QPushButton] = []
+        v.addWidget(self.oneri_kabi)
         # Soru kutuları ızgarada: etiket üstte, kutu altta; satır başına en çok SUTUN soru (dar pencerede de sığsın)
         self.kutu_satiri = QGridLayout()
         self.kutu_satiri.setHorizontalSpacing(8)
@@ -111,12 +118,33 @@ class KagitPaneli(QGroupBox):
         ts = _sade(t)
         return [o for o in self._liste() if t in o.no or ts in _sade(o.ad)]
 
+    def _oneri_dugmelerini_temizle(self):
+        for b in self.oneri_dugmeleri:
+            self.oneri_duzen.removeWidget(b)
+            b.deleteLater()
+        self.oneri_dugmeleri = []
+
     def _oneri(self, metin):
         r = self.bul(metin)
-        if metin.strip() and not r:
+        self._oneri_dugmelerini_temizle()
+        t = metin.strip()
+        if t and not r:
             self.oneriler.setText("<span style='color:#C0504D'>Listede bulunamadı</span>")
-        else:
-            self.oneriler.setText("   ".join(f"{o.no} {o.ad}" for o in r[:3]) + (f"   (+{len(r) - 3} öğrenci daha; biraz daha yazın)" if len(r) > 3 else ""))
+            return
+        if not t:
+            self.oneriler.setText("Numarasını ya da adının birkaç harfini yazın; çıkan öğrenciye tıklayın ya da Enter'a basın.")
+            return
+        # tek öğrenci kaldıysa ve arama yeterince belirginse (tam numara ya da en az 3 harf) kendiliğinden seçilir
+        if len(r) == 1 and (t == r[0].no or (len(t) >= 3 and any(c.isalpha() for c in t))):
+            self.sec(r[0])
+            return
+        self.oneriler.setText("" if len(r) <= 6 else f"(+{len(r) - 6} öğrenci daha; biraz daha yazın)")
+        for i, o in enumerate(r[:6]):
+            b = QPushButton(f"{o.no} {o.ad}")
+            b.setToolTip("Bu öğrencinin kâğıdını aç")
+            b.clicked.connect(lambda _x, o=o: self.sec(o))
+            self.oneri_duzen.addWidget(b, i // 3, i % 3)
+            self.oneri_dugmeleri.append(b)
 
     def _ilkini_sec(self):
         r = self.bul(self.ara.text())
@@ -130,7 +158,9 @@ class KagitPaneli(QGroupBox):
         isaretli = o.no in self.durum.proje.klasik_girmedi
         self.kim.setText(f"{o.no} {o.ad}" + (" (sınava girmedi işaretli; puan kaydederseniz işaret kalkar)" if isaretli else
                                              " (daha önce girilmiş; üzerine yazılır)" if once else ""))
+        self._oneri_dugmelerini_temizle()
         self.oneriler.setText("")
+        self._tabloda_goster(o.no)
         for k, e in enumerate(self.kutular):
             e.setEnabled(True)
             e.setText(d[k] if k < len(d) and d[k] is not None else "")
@@ -141,6 +171,18 @@ class KagitPaneli(QGroupBox):
         if self.kutular:
             self.kutular[0].setFocus()
             self.kutular[0].selectAll()
+
+    def _tabloda_goster(self, no: str):
+        """Alttaki puan tablosunda öğrencinin satırını seçer ve görünür yapar."""
+        tablo = getattr(self.kontrol, "klasik_tablo", None)
+        if tablo is None:
+            return
+        i = next((j for j, o in enumerate(self._liste()) if o.no == no), None)
+        if i is None:
+            return
+        ix = tablo.model().index(i, 0)
+        tablo.selectRow(i)
+        tablo.scrollTo(ix)
 
     def _sonraki_kutu(self, k):
         hedef = self.kutular[k + 1] if k + 1 < len(self.kutular) else self.toplam
@@ -163,6 +205,7 @@ class KagitPaneli(QGroupBox):
             self.durum.proje.klasik_toplamlar.pop(o.no, None)
         self.durum.degerlendir()
         self.kontrol.klasik_model.yenile()
+        self._tabloda_goster(o.no)
         s = self.durum.sonuc
         sonuc = next((x for x in s.ogrenciler if x.no == o.no), None) if s else None
         uyari = [u.mesaj for u in (sonuc.uyarilar if sonuc else []) if any(k in u.mesaj for k in ("toplam", "büyük", "eksi", "sayı"))]

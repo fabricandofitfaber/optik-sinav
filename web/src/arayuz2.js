@@ -228,11 +228,21 @@
       const ts = sadeAd(t);
       return L.filter((o) => o.no.includes(t) || sadeAd(o.ad).includes(ts));
     };
+    // alttaki puan tablosunda öğrencinin satırını vurgular ve (yalnızca tablonun kendi kaydırmasıyla) görünür yapar
+    const tablodaGoster = (no) => {
+      $$("#klasikTablo tr.vurgu", k).forEach((x) => x.classList.remove("vurgu"));
+      const tr = $(`#klasikTablo tr[data-no="${CSS.escape(no)}"]`, k);
+      if (!tr) return;
+      tr.classList.add("vurgu");
+      const kap = tr.closest(".tablo-kap");
+      if (kap) kap.scrollTop = Math.max(0, tr.offsetTop - kap.clientHeight / 2);
+    };
     const sec = (o) => {
       secili = o;
       const d = D.proje.klasik_puanlar[o.no] || [];
       $("#kagitKim", k).textContent = `${o.no} ${o.ad}${girmediMi(o.no) ? " (sınava girmedi işaretli; puan kaydederseniz işaret kalkar)" : d.some((x) => x !== null && x !== "") ? " (daha önce girilmiş; üzerine yazılır)" : ""}`;
       $("#kagitOneri", k).innerHTML = "";
+      tablodaGoster(o.no);
       kutular.forEach((b) => { b.disabled = false; b.value = d[Number(b.dataset.k)] ?? ""; });
       toplam.disabled = false;
       toplam.value = (D.proje.klasik_toplamlar || {})[o.no] ?? "";
@@ -253,6 +263,9 @@
       const r = bul(ara.value);
       $("#kagitOneri", k).innerHTML = r.slice(0, 8).map((o, i) => `<button class="kucuk" data-i="${i}">${e(o.no)} ${e(o.ad)}</button>`).join("") + (r.length > 8 ? `<span class="soluk">+${r.length - 8} öğrenci daha; biraz daha yazın</span>` : "") + (ara.value.trim() && !r.length ? '<span class="kirmizi">Listede bulunamadı</span>' : "");
       $$("#kagitOneri button", k).forEach((b) => (b.onclick = () => sec(r[Number(b.dataset.i)])));
+      // tek öğrenci kaldıysa ve arama yeterince belirginse (tam numara ya da en az 3 harf) kendiliğinden seçilir
+      const t = ara.value.trim();
+      if (r.length === 1 && (t === r[0].no || (t.length >= 3 && /\p{L}/u.test(t)))) sec(r[0]);
       return r;
     };
     ara.oninput = oneriGoster;
