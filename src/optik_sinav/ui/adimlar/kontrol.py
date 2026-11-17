@@ -1,9 +1,12 @@
-"""4. adım: renkli sonuç tablosu, uyarılar, düzeltme, sınava girmeyenler ve listede olmayanlar."""
+"""3. adım: düzeltilmesi gerekenler listesi, renkli sonuç tablosu, uyarılar, düzeltme, sınava girmeyenler ve listede olmayanlar."""
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QKeySequence
 from PySide6.QtWidgets import (
+    QListWidgetItem,
+    QListWidget,
+    QGroupBox,
     QCheckBox, QFileDialog, QHBoxLayout, QHeaderView, QInputDialog, QLabel, QMessageBox, QPushButton, QTableView,
     QTableWidget, QTableWidgetItem, QTabWidget, QWidget, QVBoxLayout,
 )
@@ -67,7 +70,7 @@ def _doldur(t: QTableWidget, satirlar: list[list[object]]):
 
 class KontrolAdimi(Adim):
     def __init__(self, durum, parent=None):
-        super().__init__(durum, M.ADIMLAR[3], parent)
+        super().__init__(durum, M.ADIMLAR[2], parent)
         ust = QHBoxLayout()
         self.ozet = QLabel()
         self.ozet.setWordWrap(True)
@@ -82,6 +85,24 @@ class KontrolAdimi(Adim):
             + "  Numara, ad ya da tek bir cevabı düzeltmek için hücreye çift tıklayın. Özgün okuma silinmez.")
         aciklama.setWordWrap(True)
         self.aciklama = aciklama  # optik sınava özgü; klasikte gizlenir
+
+        # Düzeltilmesi gerekenler: uyarılı satırlar okunur bir listede, tıklayınca tabloda o satıra gidilir (optik)
+        self.duzeltilecek_kutusu = QGroupBox("Düzeltilmesi gerekenler")
+        v = QVBoxLayout(self.duzeltilecek_kutusu)
+        self.duzeltilecekler = QListWidget()
+        self.duzeltilecekler.setMaximumHeight(150)
+        self.duzeltilecekler.setWordWrap(True)
+        self.duzeltilecekler.itemClicked.connect(self._duzeltilecege_git)
+        self.duzeltilecekler.itemActivated.connect(self._duzeltilecege_git)
+        v.addWidget(self.duzeltilecekler)
+        ip = QLabel("Satıra tıklayınca tabloda o öğrenci seçilir; hücreye çift tıklayarak düzeltin. Okunan dosyada sorun yoksa bu bölümü geçebilirsiniz.")
+        ip.setWordWrap(True)
+        ip.setStyleSheet("color: gray")
+        v.addWidget(ip)
+        self.duzen.addWidget(self.duzeltilecek_kutusu)
+        self.temiz_etiketi = QLabel("<span style='color:#1e7b34'><b>✓ Düzeltilmesi gereken satır yok.</b></span>")
+        self.temiz_etiketi.setVisible(False)
+        self.duzen.addWidget(self.temiz_etiketi)
         self.duzen.addWidget(aciklama)
 
         self.sekmeler = QTabWidget()
@@ -146,6 +167,7 @@ class KontrolAdimi(Adim):
 
     def girildi(self):
         klasik = self.durum.proje.klasik
+        self.baslik_etiketi.setText(f"<h2>{M.ADIM_KLASIK_3 if klasik else M.ADIMLAR[2]}</h2>")
         i = self.sekmeler.indexOf(self.klasik_sayfa)
         self.sekmeler.setTabVisible(i, klasik)
         # optik sınava özgü olanlar klasikte gizlenir (renk açıklaması, uyarı süzgeci, listede olmayanlar, düzeltme kaydı)
@@ -197,6 +219,7 @@ class KontrolAdimi(Adim):
         if s.liste_var:
             metin += f" Sınava girmeyen: <b>{len(s.girmeyenler)}</b>. Listede olmayan numara: <b>{len(s.listede_olmayanlar)}</b>."
         self.ozet.setText(metin)
+        self._duzeltilecekleri_doldur(s)
         self.sekmeler.setTabText(2, f"Sınava girmeyenler ({len(s.girmeyenler)})")
         self.sekmeler.setTabText(3, f"Listede olmayanlar ({len(s.listede_olmayanlar)})")
         self.sekmeler.setTabText(4, f"Düzeltme kaydı ({len(self.durum.proje.duzeltmeler)})")
@@ -204,6 +227,34 @@ class KontrolAdimi(Adim):
         _doldur(self.olmayan_tablo, [[o.kayit.satir_no, o.no, o.okunan_ad, ", ".join(o.oneriler), sayi_yaz(o.puan, s.ayarlar.ondalik)]
                                      for o in s.listede_olmayanlar])
         _doldur(self.duzeltme_tablo, [[d.satir_no, d.alan, d.eski, d.yeni, d.kim, d.zaman] for d in self.durum.proje.duzeltmeler])
+
+    def _duzeltilecekleri_doldur(self, s):
+        self.duzeltilecekler.clear()
+        if s is None or s.klasik:
+            self.duzeltilecek_kutusu.setVisible(False)
+            self.temiz_etiketi.setVisible(False)
+            return
+        for i, o in enumerate(s.ogrenciler):
+            if not o.uyarilar:
+                continue
+            it = QListWidgetItem(f"Satır {o.kayit.satir_no} · {o.no} {o.ad}: " + "; ".join(u.mesaj for u in o.uyarilar))
+            it.setData(Qt.ItemDataRole.UserRole, i)
+            self.duzeltilecekler.addItem(it)
+        n = self.duzeltilecekler.count()
+        self.duzeltilecek_kutusu.setTitle(f"Düzeltilmesi gerekenler ({n})")
+        self.duzeltilecek_kutusu.setVisible(n > 0)
+        self.temiz_etiketi.setVisible(n == 0)
+
+    def _duzeltilecege_git(self, it):
+        i = it.data(Qt.ItemDataRole.UserRole)
+        if i is None:
+            return
+        self.sekmeler.setCurrentWidget(self.tablo)
+        ix = self.suzgec.mapFromSource(self.model.index(i, 0))
+        if ix.isValid():
+            self.tablo.selectRow(ix.row())
+            self.tablo.scrollTo(ix)
+            self.tablo.setFocus()
 
     # ---------------------------------------------------------------- düzeltme
     def _cift_tik(self, ix):

@@ -32,14 +32,16 @@ YUVARLAMA_ADI = {"yarim_yukari": "Yarım yukarı", "asagi": "Aşağı", "yukari"
 YONTEM_ADI = {"esit": "Eşit puan", "soru_bazli": "Soru bazlı puan"}
 
 ADIM_KLASIK_2 = "2. Sorular ve puanlar"
+# Sade düzen (17 Kasım 2026): zorunlu dört adım ve isteğe bağlı istatistikler. Puanlama ayarları 2. adımda katlanır bölümdedir.
 ADIMLAR = [
     "1. Sınav ve dosyalar",
     "2. Cevap anahtarı",
-    "3. Puanlama",
-    "4. Kontrol ve düzeltme",
-    "5. İstatistikler",
-    "6. Dışa aktar",
+    "3. Kontrol ve düzeltme",
+    "4. Sisteme aktar ve raporlar",
+    "5. İstatistikler (isteğe bağlı)",
 ]
+ADIM_KLASIK_3 = "3. Puan girişi"
+PUANLAMA_AYARLARI = "Puanlama ayarları"
 
 EKSIK = {
     "dat": "Optik okuyucu dosyası seçilmedi.",

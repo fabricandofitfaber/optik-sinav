@@ -519,7 +519,7 @@ def _ek_analizler_sayfasi(wb, sonuc, maddeler, genel, e, ara_agirlik, arsiv):
             if x.gereken is None or x.gereken > 80:
                 c.fill = dolgu(RENK["Y"])
             r += 1
-        _not(ws, r, "Geçme kuralı ders yönetmeliğine göre farklı olabilir; geçme ortalaması ve final alt sınırı 3. adımda değiştirilebilir. "
+        _not(ws, r, "Geçme kuralı ders yönetmeliğine göre farklı olabilir; geçme ortalaması ve final alt sınırı 2. adımdaki Puanlama ayarları bölümünde değiştirilebilir. "
                     "Bütünleme ve harf notu dönüşümü hesaba katılmamıştır.", 6)
         r += 1
 

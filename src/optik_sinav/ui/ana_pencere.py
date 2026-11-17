@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, Qt, QTime, QTimer
-from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtGui import QColor, QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication, QFileDialog, QFrame, QScrollArea, QHBoxLayout, QLabel, QListWidget, QMainWindow, QMessageBox, QPushButton, QStackedWidget,
     QVBoxLayout, QWidget,
@@ -19,7 +19,6 @@ from .adimlar.disa_aktar import DisaAktarAdimi
 from .adimlar.dosyalar import DosyalarAdimi
 from .adimlar.istatistik import IstatistikAdimi
 from .adimlar.kontrol import KontrolAdimi
-from .adimlar.puanlama import PuanlamaAdimi
 from .durum import Durum, kurtarma_ozeti, kurtarmayi_yedekle, son_acilanlar
 
 
@@ -66,7 +65,8 @@ class AnaPencere(QMainWindow):
         yatay = QHBoxLayout(merkez)
         self.adim_listesi = QListWidget()
         self.adim_listesi.addItems(M.ADIMLAR)
-        self.adim_listesi.setFixedWidth(210)
+        self.adim_listesi.setFixedWidth(230)
+        self.adim_listesi.setStyleSheet("QListWidget { font-size: 14px; } QListWidget::item { padding: 8px 6px; }")
         self.adim_listesi.currentRowChanged.connect(self._adima_git)
         yatay.addWidget(self.adim_listesi)
 
@@ -78,8 +78,8 @@ class AnaPencere(QMainWindow):
         self.serit.setVisible(False)
         sag.addWidget(self.serit)
         self.yigin = QStackedWidget()
-        self.adimlar = [DosyalarAdimi(self.durum), AnahtarAdimi(self.durum), PuanlamaAdimi(self.durum),
-                        KontrolAdimi(self.durum), IstatistikAdimi(self.durum), DisaAktarAdimi(self.durum)]
+        self.adimlar = [DosyalarAdimi(self.durum), AnahtarAdimi(self.durum), KontrolAdimi(self.durum),
+                        DisaAktarAdimi(self.durum), IstatistikAdimi(self.durum)]
         for a in self.adimlar:
             kaydirma = KaydirmaAlani()
             kaydirma.setWidget(a)
@@ -148,7 +148,7 @@ class AnaPencere(QMainWindow):
         if eksik:
             QMessageBox.warning(self, "Eksik dosya", "Şu kaynak dosyalar bulunamadı; 1. adımda yeniden seçin:\n" + "\n".join(eksik))
         self.durum._son_ozet = None
-        self.adim_listesi.setCurrentRow(3 if self.durum.proje.klasik and self.durum.liste is not None else 0)
+        self.adim_listesi.setCurrentRow(2 if self.durum.proje.klasik and self.durum.liste is not None else 0)
         self._dugmeleri_guncelle()
         return True
 
@@ -196,20 +196,42 @@ class AnaPencere(QMainWindow):
         self.adimlar[i].girildi()
         self._dugmeleri_guncelle()
 
+    def adim_adi(self, j: int) -> str:
+        klasik = self.durum.proje.klasik
+        if klasik and j == 1:
+            return M.ADIM_KLASIK_2
+        if klasik and j == 2:
+            return M.ADIM_KLASIK_3
+        return M.ADIMLAR[j]
+
     def _dugmeleri_guncelle(self):
         i = self.yigin.currentIndex()
         eksik = self.adimlar[i].eksikler() if i >= 0 else []
         self.geri.setEnabled(i > 0)
         self.sonraki.setEnabled(i < len(self.adimlar) - 1)
         self.eksik.setText(("Eksik: " + " ".join(eksik)) if eksik else "")
-        # Hazırlık adımlarının (1-3) durumu: listede işaret, sonuç adımlarında (4-6) üstte şerit
-        on = [(j, self.adimlar[j].eksikler()) for j in range(3)]
+        # Hazırlık adımlarının (1-2) durumu: listede işaret, sonuç adımlarında (3-5) üstte şerit
+        on = [(j, self.adimlar[j].eksikler()) for j in range(2)]
         tamam = True  # bir adım, kendisi ve öncekiler eksiksizse işaretlenir
         for j, e in on:
             tamam = tamam and not e
-            ad = M.ADIM_KLASIK_2 if (j == 1 and self.durum.proje.klasik) else M.ADIMLAR[j]
-            self.adim_listesi.item(j).setText(ad + ("  ✓" if tamam else ""))
-        if i >= 3:
+            self.adim_listesi.item(j).setText(self.adim_adi(j) + ("  ✓" if tamam else "  •" if e else ""))
+        sonuc = self.durum.sonuc
+        p = self.durum.proje
+        if p.klasik and self.durum.liste is not None:
+            # klasik: puanı girilen ya da "girmedi" işaretli öğrenci sayısı; hepsi bitince ✓
+            L = self.durum.liste.ogrenciler
+            bitti = sum(1 for o in L if o.no in p.klasik_girmedi or any(x not in (None, "") for x in (p.klasik_puanlar.get(o.no) or [])))
+            k3 = "  ✓" if L and bitti == len(L) else f"  ({bitti}/{len(L)})" if bitti else ""
+        else:
+            k3 = "" if sonuc is None else "  ✓"
+            if sonuc is not None and any(o.uyarilar for o in sonuc.ogrenciler):
+                k3 = f"  ({sum(1 for o in sonuc.ogrenciler if o.uyarilar)} uyarı)"
+        self.adim_listesi.item(2).setText(self.adim_adi(2) + k3)
+        for j in (3, 4):
+            self.adim_listesi.item(j).setText(self.adim_adi(j))
+        self.adim_listesi.item(4).setForeground(QColor("gray"))  # isteğe bağlı
+        if i >= 2:
             satirlar = [f"<a href='{j}'>{j + 1}. adım</a>: {' '.join(e)}" for j, e in on if e]
             if self.durum.sonuc is None and not satirlar:
                 satirlar = [" ".join(self.durum.hesap_eksikleri())]

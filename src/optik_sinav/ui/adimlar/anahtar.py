@@ -257,6 +257,10 @@ class AnahtarAdimi(Adim):
         self.ipucu.setWordWrap(True)
         self.ipucu.setStyleSheet("color: gray")
         self.duzen.addWidget(self.ipucu)
+        self.pc_goster = QCheckBox("Program çıktıları sütununu göster (genellikle gerekmez: sistem bunları ders öğrenme çıktılarından hesaplar)")
+        self.pc_goster.setStyleSheet("color: gray")
+        self.pc_goster.toggled.connect(lambda _x: self._sutunlari_goster())
+        self.duzen.addWidget(self.pc_goster)
 
         # --- alt: puan ve çıktı özeti
         alt = QFrame()
@@ -298,6 +302,30 @@ class AnahtarAdimi(Adim):
         s.addStretch(1)
         a.addLayout(s)
         self.duzen.addWidget(alt)
+
+        # Puanlama ayarları: varsayılanlar çoğu sınavda doğrudur; katlanır bölümde, özetiyle
+        from PySide6.QtCore import Qt as _Qt
+        from PySide6.QtWidgets import QToolButton
+
+        from .puanlama import PuanlamaAdimi
+
+        s = QHBoxLayout()
+        self.ayar_dugmesi = QToolButton()
+        self.ayar_dugmesi.setText(M.PUANLAMA_AYARLARI)
+        self.ayar_dugmesi.setCheckable(True)
+        self.ayar_dugmesi.setToolButtonStyle(_Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.ayar_dugmesi.setArrowType(_Qt.ArrowType.RightArrow)
+        self.ayar_dugmesi.setStyleSheet("QToolButton { border: none; font-weight: bold; }")
+        self.ayar_dugmesi.toggled.connect(self._ayarlari_ac)
+        s.addWidget(self.ayar_dugmesi)
+        self.ayar_ozeti = QLabel()
+        self.ayar_ozeti.setStyleSheet("color: gray")
+        s.addWidget(self.ayar_ozeti, 1)
+        self.duzen.addLayout(s)
+        self.ayarlar_paneli = PuanlamaAdimi(durum, self)
+        self.ayarlar_paneli.setVisible(False)
+        self.ayarlar_paneli.tamamlik_degisti.connect(self._ayar_degisti)
+        self.duzen.addWidget(self.ayarlar_paneli)
         durum.degisti.connect(self.durumdan_yukle)
 
     # ---------------------------------------------------------------- yardımcılar
@@ -331,7 +359,49 @@ class AnahtarAdimi(Adim):
 
     def girildi(self):
         self.durumdan_yukle()
+        self.ayarlar_paneli.girildi()
         self.izgara.setFocus()
+
+    def _sutunlari_goster(self):
+        """Gerekmeyen sütunları gizler: eşit puanda Puan (hepsi aynı), kimse kullanmıyorsa Program çıktıları
+        (sistem program çıktılarını ders öğrenme çıktılarından kendisi hesaplar)."""
+        if not hasattr(self, "pc_goster"):
+            return
+        esit = self.durum.proje.ayarlar.yontem == PuanYontemi.ESIT and not self.klasik
+        if any(s.program_ciktilari for s in self.anahtar.sorular) and not self.pc_goster.isChecked():
+            self.pc_goster.blockSignals(True)
+            self.pc_goster.setChecked(True)
+            self.pc_goster.blockSignals(False)
+        pc = self.pc_goster.isChecked()
+        for ad, gorunur in (("Puan", not esit), ("Program çıktıları", pc)):
+            if ad in getattr(self, "baslik_w", {}):
+                self.baslik_w[ad].setVisible(gorunur)
+        for r in getattr(self, "satirlar", []):
+            if r.puan is not None:
+                r.puan.setVisible(not esit)
+            if r.pc is not None:
+                r.pc.setVisible(pc)
+
+    def _ayarlari_ac(self, acik: bool):
+        self.ayarlar_paneli.setVisible(acik)
+        self.ayar_dugmesi.setArrowType(Qt.ArrowType.DownArrow if acik else Qt.ArrowType.RightArrow)
+
+    def _ayar_degisti(self):
+        """Puanlama ayarı değişti: puan sütunu, toplam ve özet yenilenir."""
+        if getattr(self, "satirlar", None) is not None and len(self.satirlar) == self.anahtar.soru_sayisi and self.ana_mi:
+            self._sutunlari_goster()
+            self._degerleri_yaz_guvenli()
+        self.ayar_ozeti.setText(self.ayarlar_paneli.ozet_metni())
+        self._ozet()
+        self.tamamlik_degisti.emit()
+
+    def _degerleri_yaz_guvenli(self):
+        onceki = self._yukleniyor
+        self._yukleniyor = True
+        try:
+            self._degerleri_yaz()
+        finally:
+            self._yukleniyor = onceki
 
     # ---------------------------------------------------------------- kurulum
     def durumdan_yukle(self):
@@ -379,10 +449,10 @@ class AnahtarAdimi(Adim):
         self.kitapcik_sil.setVisible(not self.klasik and not self.ana_mi)
         if self.klasik:
             self.kitapcik_bilgi.setText("Klasik sınav: her sorunun puanını ve ölçtüğü öğrenme çıktılarını girin. "
-                                        "Öğrencilerin puanları 4. adımda girilir.")
+                                        "Öğrencilerin puanları 3. adımda girilir.")
         elif self.ana_mi:
             self.kitapcik_bilgi.setText("Ana kitapçık: soru numaraları bütün çıktılarda bu kitapçığa göredir. "
-                                        "Optik formda kitapçık alanı varsa 1. adımda konumunu girin; yoksa 4. adımda öğrencinin kitapçığını seçebilirsiniz."
+                                        "Optik formda kitapçık alanı varsa 1. adımda konumunu girin; yoksa 3. adımda öğrencinin kitapçığını seçebilirsiniz."
                                         if len(self.anahtar.kitapciklar()) > 1 else "")
         else:
             self.kitapcik_bilgi.setText(f"{self.kitapcik} kitapçığı: şıkları bu kitapçığın kendi soru sırasıyla işaretleyin. "
@@ -409,10 +479,12 @@ class AnahtarAdimi(Adim):
             basliklar += ["Puan", "Öğrenme çıktıları (yüzdeleriyle)", "", "Program çıktıları"]
         else:
             basliklar += ["Ana kitapçıktaki karşılığı"]
+        self.baslik_w = {}
         for j, b in enumerate(basliklar):
             l = QLabel(b)
             l.setFont(kalin)
             self.izgara_duzen.addWidget(l, 0, j)
+            self.baslik_w[b] = l
         bilinen = self.durum.ogrenme_kodlari()
         for i in range(n):
             r = SoruSatiri()
@@ -467,7 +539,10 @@ class AnahtarAdimi(Adim):
         if self.ana_mi:
             self.izgara_duzen.setColumnStretch(len(basliklar) - 3, 3)
             self.izgara_duzen.setColumnStretch(len(basliklar) - 1, 2)
+        self._sutunlari_goster()
         self.izgara_duzen.setRowStretch(n + 1, 1)
+        # alttaki bölümler açılınca tablo ezilmesin: soru sayısına göre en az yükseklik (en çok 12 satırlık)
+        self.kaydirma.setMinimumHeight(min(12, max(n, 1)) * 30 + 40)
         if self.klasik:
             self.ipucu.setText("Puanı değiştirmek için kutuya tıklayıp yazın ya da yukarıdaki satıra bütün puanları sırayla yazın. "
                                + (f"Dersin öğrenme çıktıları: {', '.join(bilinen)}; çıktı sütununa yalnızca numara da yazabilirsiniz (\"1, 3\" → Ö01 ve Ö03 eşit)."
@@ -761,32 +836,7 @@ class AnahtarAdimi(Adim):
         self.durumdan_yukle()
 
     def _sisteme_kopyala(self):
-        from PySide6.QtGui import QGuiApplication
-
-        from ...export.soru_tanimi import soru_tanimi_metni
-
-        a = self.anahtar
-        sorunlar = [x for x in anahtar_eksikleri(a, self.durum.proje.ayarlar, True) if "puan" in x.lower()]
-        hatalar, _ = cikti_denetimi(a, self.durum.ogrenme_kodlari() or None)
-        if not any(s.ogrenme_ciktilari for s in a.sorular):
-            hatalar = ["Hiçbir soruya öğrenme çıktısı seçilmedi. Sistem her soru için öğrenme çıktısı istiyor."]
-        if sorunlar or hatalar:
-            QMessageBox.warning(self, "Önce düzeltin", "\n".join(sorunlar + hatalar))
-            return
-        try:
-            metin = soru_tanimi_metni(a, self.durum.proje.ayarlar, self.durum.ogrenme_kodlari() or None)
-        except Exception as e:  # noqa: BLE001
-            QMessageBox.warning(self, "Kopyalanamadı", str(e))
-            return
-        QGuiApplication.clipboard().setText(metin)
-        QMessageBox.information(self, "Panoya kopyalandı",
-                                f"{a.soru_sayisi} sorunun tanımı kopyalandı.\n\n"
-                                "Akademik Bilgi Sistemi'nde:\n"
-                                "1. Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.\n"
-                                "2. \"Toplu Sınav Soru Tanım\" kutusunda \"Toplu Aktarım Yap\" seçin.\n"
-                                "3. \"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.\n"
-                                "4. Sağdaki Aktarım Kutusu'na tıklayıp yapıştırın (Cmd+V).\n"
-                                "5. \"Aktar\" düğmesine basın.")
+        soru_tanimini_kopyala(self, self.durum)
 
     def _eslemeyi_kaydet(self):
         yol = self.durum.ders_eslemesi_kaydet()
@@ -846,8 +896,9 @@ class AnahtarAdimi(Adim):
 
     def eksikler(self):
         a = self.anahtar
-        # Klasik sınavda soru puanları bu adımda girilir; optikte 3. adımda
-        e = [x for x in anahtar_eksikleri(a, self.durum.proje.ayarlar, self.klasik) if self.klasik or "puan" not in x.lower()]
+        # Soru puanları ve puanlama ayarları da bu adımdadır (ayarlar katlanır bölümde)
+        e = list(anahtar_eksikleri(a, self.durum.proje.ayarlar, self.klasik))
+        e += [x for x in self.ayarlar_paneli.eksikler() if x not in e]
         if not self.klasik:
             for k in a.kitapciklar()[1:]:
                 harfler = [c for c in a.kitapcik_anahtarlari.get(k, "") if not c.isspace()]
@@ -858,3 +909,34 @@ class AnahtarAdimi(Adim):
                 e.extend(a.esleme_sorunlari(k))
         hatalar, _ = cikti_denetimi(a, self.durum.ogrenme_kodlari() or None)
         return e + hatalar
+
+
+def soru_tanimini_kopyala(ebeveyn, durum) -> bool:
+    """Soru tanımını (bonus hariç) Akademik Bilgi Sistemi'nin Toplu Aktarım biçiminde panoya kopyalar. Kopyaladıysa True."""
+    from PySide6.QtGui import QGuiApplication
+
+    from ...export.soru_tanimi import soru_tanimi_metni
+
+    a = durum.proje.anahtar
+    sorunlar = [x for x in anahtar_eksikleri(a, durum.proje.ayarlar, True) if "puan" in x.lower()]
+    hatalar, _ = cikti_denetimi(a, durum.ogrenme_kodlari() or None)
+    if not any(s.ogrenme_ciktilari for s in a.sorular):
+        hatalar = ["Hiçbir soruya öğrenme çıktısı seçilmedi (2. adım). Sistem her soru için öğrenme çıktısı istiyor."]
+    if sorunlar or hatalar:
+        QMessageBox.warning(ebeveyn, "Önce düzeltin", "\n".join(sorunlar + hatalar))
+        return False
+    try:
+        metin = soru_tanimi_metni(a, durum.proje.ayarlar, durum.ogrenme_kodlari() or None)
+    except Exception as e:  # noqa: BLE001
+        QMessageBox.warning(ebeveyn, "Kopyalanamadı", str(e))
+        return False
+    QGuiApplication.clipboard().setText(metin)
+    QMessageBox.information(ebeveyn, "Panoya kopyalandı",
+                            f"{len(a.aktarim_sorulari())} sorunun tanımı kopyalandı.\n\n"
+                            "Akademik Bilgi Sistemi'nde:\n"
+                            "1. Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.\n"
+                            "2. \"Toplu Sınav Soru Tanım\" kutusunda \"Toplu Aktarım Yap\" seçin.\n"
+                            "3. \"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.\n"
+                            "4. Sağdaki Aktarım Kutusu'na tıklayıp yapıştırın (Cmd+V).\n"
+                            "5. \"Aktar\" düğmesine basın.")
+    return True

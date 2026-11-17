@@ -29,9 +29,10 @@ class DosyalarAdimi(Adim):
         self.setAcceptDrops(True)
         self._yukleniyor = False
 
-        # --- Sınav bilgileri
-        g = QGroupBox("Sınav")
+        # --- Sınav biçimi ve dosyalar: zorunlu olanlar önde
+        g = QGroupBox("Sınav ve dosyalar (dosyaları bu pencereye sürükleyip de bırakabilirsiniz)")
         f = QFormLayout(g)
+        self.dosya_formu = f
         self.bilgi_formu = f
         s = QHBoxLayout()
         self.bicim_optik = QRadioButton("Optik (test, optik okuyucu dosyası)")
@@ -46,49 +47,8 @@ class DosyalarAdimi(Adim):
         self.klasik_sayi_etiket = QLabel("Soru sayısı")
         self.klasik_sayi = QSpinBox(minimum=1, maximum=100)
         f.addRow(self.klasik_sayi_etiket, self.klasik_sayi)
-        e = QLabel("Aşağıdakiler isteğe bağlıdır; raporlarda ve dosya adlarında görünür.")
-        e.setStyleSheet("color: gray")
-        f.addRow(e)
         self.bicim_optik.toggled.connect(self._bicim_degisti)
         self.klasik_sayi.valueChanged.connect(self._klasik_sayi_degisti)
-        self.ders_kodu = QLineEdit(placeholderText="örnek: UTL4513")
-        self.ders_adi = QLineEdit(placeholderText="Yatırım Analizi")
-        self.sinav_turu = QComboBox()
-        self.sinav_turu.addItems(SINAV_TURLERI)
-        self.sinav_turu.setEditable(True)
-        self.tarih = QDateEdit(QDate.currentDate(), calendarPopup=True, displayFormat="dd.MM.yyyy")
-        self.saat = QTimeEdit(QTime(10, 0), displayFormat="HH:mm")
-        self.etki = QLineEdit(placeholderText="40")
-        self.donem = QLineEdit(placeholderText="2026-2027 Güz")
-        satir1 = QHBoxLayout()
-        satir1.addWidget(self.ders_kodu)
-        satir1.addWidget(self.ders_adi, 2)
-        f.addRow("Ders kodu ve adı", satir1)
-        satir2 = QHBoxLayout()
-        for w in (self.sinav_turu, QLabel("Tarih"), self.tarih, QLabel("Saat"), self.saat, QLabel("Etki oranı %"), self.etki):
-            satir2.addWidget(w)
-        f.addRow("Sınav türü", satir2)
-        f.addRow("Dönem", self.donem)
-        s = QHBoxLayout()
-        b = QPushButton("Ders bilgi paketini yükle (PDF)…")
-        b.setToolTip("Akademik Bilgi Sistemi'nden indirilen ders bilgi paketinden öğrenme ve program çıktılarını okur.")
-        b.clicked.connect(self._ders_pdf_sec)
-        s.addWidget(b)
-        self.ders_etiket = QLabel()
-        self.ders_etiket.setWordWrap(True)
-        s.addWidget(self.ders_etiket, 1)
-        f.addRow("Öğrenme çıktıları", s)
-        self.duzen.addWidget(g)
-        for w in (self.ders_kodu, self.ders_adi, self.etki, self.donem):
-            w.textChanged.connect(self._bilgi_degisti)
-        self.sinav_turu.currentTextChanged.connect(self._bilgi_degisti)
-        self.tarih.dateChanged.connect(self._bilgi_degisti)
-        self.saat.timeChanged.connect(self._bilgi_degisti)
-
-        # --- Dosyalar
-        g = QGroupBox("Dosyalar (sürükleyip bırakabilirsiniz)")
-        f = QFormLayout(g)
-        self.dosya_formu = f
         self.dat_etiket = QLabel("Seçilmedi")  # kısa tutulur (yalnızca dosya adı): satıra kayan yazı formda kesiliyordu
         self.dat_etiket.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         b = QPushButton("Optik dosyayı seç…")
@@ -105,12 +65,20 @@ class DosyalarAdimi(Adim):
         self.liste_dugmesi = b2
         b3 = QPushButton("Kaldır")
         b3.clicked.connect(lambda: self.durum.liste_yukle(None))
+        self.liste_kaldir = b3
+        self.esleme_dugmesi = QPushButton("Sütunları değiştir")
+        self.esleme_dugmesi.setCheckable(True)
+        self.esleme_dugmesi.setFlat(True)
+        self.esleme_dugmesi.setStyleSheet("QPushButton { color: #2F5597; text-decoration: underline; border: none; }")
+        self.esleme_dugmesi.setToolTip("Program numara ve ad sütunlarını kendisi bulur; yanlış bulduysa buradan düzeltin.")
+        self.esleme_dugmesi.toggled.connect(lambda _x: self._esleme_gorunurlugu())
         s = QHBoxLayout()
         s.addWidget(b2)
         s.addWidget(b3)
         s.addWidget(self.liste_etiket, 1)
+        s.addWidget(self.esleme_dugmesi)
         f.addRow("Öğrenci listesi", s)
-        # liste eşlemesi
+        # liste eşlemesi: yalnızca "Sütunları değiştir" denince ya da sütun bulunamayınca görünür
         self.liste_sayfa = QComboBox()
         self.liste_baslik = QSpinBox(minimum=0, maximum=100)
         self.liste_no = QComboBox()
@@ -137,10 +105,62 @@ class DosyalarAdimi(Adim):
         self.giris_dugmesi = QPushButton("Puan girişine geç: öğrenci listesi ve soru matrisi  →")
         self.giris_dugmesi.setStyleSheet(VURGULU_DUGME)
         self.giris_dugmesi.setMinimumHeight(38)
-        self.giris_dugmesi.setToolTip("4. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan kendiliğinden kaydedilir.")
-        self.giris_dugmesi.clicked.connect(lambda: self.window().adim_listesi.setCurrentRow(3))
+        self.giris_dugmesi.setToolTip("3. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan kendiliğinden kaydedilir.")
+        self.giris_dugmesi.clicked.connect(lambda: self.window().adim_listesi.setCurrentRow(2))
         self.giris_dugmesi.setVisible(False)
         self.duzen.addWidget(self.giris_dugmesi, 0, Qt.AlignmentFlag.AlignLeft)
+
+        # --- Ders: öğrenme çıktıları için (isteğe bağlı); sınav türü, tarih ve dönem katlanır
+        g = QGroupBox("Ders (isteğe bağlı; öğrenme çıktıları ve rapor başlıkları için)")
+        f = QFormLayout(g)
+        self.ders_kodu = QLineEdit(placeholderText="örnek: UTL4513")
+        self.ders_adi = QLineEdit(placeholderText="Yatırım Analizi")
+        self.sinav_turu = QComboBox()
+        self.sinav_turu.addItems(SINAV_TURLERI)
+        self.sinav_turu.setEditable(True)
+        self.tarih = QDateEdit(QDate.currentDate(), calendarPopup=True, displayFormat="dd.MM.yyyy")
+        self.saat = QTimeEdit(QTime(10, 0), displayFormat="HH:mm")
+        self.etki = QLineEdit(placeholderText="40")
+        self.donem = QLineEdit(placeholderText="2026-2027 Güz")
+        satir1 = QHBoxLayout()
+        satir1.addWidget(self.ders_kodu)
+        satir1.addWidget(self.ders_adi, 2)
+        f.addRow("Ders kodu ve adı", satir1)
+        s = QHBoxLayout()
+        b = QPushButton("Ders bilgi paketini yükle (PDF)…")
+        b.setToolTip("Akademik Bilgi Sistemi'nden indirilen ders bilgi paketinden öğrenme ve program çıktılarını okur.")
+        b.clicked.connect(self._ders_pdf_sec)
+        s.addWidget(b)
+        self.ders_etiket = QLabel()
+        self.ders_etiket.setWordWrap(True)
+        s.addWidget(self.ders_etiket, 1)
+        f.addRow("Öğrenme çıktıları", s)
+        from PySide6.QtWidgets import QToolButton
+
+        self.bilgi_dugmesi = QToolButton()
+        self.bilgi_dugmesi.setText("Sınav türü, tarih, etki oranı ve dönem")
+        self.bilgi_dugmesi.setCheckable(True)
+        self.bilgi_dugmesi.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.bilgi_dugmesi.setArrowType(Qt.ArrowType.RightArrow)
+        self.bilgi_dugmesi.setStyleSheet("QToolButton { border: none; color: gray; }")
+        f.addRow(self.bilgi_dugmesi)
+        self.bilgi_kutusu = QWidget()
+        bf = QFormLayout(self.bilgi_kutusu)
+        bf.setContentsMargins(0, 0, 0, 0)
+        satir2 = QHBoxLayout()
+        for w in (self.sinav_turu, QLabel("Tarih"), self.tarih, QLabel("Saat"), self.saat, QLabel("Etki oranı %"), self.etki):
+            satir2.addWidget(w)
+        bf.addRow("Sınav türü", satir2)
+        bf.addRow("Dönem", self.donem)
+        self.bilgi_kutusu.setVisible(False)
+        f.addRow(self.bilgi_kutusu)
+        self.bilgi_dugmesi.toggled.connect(self._bilgileri_ac)
+        self.duzen.addWidget(g)
+        for w in (self.ders_kodu, self.ders_adi, self.etki, self.donem):
+            w.textChanged.connect(self._bilgi_degisti)
+        self.sinav_turu.currentTextChanged.connect(self._bilgi_degisti)
+        self.tarih.dateChanged.connect(self._bilgi_degisti)
+        self.saat.timeChanged.connect(self._bilgi_degisti)
 
         # --- Okuyucu şablonu
         g = QGroupBox("Okuyucu şablonu (konumlar 1'den sayılır)")
@@ -365,6 +385,7 @@ class DosyalarAdimi(Adim):
             self.dat_etiket.setToolTip(p.dat_yolu)
         self.dat_etiket.setStyleSheet("color: #b45309" if dat_eksik else "color: #1e7b34")
         self.giris_dugmesi.setVisible(p.klasik and self.durum.liste is not None and self.durum.soru_sayisi > 0)
+        self._esleme_gorunurlugu()
 
     def _esleme_doldur(self):
         d = self.durum
@@ -395,6 +416,19 @@ class DosyalarAdimi(Adim):
         self.liste_etiket.setText(f"✓ {Path(d.proje.liste_yolu).name}  ({len(d.liste.ogrenciler)} öğrenci)")
         if ilk:
             self.liste_etiket.setToolTip(f"{d.proje.liste_yolu}\nİlk öğrenci: {ilk.no} {ilk.ad}")
+
+    def _bilgileri_ac(self, acik: bool):
+        self.bilgi_kutusu.setVisible(acik)
+        self.bilgi_dugmesi.setArrowType(Qt.ArrowType.DownArrow if acik else Qt.ArrowType.RightArrow)
+
+    def _esleme_gorunurlugu(self):
+        """Sütun eşlemesi: liste yüklüyse ve kullanıcı istediyse ya da numara sütunu bulunamadıysa görünür."""
+        d = self.durum
+        liste_var = d.liste is not None
+        sorunlu = liste_var and not d.liste.esleme.no_sutun
+        self.esleme_dugmesi.setVisible(liste_var)
+        self.liste_kaldir.setVisible(liste_var)
+        self.dosya_formu.setRowVisible(self.esleme_kutusu, liste_var and (self.esleme_dugmesi.isChecked() or sorunlu))
 
     def _gelismis_goster(self):
         acik = self.gelismis.isChecked() and not self.durum.proje.klasik

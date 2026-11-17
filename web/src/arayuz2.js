@@ -1,4 +1,4 @@
-/* Optik Sınav — tarayıcı sürümü: 4-6. adımlar (kontrol, istatistikler, dışa aktar), yardım, yazdırılabilir rapor ve açılış. */
+/* Optik Sınav — tarayıcı sürümü: 3-5. adımlar (kontrol, sisteme aktar, istatistikler), yardım, yazdırılabilir rapor ve açılış. */
 (function () {
   "use strict";
   const OS = window.OS, UI = window.UI, D = UI.D;
@@ -133,7 +133,8 @@
       const kl = D.proje.bicim === "klasik";
       if (!K.sekme || (K.sekme === "giris" && !kl)) K.sekme = kl ? "giris" : "sonuc";
       // Klasik sınavda puan girişi, sonuç hesaplanamasa da (ör. soru puanları 100 etmiyor) açık kalır.
-      if (!s && !(kl && D.liste)) { k.innerHTML = "<h2>4. Kontrol ve düzeltme</h2><p>Değerlendirilecek okuma yok.</p>"; return; }
+      const baslik = `<h2>3. ${UI.adimAdi(2)}</h2>`;
+      if (!s && !(kl && D.liste)) { k.innerHTML = `${baslik}<p>Değerlendirilecek okuma yok.</p>`; return; }
       if (!s) K.sekme = "giris";
       const sek = !s ? [["giris", "Puan girişi"]] : [...(kl ? [["giris", "Puan girişi"]] : []), ["sonuc", "Sonuçlar"], ["girmeyen", `Sınava girmeyenler (${s.girmeyenler.length})`],
         ...(kl ? [] : [["olmayan", `Listede olmayanlar (${s.listede_olmayanlar.length})`], ["duzeltme", `Düzeltme kaydı (${D.proje.duzeltmeler.length})`]])];
@@ -147,10 +148,23 @@
       else if (K.sekme === "olmayan") icerik = `<p class="soluk">Birebir eşleşmeyen numaralar otomatik eşleştirilmez. Numarayı düzeltmek için satıra tıklayın.</p>` +
         basitTablo(["Dosya satırı", "Okunan numara", "Okunan ad", "Olası numaralar", "Puan"], s.listede_olmayanlar.map((o) => [o.kayit.satir_no, e(o.no), e(o.okunan_ad), e(o.oneriler.join(", ")), OS.sayiYaz(o.puan, s.ayarlar.ondalik)]), "olmayan");
       else icerik = basitTablo(["Dosya satırı", "Alan", "Eski değer", "Yeni değer", "Kim", "Ne zaman"], D.proje.duzeltmeler.map((d) => [d.satir_no, e(d.alan), e(d.eski), e(d.yeni), e(d.kim), e(d.zaman)]));
-      k.innerHTML = `<h2>4. Kontrol ve düzeltme</h2>
+      // Düzeltilmesi gerekenler (optik): uyarılı satırlar okunur listede; tıklayınca tabloda o satır vurgulanır
+      const uyarili = s && !kl ? s.ogrenciler.map((o, i) => [o, i]).filter(([o]) => o.uyarilar.length) : [];
+      const duzeltilecek = !s || kl ? "" : uyarili.length
+        ? `<div class="kutu duzeltilecek"><h3>Düzeltilmesi gerekenler (${uyarili.length})</h3><ul>${uyarili.map(([o, i]) => `<li><a href="#" data-git-o="${i}">Satır ${o.kayit.satir_no} · ${e(o.no)} ${e(o.ad)}</a>: ${e(o.uyarilar.map((u) => u.mesaj).join("; "))}</li>`).join("")}</ul>
+          <p class="soluk">Satıra tıklayınca tabloda o öğrenci vurgulanır; hücresine tıklayarak düzeltin. Okunan dosyada sorun yoksa bu bölümü geçebilirsiniz.</p></div>`
+        : `<p class="yesil"><b>✓ Düzeltilmesi gereken satır yok.</b></p>`;
+      k.innerHTML = `${baslik}${duzeltilecek}
         <p id="kontrolOzet">${s ? kontrolOzeti(s) : "Puanları şimdiden girebilirsiniz; sonuç, üstteki eksikler tamamlanınca hesaplanır."}</p>
         <div class="sekmeler">${sek.map(([id, t]) => `<button data-sekme="${id}" class="${K.sekme === id ? "secili" : ""}">${t}</button>`).join("")}</div>${icerik}`;
       $$("[data-sekme]", k).forEach((b) => (b.onclick = () => { K.sekme = b.dataset.sekme; UI.ciz(); }));
+      $$("[data-git-o]", k).forEach((a2) => (a2.onclick = (ev) => {
+        ev.preventDefault();
+        K.sekme = "sonuc"; K.yalnizUyarili = false; K.vurgu = Number(a2.dataset.gitO);
+        UI.ciz();
+        const tr = $(`#sonucTablo tr[data-o="${K.vurgu}"]`);
+        if (tr) { tr.classList.add("vurgu"); tr.scrollIntoView({ block: "center" }); }
+      }));
       if ($("#yalnizUyarili", k)) $("#yalnizUyarili", k).onchange = (ev) => { K.yalnizUyarili = ev.target.checked; UI.ciz(); };
       $$("#sonucTablo th", k).forEach((th) => (th.onclick = () => { const j = Number(th.dataset.j); K.sira = { sutun: j, artan: K.sira.sutun === j ? !K.sira.artan : true }; UI.ciz(); }));
       if (!kl) $$("#sonucTablo td.tik", k).forEach((td) => (td.onclick = () => duzeltmePenceresi(s.ogrenciler[Number(td.parentElement.dataset.o)], td.dataset.alan, Number(td.dataset.k))));
@@ -412,7 +426,7 @@
     const f = OS.finalGereken(s, ara, a.gecme_ortalamasi, a.final_alt_siniri);
     if (f.length) {
       const zor = f.filter((x) => x.gereken === null || x.gereken > 80);
-      h.push(`<h3>Finalde gereken puan</h3><p>Ara sınav %${ara}, final %${100 - ara}; geçme ortalaması ${a.gecme_ortalamasi}, final alt sınırı ${a.final_alt_siniri} (3. adımda değiştirilebilir). Finalden 80'in üstünde alması gereken ya da 100 alsa da yetişemeyecek öğrenci: <b>${zor.length}</b>.</p>`);
+      h.push(`<h3>Finalde gereken puan</h3><p>Ara sınav %${ara}, final %${100 - ara}; geçme ortalaması ${a.gecme_ortalamasi}, final alt sınırı ${a.final_alt_siniri} (2. adımdaki "Puanlama ayarları" bölümünde değiştirilebilir). Finalden 80'in üstünde alması gereken ya da 100 alsa da yetişemeyecek öğrenci: <b>${zor.length}</b>.</p>`);
       h.push(`<details><summary>Bütün liste</summary>${basitTablo(["Öğrenci No", "Ad Soyad", "Ara sınav", "Finalde en az"], f.map((x) => [e(x.no), e(x.ad), sayi(x.puan), x.gereken === null ? '<b class="kirmizi">100 de yetmez</b>' : sayi(x.gereken)]))}</details>`);
     }
     const rs = OS.rasch(s);
@@ -424,7 +438,7 @@
     const arsiv = (yerel.al("os_arsiv", {}) || {})[D.proje.sinav.ders_kodu] || [];
     h.push("<h3>Önceki sınavlar</h3>");
     h.push(arsiv.length ? basitTablo(["Tarih", "Sınav", "Öğrenci", "Ortalama", "Başarılı"], arsiv.map((x) => [e(x.tarih), e(x.sinav_turu), x.ogrenci_sayisi, sayi(x.ortalama, 1), pct(x.basari_orani)]))
-      : `<p class="soluk">Bu ders için bu tarayıcıda arşiv kaydı yok. 6. adımda "Bütün Excel dosyalarını indir" her kullanıldığında sınavın özeti burada saklanır; sonraki dönemlerde karşılaştırma görünür.</p>`);
+      : `<p class="soluk">Bu ders için bu tarayıcıda arşiv kaydı yok. 4. adımda "Bütün Excel dosyalarını indir" her kullanıldığında sınavın özeti burada saklanır; sonraki dönemlerde karşılaştırma görünür.</p>`);
     return h.join("");
   }
   function kavramHtml(k) {
@@ -458,7 +472,7 @@
   function puanlamaHtml(s) {
     const ok = OS.okumaSirasiEtkisi(s, D.proje.klasik_giris_sirasi || []);
     const kp = OS.kismiPuanProfili(s) || [];
-    return `<h3>Okuma sırası etkisi</h3>${ok ? `<p><b>${e(ok.yorum)}</b></p>` : `<p class="soluk">En az 10 kâğıdın girildiği sıra gerekir. Sıra, 4. adımda bir öğrenciye ilk puan girildiğinde kendiliğinden kaydedilir (Excel'den alınan puanlarda dosyadaki sıra).</p>`}
+    return `<h3>Okuma sırası etkisi</h3>${ok ? `<p><b>${e(ok.yorum)}</b></p>` : `<p class="soluk">En az 10 kâğıdın girildiği sıra gerekir. Sıra, 3. adımda bir öğrenciye ilk puan girildiğinde kendiliğinden kaydedilir (Excel'den alınan puanlarda dosyadaki sıra).</p>`}
       <h3>Kısmi puan profili</h3><p class="soluk">Her soruda tam puan, kısmi puan, sıfır ve boş sayısı. Çoğu öğrencinin kısmi puan aldığı soruda puanlama ölçütü belirsiz olabilir.</p>
       ${basitTablo(["Soru", "Tam", "Kısmi", "Sıfır", "Boş", "Ortalama başarı", "Not"], kp.map((k) => [k.soru_no, k.tam, k.kismi, k.sifir, k.bos, k.ortalama_oran === null ? "-" : pct(k.ortalama_oran), e(k.notlar.join("; "))]))}`;
   }
@@ -502,7 +516,7 @@
         <td>${n && n.ham !== null ? v(n.ham, 2) : ""}</td>${uyg === "bagil" ? `<td>${n && n.t !== null ? v(n.t, 1) : ""}</td>` : ""}<td class="kalin">${n ? e(n.harf) : ""}</td>
         <td class="${n && n.gecti === true ? "D" : n && n.gecti === false ? "Y" : ""}">${n && n.gecti !== null ? (n.gecti ? "Geçti" : "Kaldı") : ""}</td><td class="sol">${n ? e(n.aciklama) : ""}</td><td class="${n && n.sinirda ? "uy" : ""}">${n ? e(n.sinirda) : ""}</td></tr>`;
     }).join("");
-    return `<p class="soluk">Final puanlarını girin ya da Excel'den alın; ara sınav bu sınavdan gelir. Ağırlıklar: ara sınav %${ara}, final %${100 - ara} (1. adımdaki etki oranı). Final alt sınırı ${a.final_alt_siniri}, geçme ortalaması ${a.gecme_ortalamasi} (3. adımda değiştirilir). <b>Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.</b></p>
+    return `<p class="soluk">Final puanlarını girin ya da Excel'den alın; ara sınav bu sınavdan gelir. Ağırlıklar: ara sınav %${ara}, final %${100 - ara} (1. adımdaki etki oranı). Final alt sınırı ${a.final_alt_siniri}, geçme ortalaması ${a.gecme_ortalamasi} (2. adımdaki "Puanlama ayarları" bölümünde değiştirilir). <b>Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.</b></p>
       <div class="kutu"><div class="satir"><label>Değerlendirme</label><label><input type="radio" name="hy" value="mutlak" ${h.yontem !== "bagil" ? "checked" : ""}> Mutlak</label><label><input type="radio" name="hy" value="bagil" ${h.yontem === "bagil" ? "checked" : ""}> Bağıl (T-puanı)</label>
         <label>Bağıl için en az öğrenci</label><input type="number" id="bagilEnAz" min="2" style="width:70px" value="${h.bagil_en_az}"></div>
         <div class="satir"><label>Mutlak tablo (ham not)</label><input type="text" id="tabloMutlak" style="flex:1" value="${e(h.mutlak)}"></div>
@@ -554,7 +568,7 @@
     eksikler: () => [],
     ciz(k) {
       const x = istatistikVerisi();
-      if (!x) { k.innerHTML = "<h2>5. İstatistikler</h2><p>Değerlendirilecek sonuç yok.</p>"; return; }
+      if (!x) { k.innerHTML = "<h2>5. İstatistikler (isteğe bağlı)</h2><p>Değerlendirilecek sonuç yok.</p>"; return; }
       const { s, m, g, esik } = x;
       const kl = s.klasik;
       const r = g.alfa !== null ? g.alfa : g.kr20;
@@ -588,14 +602,14 @@
       else if (I.sekme === "puanlama") icerik = puanlamaHtml(s);
       else if (I.sekme === "donem") icerik = donemHtml(s);
       else icerik = ekAnalizHtml(s, m, g, esik);
-      k.innerHTML = `<h2>5. İstatistikler</h2>
+      k.innerHTML = `<h2>5. İstatistikler <span class="soluk" style="font-weight:400;font-size:15px">isteğe bağlı</span></h2>
         <div class="kutu"><b>Kısaca:</b><ul class="yorum">${g.yorumlar.map((y) => `<li>${e(y)}</li>`).join("")}</ul></div>
         <div class="ist-ust"><div class="kartlar">${kart(sayi(g.ortalama, 1), "Ortalama")}${kart(sayi(g.medyan, 1), "Ortanca")}${kart(sayi(g.standart_sapma, 1), "Standart sapma")}${kart(pct(g.basari_orani), `${esik} ve üstü alan`)}
           ${kart(sayi(r), "Güvenirlik (alfa)")}${kart(sayi(g.olcme_hatasi, 1), "Ölçme hatası (±puan)")}${kart(sayi(g.ortalama_guclik), "Ortalama güçlük")}${kart(sayi(g.ortalama_ayirt_edicilik), "Ortalama ayırt edicilik")}</div>
           <div class="kutu" style="margin:0"><b>Puan dağılımı</b> <span class="soluk">(kırmızı: eşiğin altı)</span>${histogramSvg(s.ogrenciler.map((o) => o.puan.sayi()), ust, esik)}</div></div>
         <div class="sekmeler" style="margin-top:14px">${sekmeCubugu(sek)}</div>
         <div>${icerik}</div>
-        <p class="soluk">Tablolar 6. adımdaki istatistik Excel dosyasına, grafikler yazdırılabilir rapora girer.</p>`;
+        <p class="soluk">Tablolar 4. adımdaki istatistik Excel dosyasına, grafikler yazdırılabilir rapora girer.</p>`;
       $$("[data-ist]", k).forEach((b) => (b.onclick = () => { I.sekme = b.dataset.ist; UI.ciz(); }));
       if (I.sekme === "donem") donemOlaylari(k, s);
     },
@@ -626,25 +640,40 @@
     eksikler: () => [],
     ciz(k) {
       const s = D.sonuc || UI.degerlendir();
-      if (!s) { k.innerHTML = "<h2>6. Dışa aktar</h2><p>Sonuç yok.</p>"; return; }
+      if (!s) { k.innerHTML = "<h2>4. Sisteme aktar ve raporlar</h2><p>Sonuç yok.</p>"; return; }
       const p = OS.PROFILLER[X.profil];
       const [bas, veri] = OS.tabloUret(p, s);
       const notlar = [];
-      if (s.ogrenciler.some((o) => o.uyarilar.some((u) => u.tur === "tekrar_numara"))) notlar.push("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 4. adımda düzeltin.");
-      if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara aktarım dosyalarına yazılmaz.`);
-      k.innerHTML = `<h2>6. Dışa aktar</h2>
-        <div class="kutu"><h3>Dosyalar</h3>
-          <div class="satir"><button class="ana buyuk" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button>
+      if (s.ogrenciler.some((o) => o.uyarilar.some((u) => u.tur === "tekrar_numara"))) notlar.push("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.");
+      if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).`);
+      const adim = (id, metin, aciklama) => `<div class="aktar-satir"><button class="aktar-dugme" id="${id}">${metin}</button><span class="soluk">${aciklama}</span></div>`;
+      k.innerHTML = `<h2>4. Sisteme aktar ve raporlar</h2>
+        ${notlar.length ? `<div class="serit">${notlar.map((x) => e(x)).join("<br>")}</div>` : ""}
+        <div class="kutu"><h3>Akademik Bilgi Sistemi'ne aktarım (sırasıyla)</h3>
+          ${adim("sorulariKopyala", "1. Soruları kopyala", "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez.")}
+          ${adim("puanlariKopyala", "2. Öğrenci puanlarını kopyala", "Sorular tanımlandıktan sonra açılan öğrenci puanı ekranına yapıştırın: öğrenci listesi sırasıyla numara ve soru puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın.")}
+          ${adim("notlariKopyala", "3. Not girişi için puanları kopyala", "Not Giriş ekranı için: öğrenci numarası ve sınav puanı (öğrenci listesi sırasıyla).")}
+        </div>
+        <div class="kutu"><h3>Raporlar</h3>
+          <div class="satir"><button class="zorunlu-dugme" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button></div>
+          <p class="soluk">Sonuç, istatistik (madde analizi, çeldiriciler ve ötekiler) ve öğrenme çıktısı dosyaları.</p></div>
+        <details class="kutu" id="aktarGelismis" ${X.gelismisAcik ? "open" : ""}><summary class="soluk">Gelişmiş: aktarım biçimi, tek tek dosyalar ve önizleme</summary>
+          <div class="satir"><label>Biçim</label><select id="profil">${Object.values(OS.PROFILLER).map((x) => `<option value="${x.ad}" ${x.ad === X.profil ? "selected" : ""}>${e(x.baslik)}</option>`).join("")}</select>
+            <button id="pano">Sütun seçerek panoya kopyala</button>
             ${UI.acilirMenu("Tek tek indir", ['<button data-dosya="sonuc">Sonuç</button>', '<button data-dosya="istatistik">İstatistik</button>',
               '<button data-dosya="cikti">Öğrenme çıktısı</button>', '<button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button>', '<button data-dosya="not">Not girişi</button>'])}</div>
-          <p class="soluk">Sonuç: soru bazlı puanlar, cevaplar, uyarılar, düzeltme kaydı. İstatistik: özet ve yorum, madde analizi, çeldiriciler, beş grup, boş bırakma, kişi uyumu, benzer cevaplar, ek analizler, standart puanlar. Öğrenme çıktısı: soru-çıktı eşlemesi, sisteme aktarım tablosu, sınav dağılımı, sınıf ve öğrenci başarısı.</p>
-          ${notlar.map((x) => `<p class="kirmizi">${e(x)}</p>`).join("")}</div>
-        <div class="kutu"><h3>Akademik Bilgi Sistemi'ne aktarım</h3>
-          <p>Soru tanımı (puanlar ve öğrenme çıktısı yüzdeleri) 2. adımdaki <b>"Soru tanımını sistem için kopyala"</b> düğmesiyle aktarılır. Öğrenci puanlarının girildiği ekranın biçimi henüz doğrulanmadı; aşağıdaki biçimler geçicidir.</p>
-          <div class="satir"><label>Biçim</label><select id="profil">${Object.values(OS.PROFILLER).map((x) => `<option value="${x.ad}" ${x.ad === X.profil ? "selected" : ""}>${e(x.baslik)}</option>`).join("")}</select>
-            <button id="pano">Puanları panoya kopyala</button><span class="soluk">Sistemde tablo halinde giriş varsa ilk hücreye yapıştırın (öğrenci listesi sırasıyla).</span></div>
           <div class="tablo-kap" style="max-height:340px"><table class="veri"><thead><tr>${bas.map((b) => `<th>${e(b)}</th>`).join("")}</tr></thead>
-          <tbody>${veri.slice(0, 200).map((r) => `<tr>${r.map((h) => `<td>${e(OS.hucreMetni(h, p))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+          <tbody>${veri.slice(0, 200).map((r) => `<tr>${r.map((h) => `<td>${e(OS.hucreMetni(h, p))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
+      $("#aktarGelismis", k).ontoggle = (ev) => { X.gelismisAcik = ev.target.open; };
+      $("#sorulariKopyala", k).onclick = () => UI.soruTanimiKopyala();
+      const sutunKopyala = async (sut, ne, profilAdi = "akreditasyon_soru_bazli_varsayilan") => {
+        const pr = Object.assign({}, OS.PROFILLER[profilAdi], { sutunlar: sut });
+        const metin = OS.panoMetni(pr, s);
+        if (await kopyala(metin)) bildir(`Panoya ${metin.split("\n").length} ${ne} kopyalandı (${s.liste_var ? "öğrenci listesi sırası" : "optik dosya sırası"}). Sistemdeki tablonun ilk hücresine yapıştırın.`, 6000);
+        else bilgi("Kopyalanamadı", "Tarayıcı panoya yazmaya izin vermedi.");
+      };
+      $("#puanlariKopyala", k).onclick = () => sutunKopyala([{ alan: "ogrenci_no", baslik: "Öğrenci No" }, { alan: "soru_puanlari", baslik: "S{n}" }], "öğrencinin soru puanları");
+      $("#notlariKopyala", k).onclick = () => sutunKopyala([{ alan: "ogrenci_no", baslik: "Öğrenci No" }, { alan: "puan", baslik: "Puan" }], "öğrencinin numarası ve puanı", "not_giris_varsayilan");
       $("#profil", k).onchange = (ev) => { X.profil = ev.target.value; UI.ciz(); };
       $("#pano", k).onclick = async () => {
         const secenek = await pencere("Panoya kopyala", `<p>Kopyalanacak sütunlar:</p>${["Soru puanları (S1..Sn)", "Puan", "Öğrenci No ve puan", "Öğrenci No ve soru puanları"].map((x, i) => `<label style="display:block"><input type="radio" name="pk" value="${i}" ${i === 0 ? "checked" : ""}> ${x}</label>`).join("")}`,
@@ -722,17 +751,16 @@
   UI.yardim = function () {
     pencere("Nasıl kullanılır?", `<ol>
       <li><b>Sınav ve dosyalar:</b> biçimi (optik ya da klasik) seçin, ders kodunu yazın, optik okuyucu dosyasını ve öğrenci listesini sürükleyip bırakın. Ders bilgi paketi PDF'ini bırakırsanız öğrenme çıktıları okunur.</li>
-      <li><b>Cevap anahtarı:</b> yuvarlak şıklara tıklayın ya da tabloya bir kez tıklayıp klavyeden harfleri yazın. Her soruya puan ve öğrenme çıktısı girin; yüzdeler 100 etmelidir. "Soru tanımını sistem için kopyala" ile Akademik Bilgi Sistemi'ne aktarın.</li>
-      <li><b>Puanlama:</b> yanlış cezası, çift işaret, yuvarlama ve eşikler.</li>
-      <li><b>Kontrol:</b> renkli tablo; okuma hatasını hücreye tıklayarak düzeltin. Klasik sınavda puanlar burada girilir.</li>
-      <li><b>İstatistikler:</b> yorum, madde analizi, öğrenme çıktısı başarısı, sınırdaki öğrenciler, finalde gereken puan ve daha fazlası.</li>
-      <li><b>Dışa aktar:</b> Excel dosyaları ve yazdırılabilir rapor.</li></ol>
+      <li><b>Cevap anahtarı</b> (klasikte <b>Sorular ve puanlar</b>): yuvarlak şıklara tıklayın ya da tabloya bir kez tıklayıp klavyeden harfleri yazın; her soruya öğrenme çıktısı girin. Yanlış cezası, yuvarlama ve eşikler alttaki "Puanlama ayarları" bölümündedir.</li>
+      <li><b>Kontrol</b> (klasikte <b>Puan girişi</b>): üstteki "Düzeltilmesi gerekenler" listesinden okuma hatalarını düzeltin. Klasik sınavda puanlar burada girilir.</li>
+      <li><b>Sisteme aktar ve raporlar:</b> sırasıyla soruları ve öğrenci puanlarını kopyalayıp Akademik Bilgi Sistemi'ne yapıştırın; Excel dosyalarını ve karneleri indirin.</li>
+      <li><b>İstatistikler</b> (isteğe bağlı): yorum, madde analizi, öğrenme çıktısı başarısı, dönem sonu notu ve diğer analizler.</li></ol>
       <p><b>Kaydet</b> düğmesi sınavı tek bir <code>.osd</code> dosyasına kaydeder (optik dosya ve liste içine gömülüdür). Aynı dosya masaüstü programda da açılır.</p>
       <p><b>Gizlilik:</b> program internete bağlanmaz; dosyalar yalnızca bu tarayıcıda işlenir. Son çalışma bu tarayıcıda saklanır; ortak bilgisayarda işiniz bitince "Yeni sınav"a basın.</p>
       <p class="soluk">Kısayollar: Ctrl+Enter (Mac'te Cmd+Enter) sonraki adım, Ctrl+S (Cmd+S) kaydet.</p>`);
   };
 
-  UI.adimlar.push(adim4, adim5, adim6);
+  UI.adimlar.push(adim4, adim6, adim5);  // 3. kontrol, 4. sisteme aktar, 5. istatistikler (isteğe bağlı)
 
   // ------------------------------------------------------------------ açılış
   function baslat() {

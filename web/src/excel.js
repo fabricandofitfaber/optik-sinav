@@ -240,7 +240,7 @@
       bolum(`Finalde gereken puan (ara sınav %${araAgirlik}, final %${100 - araAgirlik}; geçme ortalaması ${a.gecme_ortalamasi}, final alt sınırı ${a.final_alt_siniri})`);
       baslik(ws, r++, ["Öğrenci No", "Ad Soyad", "Ara sınav", "Finalde en az"]);
       for (const x of f) { no(ws, r, 1, x.no); metin(ws, r, 2, x.ad); sayi(ws, r, 3, x.puan); const c = x.gereken === null ? metin(ws, r, 4, "100 de yetmez") : sayi(ws, r, 4, x.gereken); if (x.gereken === null || x.gereken > 80) c.fill = dolgu(RENK.Y); r++; }
-      not(ws, r++, "Geçme kuralı ders yönetmeliğine göre farklı olabilir; geçme ortalaması ve final alt sınırı 3. adımda değiştirilebilir. Bütünleme ve harf notu dönüşümü hesaba katılmamıştır.", 6);
+      not(ws, r++, "Geçme kuralı ders yönetmeliğine göre farklı olabilir; geçme ortalaması ve final alt sınırı 2. adımdaki Puanlama ayarları bölümünde değiştirilebilir. Bütünleme ve harf notu dönüşümü hesaba katılmamıştır.", 6);
     }
     const rs = OS.rasch(sonuc);
     if (rs) {

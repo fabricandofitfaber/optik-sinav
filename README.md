@@ -66,7 +66,7 @@ python -m optik_sinav            # arayüz
 
 ## Kullanım
 
-Program tek pencerede, soldaki altı adımla ilerler. Optik (test) ve klasik (yazılı) sınavlar desteklenir. Bir adımın zorunlu bilgileri tamamlanmadan "Sonraki" düğmesi etkinleşmez; eksik olan alt satırda yazar. `Ctrl+Enter` bir sonraki adıma geçer.
+Program tek pencerede, soldaki beş adımla ilerler: dördü zorunlu iş (sınav, sorular, kontrol, sisteme aktarım), beşincisi isteğe bağlı istatistiklerdir. Zorunlu olanlar önde, seyrek kullanılan ayarlar katlanır bölümlerde ve menülerdedir. Adımlar arasında serbestçe dolaşabilirsiniz; eksik olan alt satırda yazar, tamamlanan adımın yanında ✓ görünür. Optik (test) ve klasik (yazılı) sınavlar desteklenir. `Ctrl+Enter` bir sonraki adıma geçer.
 
 ### 1. Sınav ve dosyalar
 
@@ -94,61 +94,45 @@ Kabul edilen öğrenci listeleri: Akademik Bilgi Sistemi'nden indirilen Excel li
 
 **Öğrenme çıktıları ve %100 kuralı:** her sorunun ölçtüğü çıktıları "Seç…" düğmesiyle (açıklamalarıyla birlikte) ya da satıra yazarak girin: `1, 3` yazmak Ö01 ve Ö03'e yarı yarıya demektir; `Ö02 %60, Ö03 %40` yüzdeleri kendiniz verir. Her sorunun yüzdeleri tam 100 etmeli; etmezse ya da çıktısı seçilmemiş soru varsa alt satırda kırmızı uyarı çıkar ve sonraki adıma geçilmez (Akademik Bilgi Sistemi de %100 olmayan dağılımı kabul etmiyor). Alt satır sınavın bütününün çıktılara dağılımını da gösterir (toplam %100). "Bütün sorulara çıktıyı sırayla dağıt" hızlı bir başlangıç verir; "Ders eşlemesini kaydet" eşlemeyi sonraki sınavlar için saklar.
 
-**A ve B kitapçığı:** "Kitapçık ekle" ile B (C…) kitapçığı açılır. B sekmesinde şıkları B'nin kendi soru sırasıyla işaretleyin ve "Ana kitapçıktaki karşılığı" sütununa sorunun A'da kaçıncı soru olduğunu yazın (sıra aynıysa dokunmayın). Puan, durum ve öğrenme çıktısı A'dan gelir; bütün çıktılar A'nın soru numaralarıyla verilir. Öğrencinin kitapçığı optik formdan okunur (1. adımda "Kitapçık başlangıcı"); okunamazsa 4. adımda Kitapçık sütununa çift tıklayarak seçilir.
+**A ve B kitapçığı:** "Kitapçık ekle" ile B (C…) kitapçığı açılır. B sekmesinde şıkları B'nin kendi soru sırasıyla işaretleyin ve "Ana kitapçıktaki karşılığı" sütununa sorunun A'da kaçıncı soru olduğunu yazın (sıra aynıysa dokunmayın). Puan, durum ve öğrenme çıktısı A'dan gelir; bütün çıktılar A'nın soru numaralarıyla verilir. Öğrencinin kitapçığı optik formdan okunur (1. adımda "Kitapçık başlangıcı"); okunamazsa 3. adımda Kitapçık sütununa çift tıklayarak seçilir.
 
 **Klasik sınavda** bu adımın adı "Sorular ve puanlar"dır; şık yoktur, her sorunun puanını ve öğrenme çıktılarını girersiniz. En hızlısı üstteki **Soru puanları** satırıdır: `10 10 10 10 20 40` yazıp Enter'a basınca soru sayısı 6 olur ve puanlar yerleşir. Tek bir puanı kutusuna tıklayıp da değiştirebilirsiniz. "+ Soru ekle" ve "− Son soruyu çıkar" düğmeleri tablonun altındadır; çıkarılan soruya öğrenci puanı girilmişse onay sorulur ve puanlar silinmez (soru geri eklenince geri gelir). Toplam tutmazsa kaç puan eksik ya da fazla olduğu yazar.
 
-### 3. Puanlama
+#### Puanlama ayarları (2. adımın altında, katlanır bölüm)
 
-![Puanlama](docs/ekran/3_puanlama.png)
+Varsayılanlar çoğu sınav için doğrudur; bölüm kapalıyken yanında tek satırlık özeti görünür (örneğin "eşit puan, toplam 100, yanlış cezası yok, başarı eşiği 50"). Eşit puanda soru tablosundaki Puan sütunu gizlidir; soru bazlı puana geçince görünür. Program çıktıları sütunu da kullanılmıyorsa gizlidir (sistem program çıktılarını ders öğrenme çıktılarından kendisi hesaplar).
 
 - **Bonus soru (yalnızca optik sınav):** 2. adımda sorunun durumunu "Bonus" yapın. Bonusun puanı öteki sorularla aynıdır ama toplama girmez: doğru cevaplayan öğrencinin bir yanlışı (yanlışı yoksa bir boşu) doğru sayılır; bütün soruları doğru olan öğrencide bonus sayılmaz, puan hiçbir zaman toplamı (100'ü) geçmez. Yanlış cezası açıksa önce yanlış düzeltilir, cezası da kalkar. Akademik Bilgi Sistemi'ne gönderilen soru tanımında ve aktarım dosyalarında bonus görünmez; öteki sorular 1'den yeniden numaralanır (17 soru, sonuncusu bonus ise sistem 16 soru × 6,25 görür). Madde analizi öğrencinin gerçek cevabıyla yapılır; bonusla düzelen hücre sonuç tablosunda mavidir.
 - **Eşit puan:** soru puanı = toplam / soru sayısı (iptal sorular dahil, bonus sorular hariç). Puanlar kesir olarak tutulur, **yuvarlama yalnızca en sonda** yapılır; 15 doğru tam 100 eder.
-- **Soru bazlı puan:** her sorunun puanı 2. adımdaki soru satırında girilir, toplamın tam puana eşitliği denetlenir.
+- **Soru bazlı puan:** her sorunun puanı soru tablosunun Puan sütununda girilir, toplamın tam puana eşitliği denetlenir.
 - **Başarı eşiği** (varsayılan 50): istatistiklerde bu puan ve üstü başarılı, öğrenme çıktısında bu yüzde ve üstü "ulaştı" sayılır.
 - **Yanlışlar doğruyu götürsün** (varsayılan kapalı): net = doğru - yanlış / oran; puan sıfırın altına düşmez. Ceza soru puanlarına dağıtılmaz; akreditasyon dosyasında soru bazında ham puan kullanılır.
 - **Çift işaret (`*`):** varsayılan olarak boş sayılır, istenirse yanlış sayılır.
 - Yuvarlama: yarım yukarı, aşağı ya da yukarı; ondalık basamak sayısı seçilebilir.
 
-### 4. Kontrol ve düzeltme
+### 3. Kontrol ve düzeltme (klasikte: Puan girişi)
 
-![Kontrol ve düzeltme](docs/ekran/4_kontrol.png)
+![Kontrol ve düzeltme](docs/ekran/3_kontrol.png)
 
-Doğru yeşil, yanlış kırmızı, boş sarı, iptal gri görünür; uyarılı satırlar turuncudur. "Yalnızca uyarılıları göster" ile süzün. Numara, ad ya da tek bir cevabı düzeltmek için hücreye çift tıklayın (ya da Enter'a basın). **Özgün okuma hiçbir zaman silinmez**; her düzeltme "kim, ne zaman, eski değer, yeni değer" olarak kaydedilir ve sonuç dosyasında ayrı bir sayfada yer alır.
+Üstteki **Düzeltilmesi gerekenler** listesi uyarılı satırları okunur cümlelerle gösterir; bir satıra tıklayınca tabloda o öğrenci seçilir. Sorun yoksa "✓ Düzeltilmesi gereken satır yok" yazar ve bu adımı geçebilirsiniz. Doğru yeşil, yanlış kırmızı, boş sarı, iptal gri görünür; uyarılı satırlar turuncudur. "Yalnızca uyarılıları göster" ile süzün. Numara, ad ya da tek bir cevabı düzeltmek için hücreye çift tıklayın (ya da Enter'a basın). **Özgün okuma hiçbir zaman silinmez**; her düzeltme "kim, ne zaman, eski değer, yeni değer" olarak kaydedilir ve sonuç dosyasında ayrı bir sayfada yer alır.
 
-**Klasik sınavda** bu adımın "Puan girişi" sekmesinin üstünde **kâğıt sırasıyla giriş** paneli vardır: öğrencinin numarasını ya da adının birkaç harfini yazıp Enter'a basın, soru puanlarını yazın (Enter bir sonraki kutuya geçer), isterseniz kâğıdın üstündeki toplamı da yazın; son kutuda Enter kaydeder ve yeni kâğıda hazırlar. Kâğıttaki toplam soru puanlarının toplamıyla tutmazsa uyarılır. Altında da öğrenci listesi ve soru sütunları vardır: hücreye tıklayıp puanı yazın, ya da Excel'den bir bloğu kopyalayıp yapıştırın (Ctrl+V / Cmd+V). Sınava girmeyen öğrenciyi tablonun en sağındaki **Girmedi** kutusuyla ya da kâğıt panelindeki **Sınava girmedi** düğmesiyle işaretleyin; işaretli satır gri görünür, puanı henüz girilmemiş satırın toplamında "—" yazar ve panelde "Girilen · Girmedi · Kalan" sayıları izlenir. "Puan tablosunu Excel'e kaydet" tablonun o anki hâlini (girilen puanlar, toplam ve Girmedi sütunu) Excel'e yazar; "Excel'den puan al" numara, S1, S2… ve Girmedi sütunları olan bir dosyayı okur, yani Excel'de doldurup geri de yükleyebilirsiniz. Tam puan yeşil, kısmi puan mavi, sıfır kırmızı, sorunun puanını aşan değer turuncu görünür. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.
+**Klasik sınavda** bu adımın adı "Puan girişi"dir; soldaki listede kaç öğrencinin girildiği (örneğin 6/12) görünür. "Puan girişi" sekmesinin üstünde **kâğıt sırasıyla giriş** paneli vardır: öğrencinin numarasını ya da adının birkaç harfini yazıp Enter'a basın, soru puanlarını yazın (Enter bir sonraki kutuya geçer), isterseniz kâğıdın üstündeki toplamı da yazın; son kutuda Enter kaydeder ve yeni kâğıda hazırlar. Kâğıttaki toplam soru puanlarının toplamıyla tutmazsa uyarılır. Altında da öğrenci listesi ve soru sütunları vardır: hücreye tıklayıp puanı yazın, ya da Excel'den bir bloğu kopyalayıp yapıştırın (Ctrl+V / Cmd+V). Sınava girmeyen öğrenciyi tablonun en sağındaki **Girmedi** kutusuyla ya da kâğıt panelindeki **Sınava girmedi** düğmesiyle işaretleyin; işaretli satır gri görünür, puanı henüz girilmemiş satırın toplamında "—" yazar ve panelde "Girilen · Girmedi · Kalan" sayıları izlenir. "Puan tablosunu Excel'e kaydet" tablonun o anki hâlini (girilen puanlar, toplam ve Girmedi sütunu) Excel'e yazar; "Excel'den puan al" numara, S1, S2… ve Girmedi sütunları olan bir dosyayı okur, yani Excel'de doldurup geri de yükleyebilirsiniz. Tam puan yeşil, kısmi puan mavi, sıfır kırmızı, sorunun puanını aşan değer turuncu görünür. Hiç puanı girilmeyen öğrenci sınava girmemiş sayılır.
 
 Uyarı türleri: numarada okunamayan karakter, boş ad, Türkçe karakteri bozuk ad, kısa satır, soru alanı dışında işaret, çift işaret, geçersiz işaret, aynı numaranın iki kez okunması, listede olmayan numara. Listede olup dosyada olmayan öğrenciler "Sınava girmeyenler" sekmesinde, eşleşmeyen numaralar olası numara önerileriyle "Listede olmayanlar" sekmesinde görünür. Numara uzunlukları farklı olabileceği için (9 ve 10 hane) **otomatik eşleştirme yapılmaz**; doğru numarayı siz seçersiniz. Doğru ad her zaman öğrenci listesinden alınır.
 
-### 5. İstatistikler
+### 4. Sisteme aktar ve raporlar
 
-![İstatistikler](docs/ekran/5_istatistik.png)
+![Sisteme aktar ve raporlar](docs/ekran/4_sisteme_aktar.png)
 
-Sekmeler sadedir: önde **Madde analizi**, **Öğrenme çıktıları** ve **Dönem sonu notu**; ötekiler sağdaki **Diğer analizler** menüsündedir (seçilen analiz önde sekme olarak açılır). Sayıların sade Türkçe yorumu, temel değerler (ortalama, ortanca, standart sapma, başarılı oranı, güvenirlik, ölçme hatası, ortalama güçlük ve ayırt edicilik), eşiğin altı kırmızı olan puan dağılımı grafiği ve sekmeler:
+Akademik Bilgi Sistemi'nin toplu aktarım ekranları yapıştırma kabul eder; bu yüzden aktarım sırasıyla üç düğmedir:
 
-- **Madde analizi:** güçlük, ayırt edicilik, düzeltilmiş madde-toplam korelasyonu, "soru çıkarılırsa güvenirlik", beş başarı grubunda doğru oranı (iyi soruda soldan sağa artar) ve sorunlu soru açıklaması.
-- **Öğrenme çıktıları:** her çıktının sınavdaki payı, sınıf başarısı ve eşiğe ulaşan öğrenci oranı.
-- **Kişi uyumu:** kolay soruları kaçırıp zor soruları bilen öğrenciler (okuma hatası, dikkatsizlik ya da şans; kâğıda bakın).
-- **Benzer cevaplar:** sınıf geneline göre olağandışı sayıda aynı yanlış şıkkı işaretleyen öğrenci çiftleri. Yalnızca istatistiksel işarettir, kopya kanıtı değildir.
+1. **Soruları kopyala:** Sınav Akreditasyon İşlemleri'nde sınavı açın → "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap"; Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez.
+2. **Öğrenci puanlarını kopyala:** sorular tanımlandıktan sonra açılan öğrenci puanı ekranına; öğrenci listesi sırasıyla numara ve soru puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın.
+3. **Not girişi için puanları kopyala:** öğrenci numarası ve sınav puanı.
 
-Ayrıca: **Kavram yanılgıları** (iki sorunun yanlış şıklarını birlikte seçen öğrenciler; şansla açıklanamayanlar), **Sınav yapısı** (sınav tek bir beceriyi mi ölçüyor, hangi soru ayrışıyor, öğrenme çıktısı eşlemesi verilerle uyumlu mu) ve **Dönem sonu notu** (final puanlarını girin ya da Excel'den alın; mutlak ya da T-puanına dayalı bağıl değerlendirmeyle harf notu, geçen ve kalanlar, bir üst harfe 1 puandan az kalanlar; harf tabloları örnektir, yönetmeliğinizle karşılaştırın). 6. adımdaki **Öğrenci karneleri** her öğrenciye bir sayfa üretir: puan, sıra, öğrenme çıktısı başarısı ve soru soru sonuç.
+Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür. **Raporlar** bölümündeki "Bütün raporları klasöre kaydet" aşağıdaki dosyaların hepsini tek seferde yazar; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
 
-**Notu belirleyen sorular:** öğrenciler arasındaki not farklarının ne kadarının hangi sorudan geldiği, sorunun puan payıyla karşılaştırmalı. Örneğin 40 puanlık soru farkların %90'ını oluşturuyorsa sınav fiilen tek soruya dayanıyordur; bir soru puanına göre çok az katkı veriyorsa herkes benzer puan almıştır.
-
-**Puanlama (yalnızca klasik sınav):**
-- *Kısmi puan profili:* her soruda tam, kısmi, sıfır ve boş sayısı. Çoğu öğrencinin kısmi aldığı soruda puanlama ölçütü belirsiz olabilir.
-- *Okuma sırası etkisi:* program kâğıtların hangi sırayla girildiğini kendiliğinden kaydeder (Excel'den alınan puanlarda dosyadaki sıra). En az 10 kâğıtta, okuma ilerledikçe puanların sistematik olarak düşüp düşmediğine ya da yükselip yükselmediğine bakar (okuyanın yorulması ya da ölçütün kayması). Kâğıtlar başarıya göre sıralıysa fark okumadan değil sıradan kaynaklanır.
-
-Bunlara ek olarak Excel raporunda çeldirici analizi (her yanlış şıkkın üst ve alt gruptaki seçilme oranı, işlemeyen çeldiriciler), soru sırasına göre boş bırakma (süre yetti mi), çarpıklık, basıklık, çeyrekler ve z ile T puanları bulunur.
-
-### 6. Dışa aktar
-
-![Dışa aktar](docs/ekran/6_disa_aktar.png)
-
-- **Profil seçimi ve önizleme:** Sınav Akreditasyon (soru bazlı) ve Not Giriş için birer profil seçilir, ilk satırlar önizlenir.
-- **Sistem şablonunu doldur:** sistemden indirdiğiniz şablonun içine, şablondaki öğrenci sırası korunarak puanlar yazılır. En güvenli doğrudan giriş yolu budur.
-- **Panoya kopyala:** web ekranında tablo halinde giriş varsa seçili sütunlar sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalanır; sistemdeki tablonun ilk hücresine yapıştırın.
-- **Tüm raporları klasöre yaz:** aşağıdaki dosyaların hepsi tek seferde yazılır.
+**Gelişmiş** bölümünde (katlı): aktarım biçimi seçimi ve önizleme, sistemden indirilen şablonu doldurma (şablondaki öğrenci sırası korunur), tek tek dosya kaydetme ve sütun seçerek panoya kopyalama.
 
 Dosya adlarında ders kodu, sınav türü ve tarih bulunur, örneğin `UTL4513_AraSinav_2026-11-10_sonuc.xlsx`.
 
@@ -164,12 +148,33 @@ Dosya adlarında ders kodu, sınav türü ve tarih bulunur, örneğin `UTL4513_A
 
 Sınav ayarları, cevap anahtarı, düzeltmeler ve kaynak dosya yolları `.osd` uzantılı tek bir proje dosyasında saklanır (Dosya > Kaydet). Dosya > Son açılanlar menüsünden devam edilebilir.
 
+### 5. İstatistikler (isteğe bağlı)
+
+![İstatistikler](docs/ekran/5_istatistik.png)
+
+Sekmeler sadedir: önde **Madde analizi**, **Öğrenme çıktıları** ve **Dönem sonu notu**; ötekiler sağdaki **Diğer analizler** menüsündedir (seçilen analiz önde sekme olarak açılır). Sayıların sade Türkçe yorumu, temel değerler (ortalama, ortanca, standart sapma, başarılı oranı, güvenirlik, ölçme hatası, ortalama güçlük ve ayırt edicilik), eşiğin altı kırmızı olan puan dağılımı grafiği ve sekmeler:
+
+- **Madde analizi:** güçlük, ayırt edicilik, düzeltilmiş madde-toplam korelasyonu, "soru çıkarılırsa güvenirlik", beş başarı grubunda doğru oranı (iyi soruda soldan sağa artar) ve sorunlu soru açıklaması.
+- **Öğrenme çıktıları:** her çıktının sınavdaki payı, sınıf başarısı ve eşiğe ulaşan öğrenci oranı.
+- **Kişi uyumu:** kolay soruları kaçırıp zor soruları bilen öğrenciler (okuma hatası, dikkatsizlik ya da şans; kâğıda bakın).
+- **Benzer cevaplar:** sınıf geneline göre olağandışı sayıda aynı yanlış şıkkı işaretleyen öğrenci çiftleri. Yalnızca istatistiksel işarettir, kopya kanıtı değildir.
+
+Ayrıca: **Kavram yanılgıları** (iki sorunun yanlış şıklarını birlikte seçen öğrenciler; şansla açıklanamayanlar), **Sınav yapısı** (sınav tek bir beceriyi mi ölçüyor, hangi soru ayrışıyor, öğrenme çıktısı eşlemesi verilerle uyumlu mu) ve **Dönem sonu notu** (final puanlarını girin ya da Excel'den alın; mutlak ya da T-puanına dayalı bağıl değerlendirmeyle harf notu, geçen ve kalanlar, bir üst harfe 1 puandan az kalanlar; harf tabloları örnektir, yönetmeliğinizle karşılaştırın). 4. adımdaki **Öğrenci karneleri** her öğrenciye bir sayfa üretir: puan, sıra, öğrenme çıktısı başarısı ve soru soru sonuç.
+
+**Notu belirleyen sorular:** öğrenciler arasındaki not farklarının ne kadarının hangi sorudan geldiği, sorunun puan payıyla karşılaştırmalı. Örneğin 40 puanlık soru farkların %90'ını oluşturuyorsa sınav fiilen tek soruya dayanıyordur; bir soru puanına göre çok az katkı veriyorsa herkes benzer puan almıştır.
+
+**Puanlama (yalnızca klasik sınav):**
+- *Kısmi puan profili:* her soruda tam, kısmi, sıfır ve boş sayısı. Çoğu öğrencinin kısmi aldığı soruda puanlama ölçütü belirsiz olabilir.
+- *Okuma sırası etkisi:* program kâğıtların hangi sırayla girildiğini kendiliğinden kaydeder (Excel'den alınan puanlarda dosyadaki sıra). En az 10 kâğıtta, okuma ilerledikçe puanların sistematik olarak düşüp düşmediğine ya da yükselip yükselmediğine bakar (okuyanın yorulması ya da ölçütün kayması). Kâğıtlar başarıya göre sıralıysa fark okumadan değil sıradan kaynaklanır.
+
+Bunlara ek olarak Excel raporunda çeldirici analizi (her yanlış şıkkın üst ve alt gruptaki seçilme oranı, işlemeyen çeldiriciler), soru sırasına göre boş bırakma (süre yetti mi), çarpıklık, basıklık, çeyrekler ve z ile T puanları bulunur.
+
 ## Sistem şablonundan profil oluşturma
 
 Akademik Bilgi Sistemi'nin soru bazlı not giriş ekranının ve toplu aktarım dosyasının biçimi henüz görülemediği için gelen profiller **geçicidir** (listede "[taslak]" yazar). Gerçek biçime uymak için:
 
 1. Sistemde ilgili sınavın öğrenci listesini ya da boş şablonunu Excel olarak indirin.
-2. 5. adımda **"Şablondan profil oluştur…"** düğmesine basıp dosyayı gösterin.
+2. 4. adımın Gelişmiş bölümünde **"Şablondan biçim oluştur…"** düğmesine basıp dosyayı gösterin.
 3. Program başlık satırını, numara ve ad sütunlarını, soru sütunlarını (`S1`, `Soru 1`, `1` gibi) ve toplam puan sütununu tanıyıp bir profil önerir. Profil adını, sınava girmeyenlerin gösterimini (boş, `G`, `GR`, `-1` gibi) ve ondalık basamağı onaylayıp kaydedin.
 4. **"Sistem şablonunu doldur…"** ile puanlar şablonun içine yazılır; şablonda olup sınava girmeyenler ve sonuçta olup şablonda olmayan numaralar ayrıca bildirilir.
 

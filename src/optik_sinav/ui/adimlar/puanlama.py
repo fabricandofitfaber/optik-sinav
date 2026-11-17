@@ -1,4 +1,5 @@
-"""3. adım: eşit ya da soru bazlı puan, yanlış cezası, çift işaret kuralı, yuvarlama."""
+"""Puanlama ayarları (2. adımda katlanır bölüm): eşit ya da soru bazlı puan, yanlış cezası, çift işaret kuralı, yuvarlama,
+başarı eşiği ve geçme kuralı."""
 from __future__ import annotations
 
 from fractions import Fraction
@@ -13,13 +14,15 @@ from .temel import Adim
 
 class PuanlamaAdimi(Adim):
     def __init__(self, durum, parent=None):
-        super().__init__(durum, M.ADIMLAR[2], parent)
+        super().__init__(durum, M.PUANLAMA_AYARLARI, parent)
+        self.baslik_etiketi.hide()  # 2. adımın içinde katlanır bölüm olarak gösterilir
+        self.duzen.setContentsMargins(0, 0, 0, 0)
         self._yukleniyor = False
         g = QGroupBox("Puan yöntemi")
         self.yontem_kutusu = g
         f = QFormLayout(g)
         self.esit = QRadioButton(M.YONTEM_ADI["esit"] + " (toplam / soru sayısı; iptal sorular dahil)")
-        self.soru_bazli = QRadioButton(M.YONTEM_ADI["soru_bazli"] + " (her sorunun puanı 2. adımda, soru satırında girilir)")
+        self.soru_bazli = QRadioButton(M.YONTEM_ADI["soru_bazli"] + " (her sorunun puanı yukarıdaki tabloda, Puan sütununda girilir)")
         grup = QButtonGroup(self)
         grup.addButton(self.esit)
         grup.addButton(self.soru_bazli)
@@ -151,6 +154,15 @@ class PuanlamaAdimi(Adim):
         e = self.eksikler()
         self.durum_etiketi.setText("" if not e else "<b>Eksik:</b> " + " ".join(e))
         self.tamamlik_degisti.emit()
+
+    def ozet_metni(self) -> str:
+        """Katlanmış başlığın yanında görünen tek satırlık özet."""
+        a = self.durum.proje.ayarlar
+        if self.durum.proje.klasik:
+            return f"başarı eşiği {a.basari_esigi}, geçme ortalaması {a.gecme_ortalamasi}"
+        parca = [M.YONTEM_ADI[a.yontem.value].lower(), f"toplam {a.toplam_puan}",
+                 f"{a.ceza_orani} yanlış bir doğruyu götürür" if a.yanlis_cezasi else "yanlış cezası yok", f"başarı eşiği {a.basari_esigi}"]
+        return ", ".join(parca)
 
     def eksikler(self):
         try:

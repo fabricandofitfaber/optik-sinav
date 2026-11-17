@@ -137,3 +137,16 @@ details.acilir .menu button:hover { background: var(--vurgu-acik); color: var(--
 .sekmeler .bosluk { flex: 1; }
 .sekmeler details.acilir > summary { border: none; background: none; padding: 7px 12px; color: var(--soluk); }
 button.buyuk { padding: 10px 20px; font-size: 15px; }
+
+/* sade düzen */
+table.sorular.puan-yok .puanSutun, table.sorular.pc-yok .pcSutun { display: none; }
+nav.adimlar button.istege-bagli { color: var(--soluk); }
+nav.adimlar button .tamam { font-size: 12px; }
+details#ayarlarBolumu > summary, details#sinavBilgi > summary { cursor: pointer; padding: 4px 0; }
+
+.aktar-satir { display: flex; gap: 14px; align-items: flex-start; margin: 8px 0; }
+.aktar-satir .soluk { font-size: 13px; }
+button.aktar-dugme { min-width: 250px; text-align: left; font-weight: 600; padding: 9px 14px; flex: none; }
+.duzeltilecek ul { margin: 6px 0; padding-left: 20px; max-height: 170px; overflow: auto; }
+.duzeltilecek li { margin: 3px 0; font-size: 14px; }
+#sonucTablo tr.vurgu td { outline: 2px solid var(--vurgu); outline-offset: -2px; }

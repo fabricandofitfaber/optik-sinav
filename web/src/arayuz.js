@@ -1,4 +1,4 @@
-/* Optik Sınav — tarayıcı sürümü: ortak durum, yardımcılar, kabuk ve 1-3. adımlar.
+/* Optik Sınav — tarayıcı sürümü: ortak durum, yardımcılar, kabuk, 1-2. adımlar ve puanlama ayarları.
  * Dosyalar yalnızca bu bilgisayarda, tarayıcının içinde okunur; hiçbir yere gönderilmez.
  */
 (function () {
@@ -303,7 +303,11 @@
   };
 
   // ------------------------------------------------------------------ kabuk
-  const ADIMLAR = ["Sınav ve dosyalar", "Cevap anahtarı", "Puanlama", "Kontrol ve düzeltme", "İstatistikler", "Dışa aktar"];
+  // Sade düzen: zorunlu dört adım ve isteğe bağlı istatistikler; puanlama ayarları 2. adımda katlanır bölümde
+  const ADIMLAR = ["Sınav ve dosyalar", "Cevap anahtarı", "Kontrol ve düzeltme", "Sisteme aktar ve raporlar", "İstatistikler (isteğe bağlı)"];
+  UI.ADIMLAR = ADIMLAR;
+  const adimAdi = (j) => (D.proje.bicim === "klasik" && j === 1 ? "Sorular ve puanlar" : D.proje.bicim === "klasik" && j === 2 ? "Puan girişi" : ADIMLAR[j]);
+  UI.adimAdi = adimAdi;
   UI.adimlar = [];
   UI.ciz = function () {
     const a = UI.adimlar[D.adim];
@@ -311,15 +315,29 @@
     a.ciz($("#icerik"));
     UI.altGuncelle();
     // Hazırlık adımları (1-3): kendisi ve öncekiler eksiksizse listede ✓; sonuç adımlarında (4-6) eksikler üstte şerit
-    const on = [0, 1, 2].map((j) => UI.adimlar[j].eksikler());
+    const on = [0, 1].map((j) => UI.adimlar[j].eksikler());
     let tamam = true;
     $$("nav.adimlar button[data-adim]").forEach((b) => {
       const j = Number(b.dataset.adim);
       b.classList.toggle("secili", j === D.adim);
-      if (j < 3) { tamam = tamam && !on[j].length; b.querySelector(".tamam").textContent = tamam ? "✓" : ""; }
-      if (j === 1) b.childNodes[1].textContent = D.proje.bicim === "klasik" ? "Sorular ve puanlar" : ADIMLAR[1];
+      b.childNodes[1].textContent = adimAdi(j);
+      if (j < 2) { tamam = tamam && !on[j].length; b.querySelector(".tamam").textContent = tamam ? "✓" : on[j].length ? "•" : ""; }
+      if (j === 2) {
+        let t = "";
+        if (D.proje.bicim === "klasik" && D.liste) {
+          // klasik: puanı girilen ya da "girmedi" işaretli öğrenci sayısı; hepsi bitince ✓
+          const L = D.liste.ogrenciler, g = new Set(D.proje.klasik_girmedi || []);
+          const bitti = L.filter((o) => g.has(o.no) || (D.proje.klasik_puanlar[o.no] || []).some((x) => x !== null && x !== "")).length;
+          t = bitti === L.length && L.length ? "✓" : bitti ? `${bitti}/${L.length}` : "";
+        } else if (D.sonuc) {
+          const uy = D.sonuc.ogrenciler.filter((o) => o.uyarilar.length).length;
+          t = uy ? `${uy} uyarı` : "✓";
+        }
+        b.querySelector(".tamam").textContent = t;
+      }
+      b.classList.toggle("istege-bagli", j === 4);
     });
-    if (D.adim >= 3 && !D.sonuc) {
+    if (D.adim >= 2 && !D.sonuc) {
       let sat = on.map((x, j) => (x.length ? `<a href="#" data-git="${j}">${j + 1}. adım</a>: ${e(x.join(" "))}` : "")).filter(Boolean);
       if (!sat.length) sat = [e(UI.hesapEksikleri().join(" "))].filter(Boolean);
       if (sat.length) {
@@ -487,26 +505,27 @@
           <label>Soyad</label><select id="lSoyad">${secenek(es.soyad_sutun, true)}</select></div>`;
       }
       k.innerHTML = `<h2>1. Sınav ve dosyalar</h2>
-        <div class="kutu"><h3>Sınav <span class="soluk" style="font-weight:400;font-size:13px">bilgiler isteğe bağlı; raporlarda ve dosya adlarında görünür</span></h3>
-          <div class="satir"><label>Biçim</label>
+        <div class="satir"><label>Sınav biçimi</label>
             <label><input type="radio" name="bicim" value="optik" ${!kl ? "checked" : ""}> Optik (test, optik okuyucu dosyası)</label>
             <label><input type="radio" name="bicim" value="klasik" ${kl ? "checked" : ""}> Klasik (yazılı; puanları siz girersiniz)</label>
             ${kl ? `<label>Soru sayısı</label><input type="number" id="klasikSayi" min="1" max="100" style="width:70px" value="${p.klasik_soru_sayisi}">` : ""}</div>
-          <div class="satir"><label>Ders</label><input type="text" id="dersKodu" list="dersListesi" placeholder="Ders kodu, örnek: UTL4513" style="width:170px" value="${e(s.ders_kodu)}">
-            <datalist id="dersListesi">${Object.values(dersler).map((x) => `<option value="${e(x.kod)}">${e(x.ad)}</option>`).join("")}</datalist>
-            <input type="text" id="dersAdi" placeholder="Ders adı" style="flex:1;min-width:200px" value="${e(s.ders_adi)}"></div>
-          <div class="satir"><label>Sınav türü</label><select id="sinavTuru">${[...new Set([...SINAV_TURLERI, s.sinav_turu])].map((t) => `<option ${t === s.sinav_turu ? "selected" : ""}>${e(t)}</option>`).join("")}</select>
-            <label>Tarih</label><input type="date" id="tarih" value="${e(s.tarih)}">
-            <label>Saat</label><input type="time" id="saat" value="${e(s.saat)}">
-            <label>Etki oranı %</label><input type="text" id="etki" style="width:60px" placeholder="40" value="${e(s.etki_orani)}">
-            <label>Dönem</label><input type="text" id="donem" placeholder="2026-2027 Güz" value="${e(s.donem)}"></div>
-          <div class="satir"><button id="dersPdf">Ders bilgi paketini yükle (PDF)…</button><span style="flex:1">${dersBilgi}</span></div>
-        </div>
         <div class="ikili">
           ${!kl ? birakAlani("birakDat", "Optik okuyucu dosyası", ".dat ya da .txt; puanlama için gerekli", datBilgi, o ? "tamam" : "zorunlu") : ""}
           ${birakAlani("birakListe", "Öğrenci listesi", kl ? "Excel, CSV ya da PDF; klasik sınavda gerekli" : "Excel, CSV ya da PDF; isteğe bağlı ama önerilir (sınava girmeyenler ve doğru adlar için)", listeBilgi, l ? "tamam" : kl ? "zorunlu" : "")}
         </div>
-        ${kl && l && UI.soruSayisi() > 0 ? `<p><button class="zorunlu-dugme" id="giriseGec" title="4. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan bu tarayıcıda kendiliğinden saklanır.">Puan girişine geç: öğrenci listesi ve soru matrisi →</button></p>` : ""}
+        ${kl && l && UI.soruSayisi() > 0 ? `<p><button class="zorunlu-dugme" id="giriseGec" title="3. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan bu tarayıcıda kendiliğinden saklanır.">Puan girişine geç: öğrenci listesi ve soru matrisi →</button></p>` : ""}
+        <div class="kutu"><h3>Ders <span class="soluk" style="font-weight:400;font-size:13px">isteğe bağlı; öğrenme çıktıları ve rapor başlıkları için</span></h3>
+          <div class="satir"><label>Ders</label><input type="text" id="dersKodu" list="dersListesi" placeholder="Ders kodu, örnek: UTL4513" style="width:170px" value="${e(s.ders_kodu)}">
+            <datalist id="dersListesi">${Object.values(dersler).map((x) => `<option value="${e(x.kod)}">${e(x.ad)}</option>`).join("")}</datalist>
+            <input type="text" id="dersAdi" placeholder="Ders adı" style="flex:1;min-width:200px" value="${e(s.ders_adi)}"></div>
+          <div class="satir"><button id="dersPdf">Ders bilgi paketini yükle (PDF)…</button><span style="flex:1">${dersBilgi}</span></div>
+          <details ${D.bilgiAcik ? "open" : ""} id="sinavBilgi"><summary class="soluk">Sınav türü, tarih, etki oranı ve dönem</summary>
+          <div class="satir"><label>Sınav türü</label><select id="sinavTuru">${[...new Set([...SINAV_TURLERI, s.sinav_turu])].map((t) => `<option ${t === s.sinav_turu ? "selected" : ""}>${e(t)}</option>`).join("")}</select>
+            <label>Tarih</label><input type="date" id="tarih" value="${e(s.tarih)}">
+            <label>Saat</label><input type="time" id="saat" value="${e(s.saat)}">
+            <label>Etki oranı %</label><input type="text" id="etki" style="width:60px" placeholder="40" value="${e(s.etki_orani)}">
+            <label>Dönem</label><input type="text" id="donem" placeholder="2026-2027 Güz" value="${e(s.donem)}"></div></details>
+        </div>
         <details class="kutu" id="gelismis" ${gelismisAcik ? "open" : ""}><summary>Gelişmiş ayarlar: okuyucu şablonu ve liste sütunları</summary>
           <p class="soluk">Okuyucu şablonu, optik dosyanın her satırında adın, numaranın ve cevapların hangi karakterlerde olduğunu söyler. Program bunu kendisi bulur; yalnızca farklı düzende bir optik formda değiştirmeniz gerekir.</p>
           ${!kl ? `<div class="satir">${alanlar.map(([a, t]) => `<label>${t}</label><input type="number" data-okuyucu="${a}" min="0" max="400" style="width:70px" value="${r[a] || 0}">`).join("")}</div>
@@ -515,6 +534,7 @@
         </details>`;
       // olaylar
       $$("input[name=bicim]", k).forEach((x) => (x.onchange = () => { UI.bicimDegistir(x.value); UI.ciz(); }));
+      $("#sinavBilgi", k).ontoggle = (ev) => { D.bilgiAcik = ev.target.open; };
       if ($("#klasikSayi", k)) $("#klasikSayi", k).onchange = (ev) => { UI.klasikSoruSayisi(parseInt(ev.target.value, 10) || 1); UI.altGuncelle(); };
       const bilgiAlani = { dersAdi: "ders_adi", sinavTuru: "sinav_turu", tarih: "tarih", saat: "saat", etki: "etki_orani", donem: "donem" };
       for (const [id, a] of Object.entries(bilgiAlani)) $("#" + id, k).oninput = (ev) => { s[a] = ev.target.value.trim(); UI.altGuncelle(); };
@@ -537,7 +557,7 @@
       };
       birak("birakDat", ".dat,.txt,.DAT,.TXT");
       birak("birakListe", ".xlsx,.xls,.csv,.pdf");
-      if ($("#giriseGec", k)) $("#giriseGec", k).onclick = () => UI.git(3);
+      if ($("#giriseGec", k)) $("#giriseGec", k).onclick = () => UI.git(2);
       if ($("#listeKaldir", k)) $("#listeKaldir", k).onclick = () => { UI.listeYukle(null); UI.ciz(); };
       $$("[data-okuyucu]", k).forEach((x) => (x.onchange = () => {
         const a = x.dataset.okuyucu, v2 = parseInt(x.value, 10) || 0;
@@ -623,10 +643,10 @@
     const durum = kl ? "" : `<td><select class="durum">${Object.entries(OS.SORU_DURUMU_ADI).map(([k2, t]) => `<option value="${k2}" ${s.durum === k2 ? "selected" : ""}>${t}</option>`).join("")}</select></td>`;
     const pv = puanlar.length ? Number(OS.ondalikMetni(OS.yuvarla(puanlar[i], 2), ".")) : 0;
     return `<tr data-i="${i}" class="${i === D.etkin && !kl ? "etkin" : ""}"><td>${i + 1}</td>${kabarcik}${durum}
-      <td><input type="number" class="puan" min="0" step="0.01" value="${pv}"></td>
+      <td class="puanSutun"><input type="number" class="puan" min="0" step="0.01" value="${pv}"></td>
       <td><input type="text" class="cikti" placeholder="örnek: 1, 3  ya da  Ö01 %60, Ö02 %40" value="${e(ciktilariYaz(s))}"></td>
       <td><button class="kucuk ciktiSec">Seç…</button></td>
-      <td><input type="text" class="pc" placeholder="P02, P07" value="${e((s.program_ciktilari || []).join(", "))}"></td></tr>`;
+      <td class="pcSutun"><input type="text" class="pc" placeholder="P02, P07" value="${e((s.program_ciktilari || []).join(", "))}"></td></tr>`;
   }
   const BONUS_NOTU = "Bonus soru {no}: doğru cevaplayan öğrencinin bir yanlışını (yoksa bir boşunu) doğru sayar; bütün soruları doğru olan öğrencide sayılmaz, puan toplamı geçmez. Akademik Bilgi Sistemi'ne gönderilen soru tanımında ve aktarım dosyasında bonus görünmez; öteki sorular 1'den yeniden numaralanır.";
   function anahtarOzetHtml() {
@@ -668,11 +688,17 @@
     if (!etkilenen.length) return true;
     return onay("Soru çıkarılsın mı?", `Çıkarılacak sorulara puan girilmiş: ${etkilenen.join(", ")}. Bu puanlar hesaba katılmaz ama silinmez; soruyu geri eklerseniz geri gelir. Devam edilsin mi?`);
   }
+  function ayarOzeti() {
+    const a = D.proje.ayarlar;
+    if (D.proje.bicim === "klasik") return `başarı eşiği ${a.basari_esigi}, geçme ortalaması ${a.gecme_ortalamasi}`;
+    return [a.yontem === "esit" ? "eşit puan" : "soru bazlı puan", `toplam ${a.toplam_puan}`, a.yanlis_cezasi ? `${a.ceza_orani} yanlış bir doğruyu götürür` : "yanlış cezası yok", `başarı eşiği ${a.basari_esigi}`].join(", ");
+  }
   const adim2 = {
     eksikler() {
       const { a, kl } = anahtarDurum();
-      // Klasik sınavda soru puanları bu adımda girilir; optikte 3. adımda
-      const e2 = OS.anahtarEksikleri(a, D.proje.ayarlar, kl).filter((x) => kl || !x.toLowerCase().includes("puan"));
+      // Soru puanları ve puanlama ayarları da bu adımdadır (ayarlar katlanır bölümde)
+      const e2 = OS.anahtarEksikleri(a, D.proje.ayarlar, kl);
+      for (const x of adim3.eksikler()) if (!e2.includes(x)) e2.push(x);
       if (!kl) for (const k2 of OS.kitapciklar(a).slice(1)) {
         const h = [...(a.kitapcik_anahtarlari[k2] || "")].filter((c) => !/\s/.test(c));
         const es = OS.esleme(a, k2);
@@ -697,16 +723,17 @@
       const basliklar = ["Soru"].concat(kl ? [] : ["Doğru şık"]).concat(ana ? (kl ? [] : ["Durum"]).concat(["Puan", "Öğrenme çıktıları (yüzdeleriyle)", "", "Program çıktıları"]) : ["Ana kitapçıktaki karşılığı", ""]);
       const hizli = kl ? "" : ana ? (a.sorular.some((s) => s.dogru) ? OS.anahtarMetne(a) : "") : kitHarfleri(a, kit).some((h) => OS.SIKLAR.includes(h) && h) ? kitHarfleri(a, kit).join("") : "";
       const kodlar = UI.ogrenmeKodlari();
+      const pcGoster = D.pcGoster || a.sorular.some((s) => (s.program_ciktilari || []).length);
       k.innerHTML = `<h2>${kl ? "2. Sorular ve puanlar" : "2. Cevap anahtarı"}</h2>
         ${kl ? `<div class="satir"><label>Soru puanları</label><input type="text" id="klasikPuanlar" style="flex:1" placeholder="Sırayla yazın, örneğin 10 10 10 10 20 40; soru sayısı da buna göre ayarlanır. Enter ile uygulayın." value="${e(klasikPuanMetni(a))}"><button id="klasikPuanUygula">Uygula</button></div>
-        <p class="soluk">Klasik sınav: her sorunun puanını ve ölçtüğü öğrenme çıktılarını girin. Öğrencilerin puanları 4. adımda girilir.</p>` : `
+        <p class="soluk">Klasik sınav: her sorunun puanını ve ölçtüğü öğrenme çıktılarını girin. Öğrencilerin puanları 3. adımda girilir.</p>` : `
         <div class="sekmeler">${kitler.map((x) => `<button data-kit="${e(x)}" class="${x === kit ? "secili" : ""}">${e(x)} kitapçığı${x === a.ana_kitapcik && kitler.length > 1 ? " (ana)" : ""}</button>`).join("")}
           <button id="kitEkle" title="Farklı soru ya da şık sırası olan kitapçık ekler">+ Kitapçık ekle</button>
           ${!ana ? `<button id="kitSil">Bu kitapçığı sil</button>` : ""}</div>
         ${!ana ? `<p class="soluk">${e(kit)} kitapçığı: şıkları bu kitapçığın kendi soru sırasıyla işaretleyin. "Ana kitapçıktaki karşılığı" sütununa bu sorunun ana kitapçıkta kaçıncı soru olduğunu yazın (sıra aynıysa dokunmayın). Puan ve öğrenme çıktısı ana kitapçıktan gelir.</p>` : ""}
         <div class="satir"><label>Hızlı giriş</label><input type="text" id="hizli" style="flex:1;font-family:Menlo,Consolas,monospace" placeholder="Harfleri sırayla yazın, örneğin BEDAC DEDBC BEAAC ('-' soruyu atlar) ve Enter'a basın" value="${e(hizli)}"><button id="hizliUygula">Uygula</button></div>`}
         <div class="kutu izgara" id="izgara" tabindex="0">
-          <table class="sorular"><thead><tr>${basliklar.map((b) => `<th>${b}</th>`).join("")}</tr></thead>
+          <table class="sorular ${D.proje.ayarlar.yontem === "esit" && !kl ? "puan-yok" : ""} ${pcGoster ? "" : "pc-yok"}"><thead><tr>${basliklar.map((b) => `<th class="${b === "Puan" ? "puanSutun" : b === "Program çıktıları" ? "pcSutun" : ""}">${b}</th>`).join("")}</tr></thead>
           <tbody>${Array.from({ length: n }, (_, i) => soruSatiri(i, st)).join("")}</tbody></table>
         </div>
         ${kl ? `<div class="satir"><button id="soruEkle">+ Soru ekle</button><button id="soruCikar">− Son soruyu çıkar</button></div>` : ""}
@@ -715,8 +742,15 @@
           <div class="satir" style="margin-top:8px"><button class="ana" id="sistemeKopyala" title="Sınav Akreditasyon İşlemleri > Toplu Aktarım Yap > Aktarım Kutusu'na yapıştırılır">Soru tanımını sistem için kopyala</button>
           <button id="esitDagit">Puanları eşit dağıt</button>
           ${UI.acilirMenu("Diğer işlemler", ['<button id="siraylaDagit">Çıktıları sorulara sırayla dağıt</button>',
-            '<button id="eslemeKaydet">Ders eşlemesini kaydet</button>', '<button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button>'])}</div></div>` : ""}`;
+            '<button id="eslemeKaydet">Ders eşlemesini kaydet</button>', '<button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button>'])}</div></div>` : ""}
+        ${ana ? `<label class="soluk"><input type="checkbox" id="pcGoster" ${pcGoster ? "checked" : ""}> Program çıktıları sütununu göster (genellikle gerekmez: sistem bunları ders öğrenme çıktılarından hesaplar)</label>
+        <details class="kutu" id="ayarlarBolumu" ${D.ayarAcik ? "open" : ""}><summary><b>Puanlama ayarları</b> <span class="soluk">${e(ayarOzeti())}</span></summary><div id="puanlamaAyarlari"></div></details>` : ""}`;
       UI.anahtarOlaylari(k, st);
+      if ($("#puanlamaAyarlari", k)) {
+        adim3.ciz($("#puanlamaAyarlari", k));
+        $("#ayarlarBolumu", k).ontoggle = (ev) => { D.ayarAcik = ev.target.open; };
+        $("#pcGoster", k).onchange = (ev) => { D.pcGoster = ev.target.checked; UI.ciz(); };
+      }
     },
   };
   UI.anahtarOlaylari = function (k, st) {
@@ -896,19 +930,23 @@
       for (const s of a.sorular) { const x = t[String(s.no)]; if (x) { s.ogrenme_ciktilari = [...(x.ogrenme_ciktilari || [])]; s.program_ciktilari = [...(x.program_ciktilari || [])]; s.cikti_yuzdeleri = Object.assign({}, x.cikti_yuzdeleri || {}); } }
       yenidenCiz();
     };
-    if ($("#sistemeKopyala", k)) $("#sistemeKopyala", k).onclick = async () => {
+    if ($("#sistemeKopyala", k)) $("#sistemeKopyala", k).onclick = () => UI.soruTanimiKopyala();
+    if (!kl) setTimeout(() => izgara.focus({ preventScroll: true }), 0);
+  };
+  /** Soru tanımını (bonus hariç) Akademik Bilgi Sistemi'nin Toplu Aktarım biçiminde panoya kopyalar. */
+  UI.soruTanimiKopyala = async function () {
+      const a = D.proje.anahtar;
       const sorun = OS.anahtarEksikleri(a, D.proje.ayarlar, true).filter((x) => x.toLowerCase().includes("puan"));
       let [hatalar] = OS.ciktiDenetimi(a, UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null);
-      if (!a.sorular.some((s) => (s.ogrenme_ciktilari || []).length)) hatalar = ["Hiçbir soruya öğrenme çıktısı seçilmedi. Sistem her soru için öğrenme çıktısı istiyor."];
-      if (sorun.length || hatalar.length) { bilgi("Önce düzeltin", sorun.concat(hatalar).join("\n")); return; }
+      if (!a.sorular.some((s) => (s.ogrenme_ciktilari || []).length)) hatalar = ["Hiçbir soruya öğrenme çıktısı seçilmedi (2. adım). Sistem her soru için öğrenme çıktısı istiyor."];
+      if (sorun.length || hatalar.length) { bilgi("Önce düzeltin", sorun.concat(hatalar).join("\n")); return false; }
       const metin = OS.soruTanimiMetni(a, D.proje.ayarlar, UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null);
       const tamam = await kopyala(metin);
       const adimlar = `Akademik Bilgi Sistemi'nde:\n1. Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.\n2. "Toplu Sınav Soru Tanım" kutusunda "Toplu Aktarım Yap" seçin.\n3. "Kolon Ayracı" "Excel'den Kopyalandı" olsun.\n4. Sağdaki Aktarım Kutusu'na tıklayıp yapıştırın (Mac'te Cmd+V, Windows'ta Ctrl+V).\n5. "Aktar" düğmesine basın.`;
-      if (tamam) bilgi("Panoya kopyalandı", `${a.sorular.length} sorunun tanımı kopyalandı.\n\n${adimlar}`);
+      if (tamam) bilgi("Panoya kopyalandı", `${OS.aktarimSorulari(a).length} sorunun tanımı kopyalandı.\n\n${adimlar}`);
       else pencere("Kopyalamak için seçin", `<p>Tarayıcı panoya yazmaya izin vermedi. Aşağıdaki metni seçip kopyalayın (Cmd+C ya da Ctrl+C):</p><textarea style="width:100%;height:220px;font-family:Menlo,monospace">${e(metin)}</textarea><p style="white-space:pre-wrap">${e(adimlar)}</p>`,
         [{ metin: "Kapat", deger: true, ana: true }], (p) => $("textarea", p).select());
-    };
-    if (!kl) setTimeout(() => izgara.focus({ preventScroll: true }), 0);
+      return tamam;
   };
   UI.ciktiPenceresi = function (no, s) {
     const kodlar = UI.ogrenmeKodlari();
@@ -950,10 +988,9 @@
         const p = OS.soruPuanlari(D.proje.anahtar, a);
         soruPuani = a.yontem === "esit" && p.length ? `Soru puanı ${OS.sayiYaz(p[0], 4)} (kesir olarak tutulur; bütün sorular doğruysa tam ${OS.sayiYaz(OS.topla(p), 2)})` : `Girilen soru puanlarının toplamı ${OS.sayiYaz(OS.topla(p), 2)}`;
       } catch (_) { soruPuani = ""; }
-      k.innerHTML = `<h2>3. Puanlama</h2>
-        <div class="kutu"><h3>Puan yöntemi</h3>
+      k.innerHTML = `<div class="kutu"><h3>Puan yöntemi</h3>
           ${kl ? "" : `<div class="satir"><label><input type="radio" name="yontem" value="esit" ${a.yontem === "esit" ? "checked" : ""}> Eşit puan (toplam / soru sayısı; iptal sorular dahil)</label></div>`}
-          <div class="satir"><label><input type="radio" name="yontem" value="soru_bazli" ${a.yontem !== "esit" || kl ? "checked" : ""}> Soru bazlı puan (her sorunun puanı 2. adımda girilir)</label></div>
+          <div class="satir"><label><input type="radio" name="yontem" value="soru_bazli" ${a.yontem !== "esit" || kl ? "checked" : ""}> Soru bazlı puan (her sorunun puanı yukarıdaki tabloda, Puan sütununda girilir)</label></div>
           <div class="satir"><label>Toplam puan</label><input type="text" id="toplamPuan" style="width:80px" value="${e(a.toplam_puan)}"><span class="soluk">${e(soruPuani)}</span></div>
         </div>
         <div class="kutu"><h3>Kurallar</h3>
@@ -981,9 +1018,10 @@
         UI.altGuncelle();
         UI.otomatikKaydet();
       };
-      $$("input, select", k).forEach((x) => (x.onchange = () => { const once = a.yontem; degisti(); if (once !== a.yontem) UI.ciz(); }));
+      $$("input, select", k).forEach((x) => (x.onchange = () => { degisti(); UI.ciz(); }));
     },
   };
 
-  UI.adimlar.push(adim1, adim2, adim3);
+  UI.adimlar.push(adim1, adim2);  // adim3 (puanlama ayarları) 2. adımın içinde
+  UI.puanlamaAyarlari = adim3;
 })();

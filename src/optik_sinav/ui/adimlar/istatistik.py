@@ -1,4 +1,4 @@
-"""5. adım: sınav istatistikleri — yorum, temel sayılar, puan dağılımı, madde analizi, öğrenme çıktıları,
+"""5. adım (isteğe bağlı): sınav istatistikleri — yorum, temel sayılar, puan dağılımı, madde analizi, öğrenme çıktıları,
 kişi uyumu ve benzer yanlış örüntüsü. Hesaplar `core/madde_analizi.py` içindedir; burada yalnızca gösterim var."""
 from __future__ import annotations
 
@@ -182,7 +182,7 @@ class IstatistikAdimi(Adim):
         self.diger_dugme.setMenu(self.diger_menu)
         self.sekmeler.setCornerWidget(self.diger_dugme, Qt.Corner.TopRightCorner)
         self.duzen.addWidget(self.sekmeler, 1)
-        self.not_ = QLabel("Bütün tablolar ve grafikler 6. adımdaki \"Tüm raporları klasöre yaz\" ile Excel'e (istatistik ve öğrenme çıktısı dosyaları) yazılır.")
+        self.not_ = QLabel("Bütün tablolar ve grafikler 4. adımdaki \"Bütün raporları klasöre kaydet\" ile Excel'e (istatistik ve öğrenme çıktısı dosyaları) yazılır.")
         self.not_.setStyleSheet("color: gray")
         self.not_.setWordWrap(True)
         self.duzen.addWidget(self.not_)
@@ -342,7 +342,7 @@ class IstatistikAdimi(Adim):
         h = ["<h3>Okuma sırası etkisi</h3>"]
         ok = E.okuma_sirasi_etkisi(s, self.durum.proje.klasik_giris_sirasi)
         if ok is None:
-            h.append("<p style='color:gray'>En az 10 kâğıdın girildiği sıra gerekir. Sıra, 4. adımda bir öğrenciye ilk puan girildiğinde "
+            h.append("<p style='color:gray'>En az 10 kâğıdın girildiği sıra gerekir. Sıra, 3. adımda bir öğrenciye ilk puan girildiğinde "
                      "kendiliğinden kaydedilir (Excel'den alınan puanlarda dosyadaki satır sırası).</p>")
         else:
             h.append(f"<p><b>{ok.yorum}</b></p>")
@@ -427,6 +427,6 @@ class IstatistikAdimi(Adim):
                      + "".join(f"<tr><td>{x.tarih}</td><td>{x.sinav_turu}</td><td align=right>{x.ogrenci_sayisi}</td><td align=right>{_v(x.ortalama, 1)}</td>"
                                f"<td align=right>%{x.basari_orani * 100:.0f}</td></tr>" for x in arsiv) + "</table>")
         else:
-            h.append("<p>Bu ders için arşivde kayıt yok. 6. adımda \"Tüm raporları klasöre yaz\" her kullanıldığında sınavın özeti "
+            h.append("<p>Bu ders için arşivde kayıt yok. 4. adımda \"Bütün raporları klasöre kaydet\" her kullanıldığında sınavın özeti "
                      "bilgisayarınızdaki arşive eklenir; sonraki dönemlerde burada karşılaştırma görünür.</p>")
         return "".join(h)

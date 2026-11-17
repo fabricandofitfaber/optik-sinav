@@ -124,7 +124,7 @@ class DonemPaneli(QWidget):
             self.gecen.setText(h.gecen)
             self.bilgi.setText(f"Final puanlarını girin ya da Excel'den alın; ara sınav bu sınavdan gelir. Ağırlıklar: ara sınav %{ara:g}, final "
                                f"%{100 - ara:g} (1. adımdaki etki oranı). Final alt sınırı {a.final_alt_siniri}, geçme ortalaması {a.gecme_ortalamasi} "
-                               "(3. adımda değiştirilir). <b>Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.</b>")
+                               "(2. adımdaki Puanlama ayarları bölümünde değiştirilir). <b>Harf tabloları örnektir; üniversitenizin yönetmeliğiyle karşılaştırın.</b>")
             if not s:
                 return
             d = None

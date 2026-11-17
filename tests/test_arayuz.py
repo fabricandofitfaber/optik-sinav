@@ -75,10 +75,10 @@ def test_butun_adimlar(pencere, fix, tmp_path):
     assert d.proje.ayarlar.yontem == PuanYontemi.SORU_BAZLI and d.proje.anahtar.sorular[1].puan == "10"
     a._esit_puan()
     assert d.proje.ayarlar.yontem == PuanYontemi.ESIT
+    assert not a.baslik_w["Puan"].isVisibleTo(a)  # eşit puanda puan sütunu gizli
     pencere.sonraki.click()
-    pencere.sonraki.click()
-    k: KontrolAdimi = pencere.adimlar[3]
-    assert pencere.yigin.currentIndex() == 3
+    k: KontrolAdimi = pencere.adimlar[2]
+    assert pencere.yigin.currentIndex() == 2
     assert k.model.rowCount() == 11 and k.model.columnCount() == 3 + 10 + 5
     k.yalniz_uyarili.setChecked(True)
     assert k.suzgec.rowCount() < 11
@@ -87,12 +87,12 @@ def test_butun_adimlar(pencere, fix, tmp_path):
     satir = next(o.kayit.satir_no for o in d.sonuc.ogrenciler if o.no == "990000088")
     d.duzelt(satir, "no", "990000008")
     assert k.girmeyen_tablo.rowCount() == 3 and k.duzeltme_tablo.rowCount() == 1
-    pencere.sonraki.click()
+    pencere.adim_listesi.setCurrentRow(4)
     ist = pencere.adimlar[4]
     assert pencere.yigin.currentIndex() == 4 and ist.madde.rowCount() == 10 and "Kısaca" in ist.yorum.text()
     assert ist.cikti.rowCount() == 3  # Ö01, Ö02, Ö03
-    pencere.sonraki.click()
-    e = pencere.adimlar[5]
+    pencere.adim_listesi.setCurrentRow(3)
+    e = pencere.adimlar[3]
     assert e.akr.count() >= 3 and e.onizleme.rowCount() == 12
     # proje kaydet ve yeniden aç
     d.kaydet(str(tmp_path / "s.osd"))
@@ -143,10 +143,10 @@ def test_klasik_sinav_arayuzu(pencere, fix, tmp_path):
     assert a.satirlar[0].kabarciklar == {} and _hazir(pencere)
     a.satirlar[3].puan.setValue(40)
     a.satirlar[0].puan.setValue(10)
-    pencere.sonraki.click()
     assert _hazir(pencere)  # 10 + 25 + 25 + 40 = 100
     pencere.sonraki.click()
-    k = pencere.adimlar[3]
+    k = pencere.adimlar[2]
+    assert "Puan girişi" in k.baslik_etiketi.text() and pencere.adim_listesi.item(2).text().startswith("3. Puan girişi")
     m = k.klasik_model
     assert m.rowCount() == len(d.liste.ogrenciler) and m.columnCount() == 3 + 4 + 3  # + Toplam, Kâğıttaki toplam, Girmedi
     assert not _hazir(pencere)  # puan yok
@@ -198,8 +198,7 @@ def test_kagit_sirasiyla_giris(pencere, fix):
     p1.klasik_sayi.setValue(3)
     pencere.sonraki.click()
     pencere.sonraki.click()
-    pencere.sonraki.click()
-    k = pencere.adimlar[3]
+    k = pencere.adimlar[2]
     panel = k.kagit
     assert len(panel.kutular) == 3
     hedef = d.liste.ogrenciler[2]
@@ -219,8 +218,8 @@ def test_kagit_sirasiyla_giris(pencere, fix):
 
 def test_serbest_gezinme_ve_eksik_seridi(pencere):
     """Boş projede 6. adıma doğrudan gidilir; sonuç hesaplanmaz, üstteki şerit eksikleri ve adımlarını gösterir."""
-    pencere.adim_listesi.setCurrentRow(5)
-    assert pencere.yigin.currentIndex() == 5
+    pencere.adim_listesi.setCurrentRow(4)
+    assert pencere.yigin.currentIndex() == 4
     assert pencere.durum.sonuc is None
     assert not pencere.serit.isHidden() and "1. adım" in pencere.serit.text()
     pencere.adim_listesi.setCurrentRow(0)
@@ -245,8 +244,8 @@ def test_otomatik_kayit_ve_kurtarma(pencere, fix, tmp_path, monkeypatch):
     p1.bicim_klasik.setChecked(True)
     p1._liste_ac(str(liste))
     p1.klasik_sayi.setValue(3)
-    pencere.adim_listesi.setCurrentRow(3)
-    m = pencere.adimlar[3].klasik_model
+    pencere.adim_listesi.setCurrentRow(2)
+    m = pencere.adimlar[2].klasik_model
     m.setData(m.index(0, 3), "20")
     m.setData(m.index(1, 5), "7,5")
     pencere.otomatik_kaydet()
@@ -263,7 +262,7 @@ def test_otomatik_kayit_ve_kurtarma(pencere, fix, tmp_path, monkeypatch):
     d2 = yeni.durum
     assert d2.proje.klasik and d2.liste is not None and len(d2.liste.ogrenciler) == len(d.liste.ogrenciler)
     assert d2.proje.klasik_puanlar[ilk_no][0] == "20"
-    assert yeni.yigin.currentIndex() == 3  # doğrudan puan girişine
+    assert yeni.yigin.currentIndex() == 2  # doğrudan puan girişine
     assert d2.proje_yolu is None  # kurtarma dosyası "Kaydet" hedefi olmaz
     yeni.close()
 
@@ -300,7 +299,7 @@ def test_birakilan_pdf_liste_olarak_okunur(pencere, fix):
     assert pencere.durum.liste is not None and len(pencere.durum.liste.ogrenciler) == 12
     assert not p1.giris_dugmesi.isHidden()
     p1.giris_dugmesi.click()
-    assert pencere.yigin.currentIndex() == 3
+    assert pencere.yigin.currentIndex() == 2
 
 
 def test_klasik_sorular_ve_puanlar(pencere, fix, monkeypatch):
@@ -376,8 +375,8 @@ def test_sinava_girmedi_isareti(pencere, fix, tmp_path, monkeypatch):
     p1.bicim_klasik.setChecked(True)
     p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
     d.klasik_puanlarini_yaz(["50", "50"])
-    pencere.adim_listesi.setCurrentRow(3)
-    k = pencere.adimlar[3]
+    pencere.adim_listesi.setCurrentRow(2)
+    k = pencere.adimlar[2]
     m = k.klasik_model
     no0, no1 = d.liste.ogrenciler[0].no, d.liste.ogrenciler[1].no
     m.setData(m.index(0, 3), "40")
@@ -411,3 +410,31 @@ def test_sinava_girmedi_isareti(pencere, fix, tmp_path, monkeypatch):
     d.proje.klasik_girmedi.clear()
     k._excelden_al()
     assert sorted(d.proje.klasik_girmedi) == sorted([no1, d.liste.ogrenciler[2].no])
+
+
+def test_sisteme_aktar_adimi(pencere, fix):
+    """4. adım: öğrenci puanları ve not girişi için panoya kopyalama; uyarılar en üstte; gelişmiş bölüm katlı."""
+    from PySide6.QtGui import QGuiApplication
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    pencere.adim_listesi.setCurrentRow(2)
+    k = pencere.adimlar[2]
+    assert k.duzeltilecek_kutusu.isVisibleTo(k) and k.duzeltilecekler.count() == sum(1 for o in d.sonuc.ogrenciler if o.uyarilar)
+    k._duzeltilecege_git(k.duzeltilecekler.item(0))
+    assert k.sekmeler.currentWidget() is k.tablo and k.tablo.selectionModel().hasSelection()
+    pencere.adim_listesi.setCurrentRow(3)
+    e = pencere.adimlar[3]
+    assert not e.gelismis.isVisibleTo(e) and e.bilgi.isVisibleTo(e)  # aynı numara iki satırda: uyarı üstte
+    e._ogrenci_puanlarini_kopyala()
+    satirlar = QGuiApplication.clipboard().text().splitlines()
+    assert len(satirlar) == 12 and len(satirlar[0].split("\t")) == 1 + 10  # liste sırası: numara + 10 soru
+    e._notlari_kopyala()
+    assert len(QGuiApplication.clipboard().text().splitlines()[0].split("\t")) == 2
+    assert "kopyalandı" in e.durum_satiri.text()

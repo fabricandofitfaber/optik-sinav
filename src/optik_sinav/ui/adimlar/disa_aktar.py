@@ -1,9 +1,10 @@
-"""5. adım: profil seçimi ve önizleme, sistem şablonunu doldurma, panoya kopyalama, tüm raporları yazma."""
+"""4. adım: Akademik Bilgi Sistemi'ne sırasıyla aktarım (sorular, öğrenci puanları, not girişi), raporlar; gelişmiş bölümde biçim seçimi, önizleme ve tek tek dosyalar."""
 from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QGroupBox, QGridLayout, QHBoxLayout, QHeaderView, QLabel,
@@ -61,61 +62,137 @@ class ProfilOnayi(QDialog):
 
 class DisaAktarAdimi(Adim):
     def __init__(self, durum, parent=None):
-        super().__init__(durum, M.ADIMLAR[5], parent)
-        g = QGroupBox("Aktarım profilleri (Akademik Bilgi Sistemi biçimi henüz doğrulanmadı; profiller geçicidir)")
+        super().__init__(durum, M.ADIMLAR[3], parent)
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QToolButton, QWidget
+
+        from .dosyalar import VURGULU_DUGME
+
+        # Önemli uyarılar en üstte
+        self.bilgi = QLabel()
+        self.bilgi.setWordWrap(True)
+        self.bilgi.setStyleSheet("background: #fff4e5; color: #7a4100; border: 1px solid #f0c27a; border-radius: 6px; padding: 8px;")
+        self.bilgi.setVisible(False)
+        self.duzen.addWidget(self.bilgi)
+
+        # --- Akademik Bilgi Sistemi'ne aktarım: sırasıyla iki yapıştırma
+        g = QGroupBox("Akademik Bilgi Sistemi'ne aktarım (sırasıyla)")
+        v = QVBoxLayout(g)
+        for metin, islev, aciklama in (
+            ("1. Soruları kopyala", self._sorulari_kopyala,
+             "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". "
+             "Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. "
+             "Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez."),
+            ("2. Öğrenci puanlarını kopyala", self._ogrenci_puanlarini_kopyala,
+             "Sorular tanımlandıktan sonra açılan öğrenci puanı ekranına yapıştırın: öğrenci listesi sırasıyla numara ve soru "
+             "puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın."),
+            ("3. Not girişi için puanları kopyala", self._notlari_kopyala,
+             "Not Giriş ekranı için: öğrenci numarası ve sınav puanı (öğrenci listesi sırasıyla)."),
+        ):
+            s = QHBoxLayout()
+            b = QPushButton(metin)
+            b.setMinimumWidth(260)
+            b.setMinimumHeight(34)
+            b.setStyleSheet("font-weight: bold; text-align: left; padding-left: 10px;")
+            b.clicked.connect(islev)
+            s.addWidget(b, 0, Qt.AlignmentFlag.AlignTop)
+            l = QLabel(aciklama)
+            l.setWordWrap(True)
+            l.setStyleSheet("color: gray")
+            s.addWidget(l, 1)
+            v.addLayout(s)
+        self.duzen.addWidget(g)
+
+        # --- Raporlar
+        g = QGroupBox("Raporlar")
+        s = QHBoxLayout(g)
+        b = QPushButton("Bütün raporları klasöre kaydet…")
+        b.setToolTip("Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları.")
+        b.setStyleSheet(VURGULU_DUGME)
+        b.setMinimumHeight(38)
+        b.clicked.connect(self._hepsi)
+        s.addWidget(b)
+        b = QPushButton("Öğrenci karneleri…")
+        b.setToolTip("Her öğrenciye bir sayfa: puan, sıra, öğrenme çıktıları ve soru soru sonuç. Tarayıcıda açılır, yazdırılır.")
+        b.clicked.connect(self._karneler)
+        s.addWidget(b)
+        s.addStretch(1)
+        self.duzen.addWidget(g)
+
+        # --- Gelişmiş: aktarım biçimi (profil), tek tek dosyalar ve önizleme
+        self.gelismis_dugme = QToolButton()
+        self.gelismis_dugme.setText("Gelişmiş: aktarım biçimi, tek tek dosyalar ve önizleme")
+        self.gelismis_dugme.setCheckable(True)
+        self.gelismis_dugme.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.gelismis_dugme.setArrowType(Qt.ArrowType.RightArrow)
+        self.gelismis_dugme.setStyleSheet("QToolButton { border: none; color: gray; }")
+        self.duzen.addWidget(self.gelismis_dugme)
+        self.gelismis = QWidget()
+        gv = QVBoxLayout(self.gelismis)
+        gv.setContentsMargins(0, 0, 0, 0)
+        g = QGroupBox("Aktarım biçimi (Akademik Bilgi Sistemi biçimi henüz doğrulanmadı; biçimler geçicidir)")
         f = QFormLayout(g)
         self.akr = QComboBox()
         self.ng = QComboBox()
         f.addRow("Sınav Akreditasyon (soru bazlı)", self.akr)
         f.addRow("Not Giriş", self.ng)
         s = QHBoxLayout()
-        b = QPushButton("Şablondan profil oluştur…")
-        b.setToolTip("Sistemden indirdiğiniz boş şablonu gösterin; başlıklar ve öğrenci satırları tanınıp profil önerilir.")
+        b = QPushButton("Şablondan biçim oluştur…")
+        b.setToolTip("Sistemden indirdiğiniz boş şablonu gösterin; başlıklar ve öğrenci satırları tanınıp biçim önerilir.")
         b.clicked.connect(self._sablondan_profil)
         s.addWidget(b)
         self.sablon_etiket = QLabel()
         s.addWidget(self.sablon_etiket, 1)
         f.addRow(s)
-        self.duzen.addWidget(g)
+        gv.addWidget(g)
         self.akr.currentIndexChanged.connect(self._profil_degisti)
         self.ng.currentIndexChanged.connect(self._profil_degisti)
-
-        self.onizleme = QTableWidget()
-        self.onizleme.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.onizleme.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        s = QHBoxLayout()
+        s.addWidget(menu_dugmesi("Tek tek kaydet", [
+            ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon biçimine göre dosya yazar."),
+            ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş biçimine göre dosya yazar."),
+            ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
+        ], self))
+        b = QPushButton("Sütun seçerek panoya kopyala…")
+        b.setToolTip("Seçili sütunları sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalar.")
+        b.clicked.connect(self._panoya)
+        s.addWidget(b)
         self.onizleme_secim = QComboBox()
         self.onizleme_secim.addItems(["Akreditasyon önizlemesi", "Not giriş önizlemesi"])
         self.onizleme_secim.currentIndexChanged.connect(self._onizle)
-        self.duzen.addWidget(self.onizleme_secim)
-        self.duzen.addWidget(self.onizleme, 1)
-
-        from .dosyalar import VURGULU_DUGME
-
-        s = QHBoxLayout()
-        b = QPushButton("Tüm raporları klasöre yaz…")
-        b.setToolTip("Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları.")
-        b.setStyleSheet(VURGULU_DUGME)
-        b.setMinimumHeight(38)
-        b.clicked.connect(self._hepsi)
-        s.addWidget(b)
-        for metin, islev, ipucu in (
-            ("Öğrenci karneleri…", self._karneler, "Her öğrenciye bir sayfa: puan, sıra, öğrenme çıktıları ve soru soru sonuç. Tarayıcıda açılır, yazdırılır."),
-            ("Panoya kopyala…", self._panoya, "Seçili sütunları sistemdeki öğrenci sırasıyla sekmeyle ayrılmış olarak kopyalar."),
-        ):
-            b = QPushButton(metin)
-            b.setToolTip(ipucu)
-            b.clicked.connect(islev)
-            s.addWidget(b)
-        s.addWidget(menu_dugmesi("Tek tek kaydet", [
-            ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon profiline göre dosya yazar."),
-            ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş profiline göre dosya yazar."),
-            ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
-        ], self))
+        s.addWidget(self.onizleme_secim)
         s.addStretch(1)
-        self.duzen.addLayout(s)
-        self.bilgi = QLabel()
-        self.bilgi.setWordWrap(True)
-        self.duzen.addWidget(self.bilgi)
+        gv.addLayout(s)
+        self.onizleme = QTableWidget()
+        self.onizleme.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.onizleme.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.onizleme.setMinimumHeight(260)
+        gv.addWidget(self.onizleme, 1)
+        self.gelismis.setVisible(False)
+        self.duzen.addWidget(self.gelismis, 1)
+        self.gelismis_dugme.toggled.connect(self._gelismis_ac)
+        self.duzen.addStretch(0)
+        self.durum_satiri = QLabel()
+        self.durum_satiri.setWordWrap(True)
+        self.durum_satiri.setStyleSheet("color: #1e7b34")
+        self.duzen.addWidget(self.durum_satiri)
+
+    def _gelismis_ac(self, acik: bool):
+        self.gelismis.setVisible(acik)
+        self.gelismis_dugme.setArrowType(Qt.ArrowType.DownArrow if acik else Qt.ArrowType.RightArrow)
+
+    # ---------------------------------------------------------------- sisteme aktarım
+    def _sorulari_kopyala(self):
+        from .anahtar import soru_tanimini_kopyala
+
+        if soru_tanimini_kopyala(self, self.durum):
+            self.durum_satiri.setText(f"✓ {len(self.durum.proje.anahtar.aktarim_sorulari())} sorunun tanımı panoya kopyalandı.")
+
+    def _ogrenci_puanlarini_kopyala(self):
+        self._kopyala([Sutun("ogrenci_no", "Öğrenci No"), Sutun("soru_puanlari", "S{n}")], "öğrencinin soru puanları")
+
+    def _notlari_kopyala(self):
+        self._kopyala([Sutun("ogrenci_no", "Öğrenci No"), Sutun("puan", "Puan")], "öğrencinin numarası ve puanı", profil="ng")
 
     # ---------------------------------------------------------------- profiller
     def _profilleri_doldur(self):
@@ -151,10 +228,11 @@ class DisaAktarAdimi(Adim):
         s = self.durum.sonuc
         notlar = []
         if s and any(u.tur == UyariTuru.TEKRAR_NUMARA for o in s.ogrenciler for u in o.uyarilar):
-            notlar.append("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 4. adımda düzeltin.")
+            notlar.append("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.")
         if s and s.listede_olmayanlar:
-            notlar.append(f"Listede olmayan {len(s.listede_olmayanlar)} numara aktarım dosyalarına yazılmaz (profil ayarı).")
+            notlar.append(f"Listede olmayan {len(s.listede_olmayanlar)} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).")
         self.bilgi.setText(" ".join(notlar))
+        self.bilgi.setVisible(bool(notlar))
 
     def _onizle(self, *_):
         s = self.durum.sonuc
@@ -253,7 +331,15 @@ class DisaAktarAdimi(Adim):
             2: [Sutun("ogrenci_no", "Öğrenci No"), Sutun("puan", "Puan")],
             3: [Sutun("ogrenci_no", "Öğrenci No"), Sutun("soru_puanlari", "S{n}")],
         }[secenekler.index(secim)]
-        temel = self._profil("akr")
+        self._kopyala(sutunlar, "satır")
+
+    def _kopyala(self, sutunlar, ne: str, profil: str = "akr"):
+        """Seçili biçimin yuvarlama ve ondalık ayarlarıyla, sistemdeki öğrenci sırasıyla panoya kopyalar (başlık satırı yok)."""
+        s = self.durum.sonuc
+        if s is None:
+            QMessageBox.warning(self, "Sonuç yok", "Önce 1-3. adımları tamamlayın.")
+            return
+        temel = self._profil(profil)
         p = replace(temel, sutunlar=sutunlar)
         sira = None
         kaynak = "öğrenci listesi sırası" if s.liste_var else "optik dosya sırası"
@@ -266,7 +352,7 @@ class DisaAktarAdimi(Adim):
                 sira = None
         QGuiApplication.clipboard().setText(pano_metni(p, s, sira))
         satir = len(sira) if sira is not None else len(tablo_uret(p, s)[2])
-        self.bilgi.setText(f"Panoya {satir} satır kopyalandı ({kaynak}). Sistemdeki tablonun ilk hücresine yapıştırın.")
+        self.durum_satiri.setText(f"✓ Panoya {satir} {ne} kopyalandı ({kaynak}). Sistemdeki tablonun ilk hücresine yapıştırın.")
 
     def _karneler(self):
         from PySide6.QtCore import QUrl
