@@ -662,9 +662,18 @@ def test_puan_girisinde_kayit_gostergesi_ve_soru_puanlari(pencere, fix, tmp_path
     assert k.puan_uyari.isVisibleTo(k)  # puanlar girilmediği için eşit dağıtıldı uyarısı
     pencere.otomatik_kaydet()
     assert "Kurtarma kopyasına kaydedildi" in k.kayit_bilgi.text() and "oluştur" in k.kaydet_dugmesi.text()
-    k.soru_puanlari.setText("5 5 5 5 20 60")
-    k._soru_puanlarini_uygula()
+    k.soru_sayisi.setValue(6)
+    assert len(k.puan_kutulari) == 6
+    for kutu, p in zip(k.puan_kutulari, ["5", "5", "5", "5", "20", "60"]):
+        kutu.setText(p)
+        kutu.editingFinished.emit()
     assert [s.puan for s in d.proje.anahtar.sorular] == ["5", "5", "5", "5", "20", "60"] and not k.puan_uyari.isVisibleTo(k)
+    assert "Toplam: 100 ✓" in k.puan_toplami.text()
+    k.puan_kutulari[5].setText("12,5")
+    k.puan_kutulari[5].editingFinished.emit()
+    assert d.proje.anahtar.sorular[5].puan == "12.5" and "olması gereken" in k.puan_toplami.text()
+    k.puan_kutulari[5].setText("60")
+    k.puan_kutulari[5].editingFinished.emit()
     yol = tmp_path / "klasik.osd"
     monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *x, **kw: (str(yol), ""))
     k.kaydet_dugmesi.click()
@@ -676,3 +685,25 @@ def test_puan_girisinde_kayit_gostergesi_ve_soru_puanlari(pencere, fix, tmp_path
     a.hizli.setText("10 10 80")
     a.hizli.editingFinished.emit()
     assert [s.puan for s in d.proje.anahtar.sorular] == ["10", "10", "80"]
+
+
+def test_testte_sorulara_ayri_puan(pencere, fix):
+    """Optik sınavda eşit puan varsayılan; "Sorulara ayrı puan ver" Puan sütununu açar, eşit değerlerle doldurur."""
+    from optik_sinav.core.modeller import PuanYontemi, SoruDurumu
+
+    d = pencere.durum
+    pencere.adimlar[0]._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    d.proje.anahtar.sorular[9].durum = SoruDurumu.BONUS
+    a.durumdan_yukle()
+    assert a.ayri_puan_dugmesi.isVisibleTo(a) and not a.esit_puan_dugmesi.isVisibleTo(a)
+    assert not a.baslik_w["Puan"].isVisibleTo(a)
+    a._ayri_puan()
+    assert d.proje.ayarlar.yontem == PuanYontemi.SORU_BAZLI and a.baslik_w["Puan"].isVisibleTo(a)
+    assert [s.puan for s in d.proje.anahtar.sorular[:9]] == ["11.12"] + ["11.11"] * 8 and d.proje.anahtar.sorular[9].puan in (None, "")
+    assert a.esit_puan_dugmesi.isVisibleTo(a) and not a.ayri_puan_dugmesi.isVisibleTo(a)
+    a._esit_puan()
+    assert d.proje.ayarlar.yontem == PuanYontemi.ESIT and a.ayri_puan_dugmesi.isVisibleTo(a)

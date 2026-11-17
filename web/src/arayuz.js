@@ -809,7 +809,7 @@
         <p class="soluk">${kl ? "Puanı değiştirmek için kutuya tıklayıp yazın ya da yukarıdaki satıra bütün puanları sırayla yazın. " : "Klavye: tabloya bir kez tıklayın, sonra A-E harflerine basın; her harf o sorunun şıkkını seçip sonraki soruya geçer (Boşluk ya da Sil temizler, oklar soru değiştirir). "}${kodlar.length ? `Dersin öğrenme çıktıları: ${kodlar.join(", ")}. Çıktı sütununa yalnızca numara yazabilirsiniz: "1, 3" yazmak Ö01 ve Ö03'e yarı yarıya demektir.` : "Ders bilgi paketini 1. adımda yüklerseniz çıktılar açıklamalarıyla seçilebilir."}</p>
         ${ana ? `<div class="kutu ozet-panel"><div id="anahtarOzet">${anahtarOzetHtml()}</div>
           <div class="satir" style="margin-top:8px"><button class="ana" id="sistemeKopyala" title="Sınav Akreditasyon İşlemleri > Toplu Aktarım Yap > Aktarım Kutusu'na yapıştırılır">Soru tanımını sistem için kopyala</button>
-          <button id="esitDagit">Puanları eşit dağıt</button>
+          ${D.proje.ayarlar.yontem === "esit" && !kl ? `<button id="ayriPuan" title="Puan sütununu açar; her sorunun puanını ayrı yazarsınız (toplam 100 olmalı). Başlangıçta eşit değerlerle dolar.">Sorulara ayrı puan ver</button>` : `<button id="esitDagit">Puanları eşit dağıt</button>`}
           ${UI.acilirMenu("Diğer işlemler", ['<button id="eslemeKaydet">Ders eşlemesini kaydet</button>', '<button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button>'])}</div></div>` : ""}
         ${ana ? `<label class="soluk"><input type="checkbox" id="pcGoster" ${pcGoster ? "checked" : ""}> Program çıktıları sütununu göster (genellikle gerekmez: sistem bunları ders öğrenme çıktılarından hesaplar)</label>
         <details class="kutu" id="ayarlarBolumu" ${D.ayarAcik ? "open" : ""}><summary><b>Puanlama ayarları</b> <span class="soluk">${e(ayarOzeti())}</span></summary><div id="puanlamaAyarlari"></div></details>` : ""}`;
@@ -975,6 +975,15 @@
       if (harfSayisi !== a.sorular.length) bilgi("Cevap anahtarı", `${harfSayisi} harf girildi, soru sayısı ${a.sorular.length}. Eksik sorular anahtarsız bırakıldı, fazlası atıldı.`);
     };
     if ($("#hizli", k)) { $("#hizli", k).onkeydown = (ev) => { if (ev.key === "Enter") hizliUygula(); }; $("#hizliUygula", k).onclick = hizliUygula; }
+    if ($("#ayriPuan", k)) $("#ayriPuan", k).onclick = () => {
+      const ay = D.proje.ayarlar;
+      const sayilan = a.sorular.filter((s) => s.durum !== "bonus");
+      OS.esitSoruPuanlari(ay.toplam_puan, sayilan.length).forEach((x, j) => (sayilan[j].puan = x));
+      ay.yontem = "soru_bazli";
+      yenidenCiz();
+      const ilk = $("input.puan", k);
+      if (ilk) { ilk.focus(); ilk.select(); }
+    };
     if ($("#esitDagit", k)) $("#esitDagit", k).onclick = () => {
       const ay = D.proje.ayarlar;
       if (kl) OS.esitSoruPuanlari(ay.toplam_puan, a.sorular.length).forEach((x, i) => (a.sorular[i].puan = x));

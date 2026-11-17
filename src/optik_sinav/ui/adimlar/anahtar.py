@@ -337,9 +337,15 @@ class AnahtarAdimi(Adim):
         s = QHBoxLayout()
         self.puan_ozeti = QLabel()
         s.addWidget(self.puan_ozeti, 1)
+        self.ayri_puan_dugmesi = QPushButton("Sorulara ayrı puan ver")
+        self.ayri_puan_dugmesi.setToolTip("Puan sütununu açar; her sorunun puanını ayrı yazarsınız (toplam 100 olmalı). "
+                                          "Başlangıçta eşit değerlerle dolar.")
+        self.ayri_puan_dugmesi.clicked.connect(self._ayri_puan)
+        s.addWidget(self.ayri_puan_dugmesi)
         b = QPushButton("Puanları eşit dağıt")
         b.setToolTip("Toplam puanı sorulara eşit böler (kesir olarak tutulur; 15 soruda 15 doğru tam 100).")
         b.clicked.connect(self._esit_puan)
+        self.esit_puan_dugmesi = b
         s.addWidget(b)
         a.addLayout(s)
         self.cikti_ozeti = QLabel()
@@ -842,6 +848,23 @@ class AnahtarAdimi(Adim):
         self._hizli_doldur()
         self._ozet()
 
+    def _ayri_puan(self):
+        """Optik sınavda eşit puandan soru bazlı puana geçer: bonus dışı sorular toplamı tutan eşit değerlerle dolar,
+        Puan sütunu açılır, ilk sorunun puanına geçilir."""
+        a = self.durum.proje.ayarlar
+        if self.klasik or a.yontem != PuanYontemi.ESIT:
+            return
+        sayilan = [s for s in self.anahtar.sorular if s.durum != SoruDurumu.BONUS]
+        for s, p in zip(sayilan, esit_soru_puanlari(a.toplam_puan, len(sayilan))):
+            s.puan = p
+        a.yontem = PuanYontemi.SORU_BAZLI
+        self._sutunlari_goster()
+        self._puan_dugmelerini_goster()
+        self.tamamlik_degisti.emit()
+        if self.satirlar and self.satirlar[0].puan is not None:
+            self.satirlar[0].puan.setFocus()
+            self.satirlar[0].puan.selectAll()
+
     def _esit_puan(self):
         a = self.durum.proje.ayarlar
         if self.klasik:
@@ -851,7 +874,8 @@ class AnahtarAdimi(Adim):
             a.yontem = PuanYontemi.ESIT
             for s in self.anahtar.sorular:
                 s.puan = None
-        self.durumdan_yukle()
+        self._sutunlari_goster()
+        self._puan_dugmelerini_goster()
 
     def _oc_degisti(self, i: int):
         if self._yukleniyor:
@@ -1006,8 +1030,15 @@ class AnahtarAdimi(Adim):
             QMessageBox.information(self, "Ders eşlemesi", f"Bu ders kodu için kayıtlı eşleme yok:\n{self.durum.ders_eslemesi_yolu()}")
 
     # ---------------------------------------------------------------- özet ve denetim
+    def _puan_dugmelerini_goster(self):
+        if hasattr(self, "ayri_puan_dugmesi"):
+            esit = self.durum.proje.ayarlar.yontem == PuanYontemi.ESIT and not self.klasik
+            self.ayri_puan_dugmesi.setVisible(esit)
+            self.esit_puan_dugmesi.setVisible(not esit)
+
     def _ozet(self):
         self._cikti_seridi()
+        self._puan_dugmelerini_goster()
         p = self.durum.proje
         a = self.anahtar
         try:

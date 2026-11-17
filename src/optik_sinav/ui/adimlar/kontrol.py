@@ -127,16 +127,27 @@ class KontrolAdimi(Adim):
         s.addWidget(self.kaydet_dugmesi, 0, Qt.AlignmentFlag.AlignTop)
         v.addLayout(s)
         self.durum.kaydedildi.connect(self._kayit_bilgisini_yaz)
-        # Soru puanları: 2. adıma dönmeden görülür ve değiştirilir
+        # Soru puanları: 2. adıma dönmeden, her soru için ayrı kutuda görülür ve değiştirilir (yatay)
+        from PySide6.QtWidgets import QSpinBox
+
         s = QHBoxLayout()
+        s.addWidget(QLabel("Soru sayısı:"))
+        self.soru_sayisi = QSpinBox()
+        self.soru_sayisi.setRange(1, 60)
+        self.soru_sayisi.setKeyboardTracking(False)
+        self.soru_sayisi.valueChanged.connect(self._soru_sayisi_degisti)
+        s.addWidget(self.soru_sayisi)
+        s.addSpacing(12)
         s.addWidget(QLabel("Soru puanları:"))
-        self.soru_puanlari = QLineEdit()
-        self.soru_puanlari.setToolTip("Boşlukla ayırarak yazıp Enter'a basın, örneğin 5 5 5 5 20 60. Soru sayısı da buna göre ayarlanır.")
-        self.soru_puanlari.returnPressed.connect(self._soru_puanlarini_uygula)
-        s.addWidget(self.soru_puanlari, 1)
-        b = QPushButton("Uygula")
-        b.clicked.connect(self._soru_puanlarini_uygula)
-        s.addWidget(b)
+        self.puan_kutulari_kabi = QWidget()
+        self.puan_kutulari_duzen = QHBoxLayout(self.puan_kutulari_kabi)
+        self.puan_kutulari_duzen.setContentsMargins(0, 0, 0, 0)
+        self.puan_kutulari_duzen.setSpacing(6)
+        self.puan_kutulari: list[QLineEdit] = []
+        s.addWidget(self.puan_kutulari_kabi)
+        self.puan_toplami = QLabel()
+        s.addWidget(self.puan_toplami)
+        s.addStretch(1)
         v.addLayout(s)
         self.puan_uyari = QLabel()
         self.puan_uyari.setWordWrap(True)
@@ -287,25 +298,109 @@ class KontrolAdimi(Adim):
         self.kaydet_dugmesi.setText("Kaydet" if kalici else "Kaydet… (sınav dosyası oluştur)")
 
     def _soru_puanlarini_yaz(self):
+        """Soru sayısı kutusu ve her soru için bir puan kutusu (S1, S2 …); toplam yanında."""
+        from PySide6.QtWidgets import QVBoxLayout as _V
+
         a = self.durum.proje.anahtar
-        if not self.soru_puanlari.hasFocus():
-            self.soru_puanlari.setText(" ".join((s.puan or "?").replace(".", ",") for s in a.sorular))
+        self.soru_sayisi.blockSignals(True)
+        self.soru_sayisi.setValue(max(1, a.soru_sayisi))
+        self.soru_sayisi.blockSignals(False)
+        if len(self.puan_kutulari) != a.soru_sayisi:
+            while self.puan_kutulari_duzen.count():
+                w = self.puan_kutulari_duzen.takeAt(0).widget()
+                if w is not None:
+                    w.deleteLater()
+            self.puan_kutulari = []
+            for i in range(a.soru_sayisi):
+                kap = QWidget()
+                kv = _V(kap)
+                kv.setContentsMargins(0, 0, 0, 0)
+                kv.setSpacing(1)
+                et = QLabel(f"S{i + 1}")
+                et.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+                et.setStyleSheet("color: gray")
+                kv.addWidget(et)
+                k = QLineEdit()
+                k.setFixedWidth(52)
+                k.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                k.setToolTip(f"{i + 1}. sorunun puanı. Enter ya da Tab sonraki soruya geçer.")
+                k.editingFinished.connect(lambda i=i: self._soru_puani_degisti(i))
+                k.returnPressed.connect(lambda i=i: self._sonraki_puan_kutusu(i))
+                kv.addWidget(k)
+                self.puan_kutulari_duzen.addWidget(kap)
+                self.puan_kutulari.append(k)
+        for k, s in zip(self.puan_kutulari, a.sorular):
+            if not k.hasFocus():
+                k.setText((s.puan or "").replace(".", ","))
+        self._puan_toplamini_yaz()
         from ...core.puanlama import esit_soru_puanlari
 
         # program kendiliğinden eşit dağıttıysa (hoca puan girmeden geçtiyse) uyarılır
         esit = a.soru_sayisi > 1 and [s.puan for s in a.sorular] == list(esit_soru_puanlari(self.durum.proje.ayarlar.toplam_puan, a.soru_sayisi))
-        self.puan_uyari.setText("Soru puanları eşit dağıtılmış görünüyor. Sorularınızın puanları farklıysa yukarıya yazıp Enter'a basın "
-                                "(örneğin 5 5 5 5 20 60)." if esit else "")
+        self.puan_uyari.setText("Soru puanları eşit dağıtılmış görünüyor. Sorularınızın puanları farklıysa yukarıdaki kutulara "
+                                "yazın (örneğin 5, 5, 5, 5, 20, 60)." if esit else "")
         self.puan_uyari.setVisible(esit)
 
-    def _soru_puanlarini_uygula(self):
-        """2. adımdaki soru puanı satırıyla aynı işi görür (soru sayısı azalırken onay dahil)."""
-        anahtar_adimi = getattr(self.window(), "adimlar", [None, None])[1]
-        if anahtar_adimi is None:
+    def _puan_toplamini_yaz(self):
+        from fractions import Fraction
+
+        from ...core.puanlama import sayi_yaz
+
+        toplam = Fraction(0)
+        for s in self.durum.proje.anahtar.sorular:
+            try:
+                toplam += Fraction((s.puan or "0").replace(",", "."))
+            except ValueError:
+                pass
+        hedef = Fraction(str(self.durum.proje.ayarlar.toplam_puan).replace(",", "."))
+        tamam = toplam == hedef
+
+        def yaz(x):
+            m = sayi_yaz(x)
+            return m.rstrip("0").rstrip(",") if "," in m else m
+
+        self.puan_toplami.setText(f"Toplam: {yaz(toplam)}" + (" ✓" if tamam else f" (olması gereken {yaz(hedef)})"))
+        self.puan_toplami.setStyleSheet("color: #1e7b34; font-weight: bold" if tamam else "color: #C0504D; font-weight: bold")
+
+    def _soru_puani_degisti(self, i: int):
+        from fractions import Fraction
+
+        a = self.durum.proje.anahtar
+        if i >= len(a.sorular):
             return
-        anahtar_adimi.hizli.setText(self.soru_puanlari.text())
-        anahtar_adimi._klasik_puanlari_uygula()
-        self.soru_puanlari.clearFocus()
+        metin = self.puan_kutulari[i].text().strip().replace(",", ".")
+        try:
+            deger = Fraction(metin) if metin else None
+            if deger is not None and deger < 0:
+                raise ValueError
+        except (ValueError, ZeroDivisionError):
+            QMessageBox.warning(self, "Soru puanı", f"{i + 1}. sorunun puanını sayı olarak yazın, örneğin 20 ya da 12,5.")
+            self.puan_kutulari[i].setText((a.sorular[i].puan or "").replace(".", ","))
+            return
+        yeni = None if deger is None else metin.rstrip("0").rstrip(".") if "." in metin else metin
+        if yeni == a.sorular[i].puan:
+            return
+        a.sorular[i].puan = yeni
+        self.durum.sonuc = None
+        self.durum.degisti.emit()
+        self._puan_toplamini_yaz()
+        self._soru_puanlarini_yaz()
+        self.klasik_model.yenile()
+        self.durum.degerlendir()
+
+    def _sonraki_puan_kutusu(self, i: int):
+        if i + 1 < len(self.puan_kutulari):
+            self.puan_kutulari[i + 1].setFocus()
+            self.puan_kutulari[i + 1].selectAll()
+        else:
+            self.puan_kutulari[i].clearFocus()
+
+    def _soru_sayisi_degisti(self, n: int):
+        anahtar_adimi = getattr(self.window(), "adimlar", [None, None])[1]
+        if anahtar_adimi is not None and not anahtar_adimi._cikarmayi_onayla(n):
+            self._soru_puanlarini_yaz()
+            return
+        self.durum.klasik_soru_sayisi_ayarla(n)
         self.durum.degerlendir()
         self.girildi()
 
