@@ -878,7 +878,7 @@ def pdf_ozet_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, esikl
 
 
 # Sisteme giriş için gerekenler (varsayılan) ve isteğe bağlı raporlar
-GIRIS_DOSYALARI = ("soru_tanimi",)  # öğrenci puanları sistemin kendi dosyası doldurularak gider (sistem_puan_dosyasi)
+GIRIS_DOSYALARI = ("soru_tanimi", "sistem_puanlari")  # sistem_puanlari: sistemin biçiminde akreditasyon (öğrenci soru puanları) CSV
 DIGER_RAPORLAR = (
     ("akreditasyon", "Öğrenci soru puanları (programın Excel biçimi)"),
     ("not_giris", "Not girişi (öğrenci numarası ve puan)"),
@@ -926,6 +926,17 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
             t.notlar.append("Soru tanımı yazılmadı: " + " ".join(hatalar))
         else:
             t.dosyalar.append(soru_tanimi_yaz(a, sonuc.ayarlar, ders_kodlari, klasor / cikti_adi(sinav, "soru_tanimi")))
+    if ister("sistem_puanlari") and sonuc.ogrenciler:
+        from .sistem_puan_dosyasi import sistem_dosyasi_uret
+
+        try:
+            bayt, r = sistem_dosyasi_uret(sonuc)
+            yol = klasor / cikti_adi(sinav, "akreditasyon", ".csv")
+            yol.write_bytes(bayt)
+            t.dosyalar.append(yol)
+            t.notlar.extend(r.notlar)
+        except ValueError as e:
+            t.notlar.append("Akreditasyon (öğrenci soru puanları) dosyası yazılmadı: " + str(e))
     if ister("sonuc"):
         t.dosyalar.append(sonuc_dosyasi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "sonuc"), duzeltmeler, kaynaklar))
     if akreditasyon_profili is not None and ister("akreditasyon"):

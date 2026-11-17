@@ -55,6 +55,18 @@ def sistem_dosyasi(sonuc) -> dict:
             "notlar": r.notlar}
 
 
+def sistem_uret(sonuc) -> dict:
+    import base64
+
+    from optik_sinav.export.sistem_puan_dosyasi import sistem_dosyasi_uret
+
+    try:
+        b, r = sistem_dosyasi_uret(sonuc)
+    except ValueError as e:
+        return {"hata": str(e)}
+    return {"cikti": base64.b64encode(b).decode(), "yazilan": r.yazilan, "girmedi": r.girmedi}
+
+
 def kesir(x) -> str:
     return f"{x.numerator}/{x.denominator}"
 
@@ -78,6 +90,7 @@ def ciktilar(proje: SinavProjesi, sonuc, ders_kodlari=None) -> dict:
         "aktarim": [[hucre_metni(h, PR) for h in satir] for satir in tablo_uret(PR, sonuc)[2]],
         "aktarim_basliklar": tablo_uret(PR, sonuc)[1],
         "sistem_dosyasi": sistem_dosyasi(sonuc),
+        "sistem_uret": sistem_uret(sonuc),
         "girmeyenler": [x.no for x in sonuc.girmeyenler],
         "soru_puanlari": [kesir(p) for p in sonuc.soru_puanlari],
         "maddeler": [{

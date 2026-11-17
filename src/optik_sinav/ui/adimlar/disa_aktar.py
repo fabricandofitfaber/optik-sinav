@@ -106,14 +106,15 @@ class DisaAktarAdimi(Adim):
         g = QGroupBox("Dosyalar")
         v = QVBoxLayout(g)
         s = QHBoxLayout()
-        b = QPushButton("Soru tanımı dosyasını kaydet…")
-        b.setToolTip("Soruları kopyalamak yerine dosyadan yapıştırmak isterseniz.")
+        b = QPushButton("Sisteme giriş dosyalarını kaydet…")
+        b.setToolTip("Soru tanımı ve sistemin biçiminde akreditasyon (öğrenci soru puanları) dosyası.")
         b.setStyleSheet(VURGULU_DUGME)
         b.setMinimumHeight(38)
         b.clicked.connect(self._giris_dosyalari)
         s.addWidget(b, 0, Qt.AlignmentFlag.AlignTop)
-        l = QLabel("1. adımın dosya hâli: dosyayı açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → Aktarım "
-                   "Kutusu'na yapıştırın.")
+        l = QLabel("İki dosya: <b>soru tanımı</b> (Excel; açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → "
+                   "Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (CSV, sistemin puan dosyası biçiminde; sorular tanımlandıktan "
+                   "sonra sisteme yükleyin). Sistem bu dosyayı kabul etmezse sistemden kendi dosyasını indirip 2. düğmeyle doldurun.")
         l.setWordWrap(True)
         l.setStyleSheet("color: gray")
         s.addWidget(l, 1)
@@ -427,7 +428,7 @@ class DisaAktarAdimi(Adim):
 
         ciktilari_hazirla(self, self.durum)
         self.girildi()
-        self._yaz(set(GIRIS_DOSYALARI), "Soru tanımı dosyasının yazılacağı klasör")
+        self._yaz(set(GIRIS_DOSYALARI), "Sisteme giriş dosyalarının yazılacağı klasör")
 
     def _diger_raporlar(self):
         """İsteğe bağlı raporları işaretleyerek seçme penceresi (hepsi işaretli gelir)."""
@@ -479,7 +480,7 @@ class DisaAktarAdimi(Adim):
             return
         aciklama = {"soru_tanimi": "soruları tanımlamak için: Toplu Sınav Soru Tanım → Toplu Aktarım Yap; dosyayı açıp ilk sayfanın "
                                    "hepsini seçin, kopyalayın, Aktarım Kutusu'na yapıştırın",
-                    "akreditasyon": "öğrenci soru puanları (sorular tanımlandıktan sonra açılan puan ekranı için)",
+                    "akreditasyon": "öğrenci soru puanları: sorular tanımlandıktan sonra sisteme yükleyin",
                     "not_giris": "Not Giriş ekranı için öğrenci numarası ve puan"}
         satirlar = []
         for d in t.dosyalar:

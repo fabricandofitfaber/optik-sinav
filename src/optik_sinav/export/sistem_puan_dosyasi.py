@@ -24,6 +24,7 @@ from ..io.liste_okuyucu import _sade
 
 _SORU = re.compile(r"^\s*soru\s*(\d+)\s*\(\s*%?\s*([0-9]+(?:[.,][0-9]+)?)\s*\)\s*$", re.IGNORECASE)
 GIRDI, GIRMEDI = "Girdi", "Girmedi"
+GIRME_BASLIK = "Girme Durum"
 
 
 @dataclass
@@ -148,6 +149,36 @@ def sistem_dosyasini_doldur(veri: bytes, sonuc: SinavSonucu) -> tuple[bytes, Sis
     return yeni.encode(kod, errors="replace"), rapor
 
 
+def _ad_soyad(ad: str) -> tuple[str, str]:
+    p = (ad or "").split()
+    return (" ".join(p[:-1]), p[-1]) if len(p) > 1 else ((p[0] if p else ""), "")
+
+
+def sistem_dosyasi_uret(sonuc: SinavSonucu) -> tuple[bytes, SistemDosyasiRaporu]:
+    """Sistemden dosya indirilmeden, aynı biçimde (Windows-1254, noktalı virgül, CRLF) dolu puan dosyası üretir.
+    Soru ağırlıkları soru tanımındaki puanlardır; öğrenciler liste sırasıyla (girmeyenler "Girmedi"), liste yoksa
+    okuma sırasıyla. Sınıf (Snf) bilinmediği için boş kalır. Sistem bu dosyayı kabul etmezse sistemin kendi dosyası
+    indirilip `sistem_dosyasini_doldur` ile doldurulur."""
+    from .soru_tanimi import soru_tanimi_satirlari
+
+    agirliklar = [s[1] for s in soru_tanimi_satirlari(sonuc.anahtar, sonuc.ayarlar)]
+    bas = ["Öğrenci No", "Adı", "Soyadı", "Snf", GIRME_BASLIK] + [f"Soru{i}(%{w})" for i, w in enumerate(agirliklar, 1)] + ["Sınav Notu"]
+    if sonuc.liste_var and sonuc.liste:
+        kisiler = [(o.no, o.ad) for o in sonuc.liste.ogrenciler]
+    else:
+        kisiler = [(o.no, o.ad) for o in sonuc.ogrenciler]
+    satirlar = [";".join(bas)]
+    goruldu = set()
+    for no, ad in kisiler:
+        if no in goruldu:
+            continue
+        goruldu.add(no)
+        a, s = _ad_soyad(ad)
+        satirlar.append(";".join([no, a.replace(";", " "), s.replace(";", " "), "", GIRDI] + [""] * (len(agirliklar) + 1)))
+    metin = "\r\n".join(satirlar) + "\r\n"
+    return sistem_dosyasini_doldur(metin.encode("cp1254", errors="replace"), sonuc)
+
+
 def sistem_dosyasini_yaz(girdi: str | Path, sonuc: SinavSonucu, cikti: str | Path) -> SistemDosyasiRaporu:
     bayt, rapor = sistem_dosyasini_doldur(Path(girdi).read_bytes(), sonuc)
     cikti = Path(cikti)
@@ -156,4 +187,4 @@ def sistem_dosyasini_yaz(girdi: str | Path, sonuc: SinavSonucu, cikti: str | Pat
     return rapor
 
 
-__all__ = ["sistem_dosyasini_coz", "sistem_dosyasini_doldur", "sistem_dosyasini_yaz", "SistemDosyasiRaporu", "GIRDI", "GIRMEDI"]
+__all__ = ["sistem_dosyasi_uret", "sistem_dosyasini_coz", "sistem_dosyasini_doldur", "sistem_dosyasini_yaz", "SistemDosyasiRaporu", "GIRDI", "GIRMEDI"]

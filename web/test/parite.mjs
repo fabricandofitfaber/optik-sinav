@@ -45,6 +45,7 @@ function hesapla(sen, proje, sonuc) {
     aktarim: OS.tabloUret(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, sonuc)[1].map((r) => r.map((h) => OS.hucreMetni(h, OS.PROFILLER.akreditasyon_soru_bazli_varsayilan))),
     aktarim_basliklar: OS.tabloUret(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, sonuc)[0],
     sistem_dosyasi: sistemDosyasi(sonuc),
+    sistem_uret: (() => { try { const { bayt, rapor } = OS.sistemDosyasiUret(sonuc); return { cikti: Buffer.from(bayt).toString("base64"), yazilan: rapor.yazilan, girmedi: rapor.girmedi }; } catch (e) { return { hata: e.message }; } })(),
     girmeyenler: sonuc.girmeyenler.map((x) => x.no),
     soru_puanlari: sonuc.soru_puanlari.map(kesir),
     maddeler: m.map((x) => ({ soru_no: x.soru_no, analiz_disi: x.analiz_disi, guclik: x.guclik, ayirt: x.ayirt_edicilik, r: x.nokta_cift_serili,

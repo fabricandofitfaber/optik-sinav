@@ -193,5 +193,21 @@
     return { bayt, rapor };
   }
 
-  Object.assign(OS, { sistemDosyasiniCoz, sistemDosyasiniDoldur, dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
+  /** Python: sistem_dosyasi_uret */
+  function sistemDosyasiUret(sonuc) {
+    const w = soruTanimiSatirlari(sonuc.anahtar, sonuc.ayarlar).map((s) => s[1]);
+    const bas = ["Öğrenci No", "Adı", "Soyadı", "Snf", "Girme Durum"].concat(w.map((x, i) => `Soru${i + 1}(%${x})`), ["Sınav Notu"]);
+    const kisiler = sonuc.liste_var && sonuc.liste ? sonuc.liste.ogrenciler.map((o) => [o.no, o.ad]) : sonuc.ogrenciler.map((o) => [o.no, o.ad]);
+    const satirlar = [bas.join(";")], goruldu = new Set();
+    for (const [no, ad] of kisiler) {
+      if (goruldu.has(no)) continue;
+      goruldu.add(no);
+      const p = String(ad || "").split(/\s+/).filter(Boolean);
+      const [a, s] = p.length > 1 ? [p.slice(0, -1).join(" "), p[p.length - 1]] : [p[0] || "", ""];
+      satirlar.push([no, a.replace(/;/g, " "), s.replace(/;/g, " "), "", "Girdi"].concat(Array(w.length + 1).fill("")).join(";"));
+    }
+    return sistemDosyasiniDoldur(cp1254Kodla(satirlar.join("\r\n") + "\r\n"), sonuc);
+  }
+
+  Object.assign(OS, { sistemDosyasiUret, sistemDosyasiniCoz, sistemDosyasiniDoldur, dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
 })(typeof globalThis !== "undefined" ? globalThis : window);

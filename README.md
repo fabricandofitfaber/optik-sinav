@@ -133,7 +133,9 @@ Akademik Bilgi Sistemi'ne aktarım iki adımdır:
 
 Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür.
 
-**Dosyalar** bölümünde **"Soru tanımı dosyasını kaydet"**, 1. adımın dosya hâlini (`..._soru_tanimi.xlsx`) yazar: dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, Aktarım Kutusu'na yapıştırın. İkinci sayfa sütunları ve adımları anlatır.
+**Dosyalar** bölümünde **"Sisteme giriş dosyalarını kaydet"** iki dosya yazar:
+- `..._soru_tanimi.xlsx`: 1. adımın dosya hâli. Dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, Aktarım Kutusu'na yapıştırın. İkinci sayfa sütunları ve adımları anlatır.
+- `..._akreditasyon.csv`: öğrenci soru puanları, sistemin puan dosyasıyla aynı biçimde (öğrenci listesi sırasıyla; girmeyenler "Girmedi"; sınıf sütunu boş). Sorular tanımlandıktan sonra sisteme yükleyin. Sistem kabul etmezse sistemden kendi dosyasını indirip "2. Sistemin puan dosyasını doldur" ile doldurun.
 
 Öteki raporlar (sonuç, istatistik, öğrenme çıktısı, karneler, özet; isterseniz programın kendi biçiminde öğrenci soru puanları ve not girişi) **"Diğer raporlar…"** ile işaretleyerek seçilir; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
 
