@@ -496,3 +496,44 @@ def test_sinav_kimligi_seridi(pencere, fix, tmp_path):
     assert osd_okunur_adi(str(yol)).startswith("EKF4507 Ara Sınav (") and osd_okunur_adi(str(yol)).endswith("— s.osd")
     p1.ders_kodu.setText("UTL4513")  # başka derse geçildi
     assert "UTL4513" in pencere.kimlik.text() and pencere.windowTitle().startswith("UTL4513")
+
+
+def test_ders_paketi_yokken_cikti_sayisi(pencere, fix, monkeypatch, tmp_path):
+    """Ders bilgi paketi yokken (ders kodu boş) sisteme giriş dosyaları istenince öğrenme çıktısı sayısı sorulur,
+    çıktılar eşit dağıtılır ve soru tanımı yazılır; 2. adımdaki sayı kutusu aynı işi görür ve dosyaya kaydedilir."""
+    from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+
+    from optik_sinav.core.madde_analizi import cikti_atamasi_esit_mi, sayidan_cikti_kodlari
+    from optik_sinav.core.proje import SinavProjesi
+
+    assert sayidan_cikti_kodlari(3) == ["Ö01", "Ö02", "Ö03"] and sayidan_cikti_kodlari(0) == []
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    assert d.ders is None and d.ogrenme_kodlari() == [] and a.cikti_sayisi_kutusu.isVisibleTo(a)
+    assert "bilinmiyor" in a.cikti_bilgi.text()
+    pencere.adim_listesi.setCurrentRow(3)
+    e = pencere.adimlar[3]
+    assert "öğrenme çıktısı sayısı sorulacak" in e.bilgi.text()
+    monkeypatch.setattr(QInputDialog, "getInt", lambda *x, **k: (4, True))
+    monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *x, **k: str(tmp_path))
+    monkeypatch.setattr(QMessageBox, "information", lambda *x, **k: None)
+    e._giris_dosyalari()
+    assert d.proje.cikti_sayisi == 4 and cikti_atamasi_esit_mi(d.proje.anahtar, ["Ö01", "Ö02", "Ö03", "Ö04"])
+    st = list(tmp_path.glob("*_soru_tanimi.xlsx"))
+    assert len(st) == 1
+    from openpyxl import load_workbook
+
+    satirlar = [[c.value for c in r] for r in load_workbook(st[0])["Aktarım"].iter_rows()]
+    assert len(satirlar) == 10 and satirlar[0][3] == "1" and satirlar[-1][3] == "4" and satirlar[0][4] == "100"
+    assert SinavProjesi.from_dict(d.proje.to_dict()).cikti_sayisi == 4
+    # 2. adımdaki kutu: sayı değişince yeniden eşit dağıtılır
+    pencere.adim_listesi.setCurrentRow(1)
+    assert a.cikti_sayisi_kutusu.value() == 4
+    a.cikti_sayisi_kutusu.setValue(2)
+    assert cikti_atamasi_esit_mi(d.proje.anahtar, ["Ö01", "Ö02"]) and "eşit dağıtıldı" in a.cikti_bilgi.text()

@@ -311,6 +311,12 @@
     return new Map([...taban].map(([k, x]) => [k, Number(x)]));
   }
   /** Soruları öğrenme çıktılarına sırayla, eşit sayıda paylaştırır; her soru tek çıktıya (Python: esit_cikti_atamasi). */
+  /** Python: sayidan_cikti_kodlari */
+  function sayidanCiktiKodlari(n) {
+    const k = [];
+    for (let i = 1; i <= Math.max(0, parseInt(n, 10) || 0); i++) k.push("Ö" + String(i).padStart(2, "0"));
+    return k;
+  }
   function esitCiktiAtamasi(anahtar, kodlar) {
     const sira = anahtar.sorular.map((s, i) => [s, i]).filter(([s]) => s.durum !== "bonus").map(([, i]) => i);
     const sonuc = anahtar.sorular.map(() => []);
@@ -590,7 +596,7 @@
   }
 
   Object.assign(OS, {
-    varsayilanEsikler, maddeAnalizi, ogrenmeCiktisiRaporu, ciktiDagilimiSinav, tamSayiDagilim, ciktiDenetimi, esitCiktiAtamasi, ciktilariEsitDagit, ciktiAtamasiEsitMi,
+    varsayilanEsikler, maddeAnalizi, ogrenmeCiktisiRaporu, ciktiDagilimiSinav, tamSayiDagilim, ciktiDenetimi, sayidanCiktiKodlari, esitCiktiAtamasi, ciktilariEsitDagit, ciktiAtamasiEsitMi,
     sinirdakiOgrenciler, finalGereken, sansPuani, tIkiYonluP, kitapcikKarsilastirma, spearman, tasarimDenetimi, rasch, araAgirligi, arsivKaydi,
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

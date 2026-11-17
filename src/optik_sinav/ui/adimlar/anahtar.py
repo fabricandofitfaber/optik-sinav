@@ -243,6 +243,15 @@ class AnahtarAdimi(Adim):
         self.cikti_bilgi = QLabel()
         self.cikti_bilgi.setWordWrap(True)
         s.addWidget(self.cikti_bilgi, 1)
+        self.cikti_sayisi_etiketi = QLabel("Dersin öğrenme çıktısı sayısı:")
+        s.addWidget(self.cikti_sayisi_etiketi)
+        self.cikti_sayisi_kutusu = QSpinBox()
+        self.cikti_sayisi_kutusu.setRange(0, 30)
+        self.cikti_sayisi_kutusu.setSpecialValueText("—")
+        self.cikti_sayisi_kutusu.setToolTip("Ders bilgi paketi yüklenmemişse dersin kaç öğrenme çıktısı olduğunu yazın "
+                                            "(Ö01, Ö02 …); sorulara eşit dağıtılır.")
+        self.cikti_sayisi_kutusu.valueChanged.connect(self._cikti_sayisi_degisti)
+        s.addWidget(self.cikti_sayisi_kutusu)
         self.esit_dagit_dugmesi = QPushButton("Öğrenme çıktılarını eşit dağıt")
         self.esit_dagit_dugmesi.setToolTip("Soruları dersin öğrenme çıktılarına sırayla, eşit sayıda paylaştırır; her soru bir çıktıya bağlanır.")
         self.esit_dagit_dugmesi.clicked.connect(self._sirayla_dagit)
@@ -846,13 +855,32 @@ class AnahtarAdimi(Adim):
                 and not cikti_atamasi_esit_mi(self.anahtar, kodlar)):
             ciktilari_esit_dagit(self.anahtar, kodlar)  # soru sayısı ya da ders değişse de eşit kalır
 
+    def _cikti_sayisi_degisti(self, n: int):
+        p = self.durum.proje
+        if n == p.cikti_sayisi:
+            return
+        p.cikti_sayisi = n
+        if n == 0 and not p.cikti_elle:
+            for s in self.anahtar.sorular:
+                s.ogrenme_ciktilari, s.cikti_yuzdeleri = [], {}
+        self._kurulu = None
+        self.durumdan_yukle()
+        self.tamamlik_degisti.emit()
+
     def _cikti_seridi(self):
         """Tablonun üstündeki satır: çıktılar eşit mi dağıtıldı, elle mi düzenlendi, yoksa ders çıktıları bilinmiyor mu."""
         kodlar = self.durum.ogrenme_kodlari()
         self.cikti_serit.setVisible(self.ana_mi)
+        paketsiz = self.durum.ders is None
+        self.cikti_sayisi_etiketi.setVisible(paketsiz)
+        self.cikti_sayisi_kutusu.setVisible(paketsiz)
+        self.cikti_sayisi_kutusu.blockSignals(True)
+        self.cikti_sayisi_kutusu.setValue(self.durum.proje.cikti_sayisi)
+        self.cikti_sayisi_kutusu.blockSignals(False)
         if not kodlar:
-            self.cikti_bilgi.setText("<span style='color:gray'>Dersin öğrenme çıktıları bilinmiyor: 1. adımda ders kodunu yazın ya da ders "
-                                     "bilgi paketini yükleyin; sorulara kendiliğinden eşit dağıtılır. Çıktı kodlarını aşağıya elle de yazabilirsiniz.</span>")
+            self.cikti_bilgi.setText("<b>Dersin öğrenme çıktıları bilinmiyor.</b> <span style='color:gray'>Sistem her soru için öğrenme "
+                                     "çıktısı istiyor: sağa dersin öğrenme çıktısı sayısını yazın ya da 1. adımda ders bilgi paketini "
+                                     "yükleyin; çıktılar sorulara kendiliğinden eşit dağıtılır.</span>")
             self.esit_dagit_dugmesi.setVisible(False)
         elif cikti_atamasi_esit_mi(self.anahtar, kodlar):
             self.cikti_bilgi.setText(f"<b>Öğrenme çıktıları sorulara eşit dağıtıldı</b> (her soru bir çıktıya; {', '.join(kodlar)}). "
@@ -866,7 +894,7 @@ class AnahtarAdimi(Adim):
     def _sirayla_dagit(self):
         kodlar = self.durum.ogrenme_kodlari()
         if not kodlar:
-            QMessageBox.information(self, "Öğrenme çıktıları", "Önce 1. adımda ders kodunu yazın ya da ders bilgi paketini yükleyin.")
+            QMessageBox.information(self, "Öğrenme çıktıları", "Önce dersin öğrenme çıktısı sayısını yazın ya da 1. adımda ders bilgi paketini yükleyin.")
             return
         if any(s.ogrenme_ciktilari for s in self.anahtar.sorular) and not cikti_atamasi_esit_mi(self.anahtar, kodlar):
             if QMessageBox.question(self, "Yeniden eşit dağıt", "Sorulara elle seçtiğiniz öğrenme çıktıları silinip eşit dağıtılsın mı?") \
@@ -955,12 +983,35 @@ class AnahtarAdimi(Adim):
         return e + hatalar
 
 
+def ciktilari_hazirla(ebeveyn, durum) -> None:
+    """Soru tanımından önce: çıktılar bilinmiyorsa dersin öğrenme çıktısı sayısını sorar; hoca elle değiştirmediyse
+    çıktıları sorulara eşit dağıtır (2. adım hiç açılmamış olsa da)."""
+    a = durum.proje.anahtar
+    if not a.sorular:
+        return
+    kodlar = durum.ogrenme_kodlari()
+    if not kodlar and not any(s.ogrenme_ciktilari for s in a.sorular):
+        n, tamam = QInputDialog.getInt(ebeveyn, "Öğrenme çıktısı sayısı",
+                                       "Sistem soru tanımında her soru için bir öğrenme çıktısı istiyor.\n"
+                                       "Bu dersin kaç öğrenme çıktısı var? (ders bilgi paketindeki sayı)\n\n"
+                                       "Çıktılar (Ö01, Ö02 …) sorulara sırayla, eşit sayıda dağıtılır; 2. adımda değiştirebilirsiniz.",
+                                       1, 1, 30)
+        if not tamam:
+            return
+        durum.proje.cikti_sayisi = n
+        durum.proje.cikti_elle = False
+        kodlar = durum.ogrenme_kodlari()
+    if kodlar and not durum.proje.cikti_elle and not cikti_atamasi_esit_mi(a, kodlar):
+        ciktilari_esit_dagit(a, kodlar)
+
+
 def soru_tanimini_kopyala(ebeveyn, durum) -> bool:
     """Soru tanımını (bonus hariç) Akademik Bilgi Sistemi'nin Toplu Aktarım biçiminde panoya kopyalar. Kopyaladıysa True."""
     from PySide6.QtGui import QGuiApplication
 
     from ...export.soru_tanimi import soru_tanimi_metni
 
+    ciktilari_hazirla(ebeveyn, durum)
     a = durum.proje.anahtar
     sorunlar = [x for x in anahtar_eksikleri(a, durum.proje.ayarlar, True) if "puan" in x.lower()]
     hatalar, _ = cikti_denetimi(a, durum.ogrenme_kodlari() or None)

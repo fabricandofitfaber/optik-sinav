@@ -112,7 +112,24 @@
     if (D.ders && !D.proje.sinav.ders_adi) D.proje.sinav.ders_adi = D.ders.ad;
     return D.ders;
   };
-  UI.ogrenmeKodlari = () => (D.ders ? D.ders.ogrenme_ciktilari.map((c) => c.kod) : []);
+  UI.ogrenmeKodlari = () => (D.ders ? D.ders.ogrenme_ciktilari.map((c) => c.kod) : OS.sayidanCiktiKodlari(D.proje.cikti_sayisi));
+  /** Python: ciktilari_hazirla. Çıktılar bilinmiyorsa sayıyı sorar; elle değiştirilmediyse eşit dağıtır. */
+  UI.ciktilariHazirla = async function () {
+    const a = D.proje.anahtar;
+    if (!a.sorular.length) return;
+    let kodlar = UI.ogrenmeKodlari();
+    if (!kodlar.length && !a.sorular.some((s) => (s.ogrenme_ciktilari || []).length)) {
+      const n = await pencere("Öğrenme çıktısı sayısı", `<p>Sistem soru tanımında her soru için bir öğrenme çıktısı istiyor.</p>
+        <p>Bu dersin kaç öğrenme çıktısı var? (ders bilgi paketindeki sayı) <input type="number" id="ciktiSayisiSor" min="1" max="30" value="1" style="width:5em"></p>
+        <p class="soluk">Çıktılar (Ö01, Ö02 …) sorulara sırayla, eşit sayıda dağıtılır; 2. adımda değiştirebilirsiniz.</p>`,
+        [{ metin: "Vazgeç", deger: null }, { metin: "Tamam", ana: true, deger: (q) => parseInt($("#ciktiSayisiSor", q).value, 10) || 0 }]);
+      if (!n || n < 1) return;
+      D.proje.cikti_sayisi = Math.min(30, n);
+      D.proje.cikti_elle = false;
+      kodlar = UI.ogrenmeKodlari();
+    }
+    if (kodlar.length && !D.proje.cikti_elle && !OS.ciktiAtamasiEsitMi(a, kodlar)) OS.ciktilariEsitDagit(a, kodlar);
+  };
   UI.programKodlari = () => (D.ders ? D.ders.program_ciktilari.map((c) => c.kod) : []);
   UI.aciklamalar = () => { const r = {}; if (D.ders) for (const c of [...D.ders.ogrenme_ciktilari, ...D.ders.program_ciktilari]) r[c.kod] = c.aciklama; return r; };
   UI.soruSayisi = () => (D.proje.bicim === "klasik" ? D.proje.klasik_soru_sayisi : D.proje.okuyucu.soru_sayisi);
@@ -717,9 +734,10 @@
   }
   function ciktiSeridi(a) {
     const kodlar = UI.ogrenmeKodlari();
-    if (!kodlar.length) return `<p class="soluk" style="margin:4px 0 8px">Dersin öğrenme çıktıları bilinmiyor: 1. adımda ders kodunu yazın ya da ders bilgi paketini yükleyin; sorulara kendiliğinden eşit dağıtılır. Çıktı kodlarını aşağıya elle de yazabilirsiniz.</p>`;
-    if (OS.ciktiAtamasiEsitMi(a, kodlar)) return `<p style="margin:4px 0 8px"><b>Öğrenme çıktıları sorulara eşit dağıtıldı</b> (her soru bir çıktıya; ${e(kodlar.join(", "))}). <span class="soluk">Değiştirmek için sorunun çıktı kutusuna yazın ya da Seç…'e basın.</span></p>`;
-    return `<div class="satir" style="margin:4px 0 8px"><span><b>Öğrenme çıktıları elle düzenlendi.</b> <span class="soluk">İsterseniz yeniden eşit dağıtabilirsiniz.</span></span><button id="esitDagitCikti">Yeniden eşit dağıt</button></div>`;
+    const sayi = D.ders ? "" : ` <label style="white-space:nowrap">Dersin öğrenme çıktısı sayısı: <input type="number" id="ciktiSayisi" min="0" max="30" value="${D.proje.cikti_sayisi || ""}" style="width:4.5em"></label>`;
+    if (!kodlar.length) return `<div class="satir" style="margin:4px 0 8px"><span><b>Dersin öğrenme çıktıları bilinmiyor.</b> <span class="soluk">Sistem her soru için öğrenme çıktısı istiyor: sağa dersin öğrenme çıktısı sayısını yazın ya da 1. adımda ders bilgi paketini yükleyin; çıktılar sorulara kendiliğinden eşit dağıtılır.</span></span>${sayi}</div>`;
+    if (OS.ciktiAtamasiEsitMi(a, kodlar)) return `<div class="satir" style="margin:4px 0 8px"><span><b>Öğrenme çıktıları sorulara eşit dağıtıldı</b> (her soru bir çıktıya; ${e(kodlar.join(", "))}). <span class="soluk">Değiştirmek için sorunun çıktı kutusuna yazın ya da Seç…'e basın.</span></span>${sayi}</div>`;
+    return `<div class="satir" style="margin:4px 0 8px"><span><b>Öğrenme çıktıları elle düzenlendi.</b> <span class="soluk">İsterseniz yeniden eşit dağıtabilirsiniz.</span></span>${sayi}<button id="esitDagitCikti">Yeniden eşit dağıt</button></div>`;
   }
   function ayarOzeti() {
     const a = D.proje.ayarlar;
@@ -949,6 +967,12 @@
       else { ay.yontem = "esit"; for (const s of a.sorular) s.puan = null; }
       yenidenCiz();
     };
+    if ($("#ciktiSayisi", k)) $("#ciktiSayisi", k).onchange = (ev) => {
+      const n = Math.max(0, Math.min(30, parseInt(ev.target.value, 10) || 0));
+      D.proje.cikti_sayisi = n;
+      if (!n && !D.proje.cikti_elle) for (const s of a.sorular) { s.ogrenme_ciktilari = []; s.cikti_yuzdeleri = {}; }
+      yenidenCiz();
+    };
     if ($("#esitDagitCikti", k)) $("#esitDagitCikti", k).onclick = async () => {
       if (!(await onay("Yeniden eşit dağıt", "Sorulara elle seçtiğiniz öğrenme çıktıları silinip eşit dağıtılsın mı?"))) return;
       OS.ciktilariEsitDagit(a, UI.ogrenmeKodlari());
@@ -973,6 +997,7 @@
   };
   /** Soru tanımını (bonus hariç) Akademik Bilgi Sistemi'nin Toplu Aktarım biçiminde panoya kopyalar. */
   UI.soruTanimiKopyala = async function () {
+      await UI.ciktilariHazirla();
       const a = D.proje.anahtar;
       const sorun = OS.anahtarEksikleri(a, D.proje.ayarlar, true).filter((x) => x.toLowerCase().includes("puan"));
       let [hatalar] = OS.ciktiDenetimi(a, UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null);

@@ -91,7 +91,12 @@ class Durum(QObject):
         return " · ".join(parca)
 
     def ogrenme_kodlari(self) -> list[str]:
-        return self.ders.ogrenme_kodlari() if self.ders else []
+        """Ders bilgi paketindeki kodlar; paket yoksa hocanın girdiği sayıdan Ö01, Ö02 …"""
+        if self.ders:
+            return self.ders.ogrenme_kodlari()
+        from ..core.madde_analizi import sayidan_cikti_kodlari
+
+        return sayidan_cikti_kodlari(self.proje.cikti_sayisi)
 
     def program_kodlari(self) -> list[str]:
         return [c.kod for c in self.ders.program_ciktilari] if self.ders else []

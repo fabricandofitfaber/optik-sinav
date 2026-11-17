@@ -645,7 +645,7 @@
       const [bas, veri] = OS.tabloUret(p, s);
       const notlar = [];
       if (s.ogrenciler.some((o) => o.uyarilar.some((u) => u.tur === "tekrar_numara"))) notlar.push("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.");
-      if (!D.proje.anahtar.sorular.some((q) => (q.ogrenme_ciktilari || []).length)) notlar.push("Soru tanımı için sorulara öğrenme çıktısı gerekli (sistem her soru için istiyor): 1. adımda ders kodunu yazın (örneğin EKF4507) ya da ders bilgi paketini yükleyin; çıktılar sorulara kendiliğinden eşit dağıtılır.");
+      if (!D.proje.anahtar.sorular.some((q) => (q.ogrenme_ciktilari || []).length)) notlar.push("Soru tanımı için her soruya bir öğrenme çıktısı gerekiyor: dosyaları indirirken ya da soruları kopyalarken dersin öğrenme çıktısı sayısı sorulacak (ders bilgi paketini 1. adımda yüklediyseniz sorulmaz).");
       if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).`);
       const adim = (id, metin, aciklama) => `<div class="aktar-satir"><button class="aktar-dugme" id="${id}">${metin}</button><span class="soluk">${aciklama}</span></div>`;
       k.innerHTML = `<h2>4. Sisteme aktar ve raporlar</h2>
@@ -722,7 +722,7 @@
         }
         bilgi(baslik, `${UI.sinavKisaAdi()}\n\n${adlar.join("\n")}${notlar.length ? "\n\n" + notlar.join("\n") : ""}\n\nDosyalar tarayıcının İndirilenler klasörüne kaydedildi.`);
       };
-      $("#girisDosyalari", k).onclick = () => toplu(["soru_tanimi", "akreditasyon", "not"], "Sisteme giriş dosyaları indirildi");
+      $("#girisDosyalari", k).onclick = async () => { await UI.ciktilariHazirla(); UI.otomatikKaydet(); toplu(["soru_tanimi", "akreditasyon", "not"], "Sisteme giriş dosyaları indirildi"); };
       $("#digerRaporlar", k).onclick = async () => {
         const secenek = [["sonuc", "Sonuç (ayrıntılı: cevaplar, uyarılar, düzeltme kaydı)"], ["istatistik", "İstatistik (madde analizi, çeldiriciler ve ötekiler)"], ["cikti", "Öğrenme çıktısı raporu"]];
         const secim = await pencere("Diğer raporlar", `<p>İndirilecek raporları işaretleyin:</p>${secenek.map(([id, t]) => `<label style="display:block;margin:4px 0"><input type="checkbox" data-rapor="${id}" checked> ${t}</label>`).join("")}

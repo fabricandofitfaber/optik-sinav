@@ -511,6 +511,11 @@ def tam_sayi_dagilim(dagilim: dict[str, Fraction]) -> dict[str, int]:
     return taban
 
 
+def sayidan_cikti_kodlari(n: int) -> list[str]:
+    """Ders bilgi paketi yokken hocanın verdiği sayıdan öğrenme çıktısı kodları: Ö01, Ö02 … (paketlerdeki biçim)."""
+    return [f"Ö{i:02d}" for i in range(1, max(0, int(n or 0)) + 1)]
+
+
 def esit_cikti_atamasi(anahtar, kodlar: list[str]) -> list[list[str]]:
     """Soruları dersin öğrenme çıktılarına sırayla, eşit sayıda paylaştırır: her soru tek bir çıktıya bağlanır.
 
