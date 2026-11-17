@@ -570,3 +570,23 @@ def test_sistem_puan_dosyasi_doldurma(pencere, fix, monkeypatch, tmp_path):
     satir = cikti.read_bytes().decode("cp1254").split("\r\n")[1].split(";")
     assert satir[0] == nolar[0] + "\xa0" and satir[2] == "Girdi" and all(x in ("0", "10") for x in satir[3:13])
     assert "Puanı yazılan öğrenci: 3" in mesaj[0]
+
+
+def test_bonus_soru_numarayla(pencere, fix):
+    """Bonus soru, açılır kutu yerine "Bonus soru" alanına numara yazılarak da seçilir; boşaltınca kalkar."""
+    from optik_sinav.core.modeller import SoruDurumu
+
+    d = pencere.durum
+    pencere.adimlar[0]._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    assert a.bonus_satiri.isVisibleTo(a)
+    a.bonus.setText("10")
+    a._bonus_degisti()
+    assert d.proje.anahtar.sorular[9].durum == SoruDurumu.BONUS and len(d.proje.anahtar.aktarim_sorulari()) == 9
+    assert a.satirlar[9].durum.currentData() == "bonus" and "bonus" in pencere.kimlik.text().lower()
+    a.bonus.setText("")
+    a._bonus_degisti()
+    assert all(s.durum == SoruDurumu.NORMAL for s in d.proje.anahtar.sorular)

@@ -226,6 +226,22 @@ class AnahtarAdimi(Adim):
         b.clicked.connect(self._hizli_uygula)
         s.addWidget(b)
         u.addLayout(s)
+        # Bonus soru: açılır kutuya gerek kalmadan numarayla seçilir
+        self.bonus_satiri = QWidget()
+        s = QHBoxLayout(self.bonus_satiri)
+        s.setContentsMargins(0, 0, 0, 0)
+        s.addWidget(QLabel("Bonus soru:"))
+        self.bonus = QLineEdit()
+        self.bonus.setPlaceholderText("örnek: 17")
+        self.bonus.setFixedWidth(120)
+        self.bonus.editingFinished.connect(self._bonus_degisti)
+        s.addWidget(self.bonus)
+        l = QLabel("Numarasını yazıp Enter'a basın (birden çoksa virgülle). Bonus soru toplama girmez; doğru yapan öğrencinin bir "
+                   "yanlışını (yoksa bir boşunu) doğru sayar. Kaldırmak için kutuyu boşaltın.")
+        l.setWordWrap(True)
+        l.setStyleSheet("color: gray")
+        s.addWidget(l, 1)
+        u.addWidget(self.bonus_satiri)
         self.kitapcik_bilgi = QLabel()
         self.kitapcik_bilgi.setWordWrap(True)
         u.addWidget(self.kitapcik_bilgi)
@@ -574,8 +590,42 @@ class AnahtarAdimi(Adim):
             self.ipucu.setText("Klavye: tabloya tıklayıp A-E harflerine basın, otomatik olarak sonraki soruya geçer. "
                                "Ders bilgi paketini 1. adımda yüklerseniz çıktılar açıklamalarıyla seçilebilir.")
 
+    def _bonus_degisti(self):
+        if self._yukleniyor or self.klasik:
+            return
+        n = self.anahtar.soru_sayisi
+        metin = self.bonus.text().replace(";", ",").replace(" ", ",")
+        try:
+            nolar = sorted({int(x) for x in metin.split(",") if x.strip()})
+        except ValueError:
+            QMessageBox.warning(self, "Bonus soru", "Bonus soru numarasını rakamla yazın, örneğin 17.")
+            return
+        disarida = [x for x in nolar if not 1 <= x <= n]
+        if disarida:
+            QMessageBox.warning(self, "Bonus soru", f"{', '.join(map(str, disarida))}. soru yok: sınavda {n} soru var.")
+            return
+        if nolar and len(nolar) >= n:
+            QMessageBox.warning(self, "Bonus soru", "Bütün sorular bonus olamaz.")
+            return
+        degisti = False
+        for s in self.anahtar.sorular:
+            if s.no in nolar and s.durum != SoruDurumu.BONUS:
+                s.durum = SoruDurumu.BONUS
+                if len(s.dogru) > 1:
+                    s.dogru = s.dogru[:1]
+                degisti = True
+            elif s.no not in nolar and s.durum == SoruDurumu.BONUS:
+                s.durum = SoruDurumu.NORMAL
+                degisti = True
+        if degisti:
+            self.durumdan_yukle()
+            self.tamamlik_degisti.emit()
+
     def _degerleri_yaz(self):
         a = self.anahtar
+        self.bonus_satiri.setVisible(not self.klasik and self.ana_mi)
+        if not self.bonus.hasFocus():
+            self.bonus.setText(", ".join(str(s.no) for s in a.sorular if s.durum == SoruDurumu.BONUS))
         esit = self.durum.proje.ayarlar.yontem == PuanYontemi.ESIT and not self.klasik
         puanlar = soru_puanlari(a, self.durum.proje.ayarlar) if a.soru_sayisi else []
         harfler = self._kitapcik_harfleri() if not self.ana_mi else None

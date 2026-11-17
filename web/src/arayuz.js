@@ -786,6 +786,8 @@
           ${!ana ? `<button id="kitSil">Bu kitapçığı sil</button>` : ""}</div>
         ${!ana ? `<p class="soluk">${e(kit)} kitapçığı: şıkları bu kitapçığın kendi soru sırasıyla işaretleyin. "Ana kitapçıktaki karşılığı" sütununa bu sorunun ana kitapçıkta kaçıncı soru olduğunu yazın (sıra aynıysa dokunmayın). Puan ve öğrenme çıktısı ana kitapçıktan gelir.</p>` : ""}
         <div class="satir"><label>Hızlı giriş</label><input type="text" id="hizli" style="flex:1;font-family:Menlo,Consolas,monospace" placeholder="Harfleri sırayla yazın, örneğin BEDAC DEDBC BEAAC ('-' soruyu atlar) ve Enter'a basın" value="${e(hizli)}"><button id="hizliUygula">Uygula</button></div>`}
+        ${!kl && ana ? `<div class="satir"><label>Bonus soru</label><input type="text" id="bonusSoru" style="width:7em" placeholder="örnek: 17" value="${a.sorular.filter((x) => x.durum === "bonus").map((x) => x.no).join(", ")}">
+          <span class="soluk">Numarasını yazıp Enter'a basın (birden çoksa virgülle). Bonus soru toplama girmez; doğru yapan öğrencinin bir yanlışını (yoksa bir boşunu) doğru sayar. Kaldırmak için kutuyu boşaltın.</span></div>` : ""}
         <div class="kutu izgara" id="izgara" tabindex="0">
           ${ana ? ciktiSeridi(a) : ""}
           <table class="sorular ${D.proje.ayarlar.yontem === "esit" && !kl ? "puan-yok" : ""} ${pcGoster ? "" : "pc-yok"}"><thead><tr>${basliklar.map((b) => `<th class="${b === "Puan" ? "puanSutun" : b === "Program çıktıları" ? "pcSutun" : ""}">${b}</th>`).join("")}</tr></thead>
@@ -971,6 +973,20 @@
       const n = Math.max(0, Math.min(30, parseInt(ev.target.value, 10) || 0));
       D.proje.cikti_sayisi = n;
       if (!n && !D.proje.cikti_elle) for (const s of a.sorular) { s.ogrenme_ciktilari = []; s.cikti_yuzdeleri = {}; }
+      yenidenCiz();
+    };
+    if ($("#bonusSoru", k)) $("#bonusSoru", k).onchange = (ev) => {
+      const n = a.sorular.length;
+      const parca = ev.target.value.split(/[,;\s]+/).filter(Boolean);
+      if (parca.some((x) => !/^\d+$/.test(x))) { bilgi("Bonus soru", "Bonus soru numarasını rakamla yazın, örneğin 17."); return; }
+      const nolar = [...new Set(parca.map(Number))];
+      const disarida = nolar.filter((x) => x < 1 || x > n);
+      if (disarida.length) { bilgi("Bonus soru", `${disarida.join(", ")}. soru yok: sınavda ${n} soru var.`); return; }
+      if (nolar.length && nolar.length >= n) { bilgi("Bonus soru", "Bütün sorular bonus olamaz."); return; }
+      for (const s of a.sorular) {
+        if (nolar.includes(s.no)) { if (s.durum !== "bonus") { s.durum = "bonus"; if (s.dogru.length > 1) s.dogru = s.dogru[0]; } }
+        else if (s.durum === "bonus") s.durum = "normal";
+      }
       yenidenCiz();
     };
     if ($("#esitDagitCikti", k)) $("#esitDagitCikti", k).onclick = async () => {
