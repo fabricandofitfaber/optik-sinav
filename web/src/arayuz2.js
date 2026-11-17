@@ -645,6 +645,7 @@
       const [bas, veri] = OS.tabloUret(p, s);
       const notlar = [];
       if (s.ogrenciler.some((o) => o.uyarilar.some((u) => u.tur === "tekrar_numara"))) notlar.push("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.");
+      if (!D.proje.anahtar.sorular.some((q) => (q.ogrenme_ciktilari || []).length)) notlar.push("Soru tanımı için sorulara öğrenme çıktısı gerekli (sistem her soru için istiyor): 1. adımda ders kodunu yazın (örneğin EKF4507) ya da ders bilgi paketini yükleyin; çıktılar sorulara kendiliğinden eşit dağıtılır.");
       if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).`);
       const adim = (id, metin, aciklama) => `<div class="aktar-satir"><button class="aktar-dugme" id="${id}">${metin}</button><span class="soluk">${aciklama}</span></div>`;
       k.innerHTML = `<h2>4. Sisteme aktar ve raporlar</h2>

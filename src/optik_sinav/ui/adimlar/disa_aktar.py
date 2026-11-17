@@ -243,6 +243,8 @@ class DisaAktarAdimi(Adim):
         notlar = []
         if s and any(u.tur == UyariTuru.TEKRAR_NUMARA for o in s.ogrenciler for u in o.uyarilar):
             notlar.append("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.")
+        if not any(q.ogrenme_ciktilari for q in self.durum.proje.anahtar.sorular):
+            notlar.append("Soru tanımı için sorulara öğrenme çıktısı gerekli (sistem her soru için istiyor): 1. adımda ders kodunu yazın (örneğin EKF4507) ya da ders bilgi paketini yükleyin; çıktılar sorulara kendiliğinden eşit dağıtılır.")
         if s and s.listede_olmayanlar:
             notlar.append(f"Listede olmayan {len(s.listede_olmayanlar)} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).")
         self.bilgi.setText(" ".join(notlar))
