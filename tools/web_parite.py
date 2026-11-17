@@ -35,6 +35,26 @@ from optik_sinav.io.liste_okuyucu import liste_oku  # noqa: E402
 F = KOK / "tests" / "fixtures"
 
 
+def sistem_girdisi(nolar: list[str], n: int) -> str:
+    """Sistemin soru bazlı puan dosyasının uydurma karşılığı (latin-1 ile bayta çevrilir; numarada bölünmez boşluk)."""
+    bas = "Ogrenci No;Adi;Girme Durum;" + ";".join(f"Soru{i}(%6,67)" for i in range(1, n + 1)) + ";Sinav Notu\r\n"
+    return bas + "".join(f"{no}\xa0;AD;Girdi;" + ";" * n + "\r\n" for no in sorted(nolar) + ["99999999"])
+
+
+def sistem_dosyasi(sonuc) -> dict:
+    import base64
+
+    from optik_sinav.export.sistem_puan_dosyasi import sistem_dosyasini_doldur
+
+    girdi = sistem_girdisi([o.no for o in sonuc.ogrenciler], len(sonuc.anahtar.aktarim_sorulari())).encode("latin-1")
+    try:
+        b, r = sistem_dosyasini_doldur(girdi, sonuc)
+    except ValueError as e:
+        return {"hata": str(e)}
+    return {"cikti": base64.b64encode(b).decode(), "yazilan": r.yazilan, "girmedi": r.girmedi, "dosyada_olmayan": r.dosyada_olmayan,
+            "notlar": r.notlar}
+
+
 def kesir(x) -> str:
     return f"{x.numerator}/{x.denominator}"
 
@@ -57,6 +77,7 @@ def ciktilar(proje: SinavProjesi, sonuc, ders_kodlari=None) -> dict:
         } for o in sonuc.ogrenciler],
         "aktarim": [[hucre_metni(h, PR) for h in satir] for satir in tablo_uret(PR, sonuc)[2]],
         "aktarim_basliklar": tablo_uret(PR, sonuc)[1],
+        "sistem_dosyasi": sistem_dosyasi(sonuc),
         "girmeyenler": [x.no for x in sonuc.girmeyenler],
         "soru_puanlari": [kesir(p) for p in sonuc.soru_puanlari],
         "maddeler": [{

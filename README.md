@@ -126,20 +126,16 @@ Uyarı türleri: numarada okunamayan karakter, boş ad, Türkçe karakteri bozuk
 
 ![Sisteme aktar ve raporlar](docs/ekran/4_sisteme_aktar.png)
 
-Akademik Bilgi Sistemi'nin toplu aktarım ekranları yapıştırma kabul eder; bu yüzden aktarım sırasıyla üç düğmedir:
+Akademik Bilgi Sistemi'ne aktarım iki adımdır:
 
-1. **Soruları kopyala:** Sınav Akreditasyon İşlemleri'nde sınavı açın → "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap"; Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez.
-2. **Öğrenci puanlarını kopyala:** sorular tanımlandıktan sonra açılan öğrenci puanı ekranına; öğrenci listesi sırasıyla numara ve soru puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın.
-3. **Not girişi için puanları kopyala:** öğrenci numarası ve sınav puanı.
+1. **Soruları kopyala:** Sınav Akreditasyon İşlemleri'nde sınavı açın → "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap"; Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez. Ders bilgi paketi yüklü değilse program dersin öğrenme çıktısı sayısını sorar ve çıktıları sorulara eşit dağıtır.
+2. **Sistemin puan dosyasını doldur:** sorular tanımlandıktan sonra sistemde aynı dersin ve sınavın soru bazlı puan dosyasını (CSV) indirin ve bu düğmeyle seçin. Program her öğrencinin soru puanlarını ve sınav notunu yazar, sınava girmeyenleri "Girmedi" yapar ve dosyayı sistemin biçiminde (Windows Türkçe karakter kodlaması, noktalı virgül) kaydeder; o dosyayı sisteme yükleyin. Soru puanı = öğrencinin o sorudan aldığı pay × sistemdeki soru ağırlığı; sınav notu bunların toplamıdır. Dosyadaki öğrencilerin hiçbiri sınavda yoksa (başka dersin dosyası) program uyarır. Not girişi için ayrıca dosya gerekmez.
 
 Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür.
 
-**Dosyalar** bölümünde öne çıkan **"Sisteme giriş dosyalarını kaydet"** yalnızca sisteme giriş için gereken üç dosyayı yazar:
-- `..._soru_tanimi.xlsx`: soruları tanımlamak için. Dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, sistemde "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap" → Aktarım Kutusu'na yapıştırın (Kolon Ayracı "Excel'den Kopyalandı"). İkinci sayfa sütunları ve adımları anlatır. Aynı içeriği "1. Soruları kopyala" düğmesi doğrudan panoya da kopyalar.
-- `..._akreditasyon.xlsx`: öğrenci soru puanları.
-- `..._not_giris.xlsx`: öğrenci numarası ve puan.
+**Dosyalar** bölümünde **"Soru tanımı dosyasını kaydet"**, 1. adımın dosya hâlini (`..._soru_tanimi.xlsx`) yazar: dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, Aktarım Kutusu'na yapıştırın. İkinci sayfa sütunları ve adımları anlatır.
 
-Öteki raporlar (sonuç, istatistik, öğrenme çıktısı, karneler, özet) **"Diğer raporlar…"** ile işaretleyerek seçilir; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
+Öteki raporlar (sonuç, istatistik, öğrenme çıktısı, karneler, özet; isterseniz programın kendi biçiminde öğrenci soru puanları ve not girişi) **"Diğer raporlar…"** ile işaretleyerek seçilir; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
 
 **Gelişmiş** bölümünde (katlı): aktarım biçimi seçimi ve önizleme, sistemden indirilen şablonu doldurma (şablondaki öğrenci sırası korunur), tek tek dosya kaydetme ve sütun seçerek panoya kopyalama.
 

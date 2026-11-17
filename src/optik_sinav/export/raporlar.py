@@ -878,14 +878,18 @@ def pdf_ozet_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, esikl
 
 
 # Sisteme giriş için gerekenler (varsayılan) ve isteğe bağlı raporlar
-GIRIS_DOSYALARI = ("soru_tanimi", "akreditasyon", "not_giris")
+GIRIS_DOSYALARI = ("soru_tanimi",)  # öğrenci puanları sistemin kendi dosyası doldurularak gider (sistem_puan_dosyasi)
 DIGER_RAPORLAR = (
+    ("akreditasyon", "Öğrenci soru puanları (programın Excel biçimi)"),
+    ("not_giris", "Not girişi (öğrenci numarası ve puan)"),
     ("sonuc", "Sonuç (ayrıntılı: cevaplar, uyarılar, düzeltme kaydı)"),
     ("istatistik", "İstatistik (grafikli; madde analizi, çeldiriciler ve ötekiler)"),
     ("ogrenme_ciktisi", "Öğrenme çıktısı raporu"),
     ("karne", "Öğrenci karneleri (her öğrenciye bir sayfa)"),
     ("ozet", "Özet (PDF; arşiv ve bölüm dosyası için)"),
 )
+
+VARSAYILAN_KAPALI = {"akreditasyon", "not_giris"}  # "Diğer raporlar" penceresinde işaretsiz gelir
 
 
 @dataclass

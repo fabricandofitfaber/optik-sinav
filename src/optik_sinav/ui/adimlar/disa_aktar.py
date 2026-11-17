@@ -17,7 +17,7 @@ from ...core.ek_istatistik import ara_agirligi
 from ...core.modeller import UyariTuru
 from ...export.pano import pano_metni
 from ...export.profil import Profil, Sutun, hucre_metni, profil_bul, profilleri_listele, tablo_uret
-from ...export.raporlar import DIGER_RAPORLAR, GIRIS_DOSYALARI, tum_raporlari_yaz
+from ...export.raporlar import DIGER_RAPORLAR, GIRIS_DOSYALARI, VARSAYILAN_KAPALI, tum_raporlari_yaz
 from ...export.sablon_doldurucu import numara_sirasi, sablondan_profil_oner, sablonu_doldur
 from ...export.xlsx_yazici import aktarim_yaz, uzanti
 from ...kaynaklar import kullanici_klasoru
@@ -83,11 +83,10 @@ class DisaAktarAdimi(Adim):
              "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". "
              "Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. "
              "Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez."),
-            ("2. Öğrenci puanlarını kopyala", self._ogrenci_puanlarini_kopyala,
-             "Sorular tanımlandıktan sonra açılan öğrenci puanı ekranına yapıştırın: öğrenci listesi sırasıyla numara ve soru "
-             "puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın."),
-            ("3. Not girişi için puanları kopyala", self._notlari_kopyala,
-             "Not Giriş ekranı için: öğrenci numarası ve sınav puanı (öğrenci listesi sırasıyla)."),
+            ("2. Sistemin puan dosyasını doldur…", self._sistem_dosyasi,
+             "Sorular tanımlandıktan sonra sistemde aynı dersin ve sınavın soru bazlı puan dosyasını indirin (CSV) ve burada seçin. "
+             "Program her öğrencinin soru puanlarını ve sınav notunu yazar, girmeyenleri \"Girmedi\" yapar ve dosyayı aynı biçimde "
+             "kaydeder; o dosyayı sisteme yükleyin. Not girişi için ayrıca bir dosya gerekmez."),
         ):
             s = QHBoxLayout()
             b = QPushButton(metin)
@@ -107,14 +106,14 @@ class DisaAktarAdimi(Adim):
         g = QGroupBox("Dosyalar")
         v = QVBoxLayout(g)
         s = QHBoxLayout()
-        b = QPushButton("Sisteme giriş dosyalarını kaydet…")
-        b.setToolTip("Yalnızca Akademik Bilgi Sistemi'ne giriş için gereken üç dosya.")
+        b = QPushButton("Soru tanımı dosyasını kaydet…")
+        b.setToolTip("Soruları kopyalamak yerine dosyadan yapıştırmak isterseniz.")
         b.setStyleSheet(VURGULU_DUGME)
         b.setMinimumHeight(38)
         b.clicked.connect(self._giris_dosyalari)
         s.addWidget(b, 0, Qt.AlignmentFlag.AlignTop)
-        l = QLabel("Üç dosya: <b>soru tanımı</b> (Toplu Sınav Soru Tanım → Aktarım Kutusu'na; dosyayı açıp hepsini seçin, kopyalayın, "
-                   "yapıştırın), <b>öğrenci soru puanları</b> ve <b>not girişi</b>.")
+        l = QLabel("1. adımın dosya hâli: dosyayı açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → Aktarım "
+                   "Kutusu'na yapıştırın.")
         l.setWordWrap(True)
         l.setStyleSheet("color: gray")
         s.addWidget(l, 1)
@@ -164,6 +163,8 @@ class DisaAktarAdimi(Adim):
         s.addWidget(menu_dugmesi("Tek tek kaydet", [
             ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon biçimine göre dosya yazar."),
             ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş biçimine göre dosya yazar."),
+            ("Öğrenci puanlarını panoya kopyala", self._ogrenci_puanlarini_kopyala, "Öğrenci listesi sırasıyla numara ve soru puanları."),
+            ("Not girişi için puanları panoya kopyala", self._notlari_kopyala, "Öğrenci numarası ve sınav puanı."),
             ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
         ], self))
         b = QPushButton("Sütun seçerek panoya kopyala…")
@@ -309,6 +310,37 @@ class DisaAktarAdimi(Adim):
             except Exception as e:  # noqa: BLE001
                 QMessageBox.warning(self, "Yazılamadı", str(e))
 
+    def _sistem_dosyasi(self):
+        """Sistemden indirilen soru bazlı puan dosyasını (CSV) doldurup aynı biçimde kaydeder."""
+        from ...export.sistem_puan_dosyasi import sistem_dosyasini_doldur
+
+        if self.durum.sonuc is None:
+            QMessageBox.information(self, "Önce sonuç", "Puanlar henüz hesaplanmadı: önceki adımlardaki eksikleri tamamlayın.")
+            return
+        girdi, _ = QFileDialog.getOpenFileName(self, "Sistemden indirilen puan dosyası", str(Path.home() / "Downloads"),
+                                               "Sistem dosyası (*.csv *.txt);;Bütün dosyalar (*)")
+        if not girdi:
+            return
+        try:
+            bayt, r = sistem_dosyasini_doldur(Path(girdi).read_bytes(), self.durum.sonuc)
+        except Exception as e:  # noqa: BLE001
+            QMessageBox.warning(self, "Dosya doldurulamadı", str(e))
+            return
+        oneri = Path(girdi).with_name(Path(cikti_adi(self.durum.proje.sinav, "sistem_puanlari")).stem + ".csv")
+        yol, _ = QFileDialog.getSaveFileName(self, "Doldurulmuş dosyayı kaydet", str(oneri), "CSV (*.csv)")
+        if not yol:
+            return
+        Path(yol).write_bytes(bayt)
+        satirlar = [f"{self.durum.sinav_kisa_adi()}", "", f"Puanı yazılan öğrenci: {r.yazilan}"]
+        if r.girmedi:
+            satirlar.append(f"\"Girmedi\" yapılan (dosyada var, sınavda yok): {len(r.girmedi)}")
+        if r.dosyada_olmayan:
+            satirlar.append(f"Sınava girmiş ama dosyada olmayan numaralar: {', '.join(r.dosyada_olmayan)}")
+        satirlar += [""] + r.notlar + ["", f"Kaydedildi: {yol}", "", "Bu dosyayı sistemde aynı ekrana yükleyin. İlk kullanımda bir öğrencinin "
+                                      "satırını programdaki puanla karşılaştırın."]
+        QMessageBox.information(self, "Puan dosyası dolduruldu", "\n".join(x for x in satirlar if x is not None))
+        self.durum_satiri.setText(f"✓ Puan dosyası yazıldı: {yol}")
+
     def _sablonu_doldur(self):
         sablon = self.durum.proje.sistem_sablonu_yolu
         if not sablon or not Path(sablon).exists():
@@ -395,7 +427,7 @@ class DisaAktarAdimi(Adim):
 
         ciktilari_hazirla(self, self.durum)
         self.girildi()
-        self._yaz(set(GIRIS_DOSYALARI), "Sisteme giriş dosyalarının yazılacağı klasör")
+        self._yaz(set(GIRIS_DOSYALARI), "Soru tanımı dosyasının yazılacağı klasör")
 
     def _diger_raporlar(self):
         """İsteğe bağlı raporları işaretleyerek seçme penceresi (hepsi işaretli gelir)."""
@@ -408,7 +440,7 @@ class DisaAktarAdimi(Adim):
         kutular = {}
         for ad, metin in DIGER_RAPORLAR:
             k = QCheckBox(metin)
-            k.setChecked(True)
+            k.setChecked(ad not in VARSAYILAN_KAPALI)
             v.addWidget(k)
             kutular[ad] = k
         bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)

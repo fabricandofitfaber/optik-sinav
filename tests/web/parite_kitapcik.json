@@ -191,7 +191,8 @@
   "klasik_giris_sirasi": [],
   "final_puanlar": {},
   "harf_ayarlari": {},
-  "cikti_elle": false
+  "cikti_elle": false,
+  "cikti_sayisi": 0
  },
  "ders_kodlari": null,
  "okuyucu_onerisi": {
@@ -886,6 +887,19 @@
    "S9",
    "S10"
   ],
+  "sistem_dosyasi": {
+   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NvcnU1KCU2LDY3KTtTb3J1NiglNiw2Nyk7U29ydTcoJTYsNjcpO1NvcnU4KCU2LDY3KTtTb3J1OSglNiw2Nyk7U29ydTEwKCU2LDY3KTtTaW5hdiBOb3R1DQo5OTAwMCowMDSgO0FEO0dpcmRpOzs7Ozs7Ozs7OzsNCjk5MDAwMDAwMaA7QUQ7R2lyZGk7MDswOzYsNjc7MDswOzA7MDs2LDY3OzA7MDsxMywzNA0KOTkwMDAwMDAyoDtBRDtHaXJkaTs2LDY3OzA7Niw2NzswOzA7MDswOzYsNjc7MDswOzIwLDAxDQo5OTAwMDAwMDOgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzA7MDs2LDY3OzYsNjc7Niw2NzswOzA7NDAsMDINCjk5MDAwMDAwNaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDagO0FEO0dpcmRpOzYsNjc7Niw2NzswOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwN6A7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDmgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDA5oDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzY2LDcNCjk5MDAwMDAxMKA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzA7MDswOzA7MDszMywzNQ0KOTkwMDAwMDg4oDtBRDtHaXJkaTswOzYsNjc7MDswOzA7MDs2LDY3OzA7MDswOzEzLDM0DQo5OTk5OTk5OaA7QUQ7R2lybWVkaTs7Ozs7Ozs7Ozs7DQo=",
+   "yazilan": 10,
+   "girmedi": [
+    "99999999"
+   ],
+   "dosyada_olmayan": [
+    "99000*004"
+   ],
+   "notlar": [
+    "Dosyadaki soru ağırlıklarının toplamı 66,7 (100 değil)."
+   ]
+  },
   "girmeyenler": [
    "990000004",
    "990000008",

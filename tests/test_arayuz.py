@@ -537,3 +537,31 @@ def test_ders_paketi_yokken_cikti_sayisi(pencere, fix, monkeypatch, tmp_path):
     assert a.cikti_sayisi_kutusu.value() == 4
     a.cikti_sayisi_kutusu.setValue(2)
     assert cikti_atamasi_esit_mi(d.proje.anahtar, ["Ö01", "Ö02"]) and "eşit dağıtıldı" in a.cikti_bilgi.text()
+
+
+def test_sistem_puan_dosyasi_doldurma(pencere, fix, monkeypatch, tmp_path):
+    """4. adım "2. Sistemin puan dosyasını doldur…": sistemden indirilen CSV seçilir, doldurulmuş hâli aynı biçimde kaydedilir."""
+    from PySide6.QtWidgets import QFileDialog, QMessageBox
+
+    p1 = pencere.adimlar[0]
+    p1._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    pencere.adim_listesi.setCurrentRow(3)
+    e = pencere.adimlar[3]
+    nolar = [o.no for o in pencere.durum.sonuc.ogrenciler if o.listede][:3]
+    girdi = tmp_path / "FILE_x.csv"
+    girdi.write_bytes(("Öğrenci No;Adı;Girme Durum;" + ";".join(f"Soru{i}(%10)" for i in range(1, 11)) + ";Sınav Notu\r\n"
+                       + "".join(f"{n}\xa0;AD;Girdi;" + ";" * 10 + "\r\n" for n in nolar)).encode("cp1254"))
+    cikti = tmp_path / "dolu.csv"
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", lambda *x, **k: (str(girdi), ""))
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *x, **k: (str(cikti), ""))
+    mesaj = []
+    monkeypatch.setattr(QMessageBox, "information", lambda *x, **k: mesaj.append(x[2]))
+    e._sistem_dosyasi()
+    satir = cikti.read_bytes().decode("cp1254").split("\r\n")[1].split(";")
+    assert satir[0] == nolar[0] + "\xa0" and satir[2] == "Girdi" and all(x in ("0", "10") for x in satir[3:13])
+    assert "Puanı yazılan öğrenci: 3" in mesaj[0]

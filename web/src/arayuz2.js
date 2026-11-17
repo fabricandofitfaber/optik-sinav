@@ -652,22 +652,33 @@
         ${notlar.length ? `<div class="serit">${notlar.map((x) => e(x)).join("<br>")}</div>` : ""}
         <div class="kutu"><h3>Akademik Bilgi Sistemi'ne aktarım (sırasıyla)</h3>
           ${adim("sorulariKopyala", "1. Soruları kopyala", "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez.")}
-          ${adim("puanlariKopyala", "2. Öğrenci puanlarını kopyala", "Sorular tanımlandıktan sonra açılan öğrenci puanı ekranına yapıştırın: öğrenci listesi sırasıyla numara ve soru puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın.")}
-          ${adim("notlariKopyala", "3. Not girişi için puanları kopyala", "Not Giriş ekranı için: öğrenci numarası ve sınav puanı (öğrenci listesi sırasıyla).")}
+          ${adim("sistemDosyasi", "2. Sistemin puan dosyasını doldur…", "Sorular tanımlandıktan sonra sistemde aynı dersin ve sınavın soru bazlı puan dosyasını indirin (CSV) ve burada seçin. Program her öğrencinin soru puanlarını ve sınav notunu yazar, girmeyenleri \"Girmedi\" yapar ve dosyayı aynı biçimde indirir; o dosyayı sisteme yükleyin. Not girişi için ayrıca bir dosya gerekmez.")}
         </div>
         <div class="kutu"><h3>Dosyalar</h3>
-          <div class="aktar-satir"><button class="zorunlu-dugme" id="girisDosyalari">Sisteme giriş dosyalarını indir</button>
-            <span class="soluk">Üç dosya: <b>soru tanımı</b> (Toplu Sınav Soru Tanım → Aktarım Kutusu'na; dosyayı açıp hepsini seçin, kopyalayın, yapıştırın), <b>öğrenci soru puanları</b> ve <b>not girişi</b>.</span></div>
+          <div class="aktar-satir"><button class="zorunlu-dugme" id="girisDosyalari">Soru tanımı dosyasını indir</button>
+            <span class="soluk">1. adımın dosya hâli: dosyayı açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → Aktarım Kutusu'na yapıştırın.</span></div>
           <div class="satir"><button id="digerRaporlar">Diğer raporlar…</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button></div></div>
         <details class="kutu" id="aktarGelismis" ${X.gelismisAcik ? "open" : ""}><summary class="soluk">Gelişmiş: aktarım biçimi, tek tek dosyalar ve önizleme</summary>
           <div class="satir"><label>Biçim</label><select id="profil">${Object.values(OS.PROFILLER).map((x) => `<option value="${x.ad}" ${x.ad === X.profil ? "selected" : ""}>${e(x.baslik)}</option>`).join("")}</select>
-            <button id="pano">Sütun seçerek panoya kopyala</button>
+            <button id="pano">Sütun seçerek panoya kopyala</button><button id="puanlariKopyala">Öğrenci puanlarını kopyala</button><button id="notlariKopyala">Not girişi için puanları kopyala</button>
             ${UI.acilirMenu("Tek tek indir", ['<button data-dosya="sonuc">Sonuç</button>', '<button data-dosya="istatistik">İstatistik</button>',
               '<button data-dosya="cikti">Öğrenme çıktısı</button>', '<button data-dosya="soru_tanimi">Soru tanımı</button>', '<button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button>', '<button data-dosya="not">Not girişi</button>'])}</div>
           <div class="tablo-kap" style="max-height:340px"><table class="veri"><thead><tr>${bas.map((b) => `<th>${e(b)}</th>`).join("")}</tr></thead>
           <tbody>${veri.slice(0, 200).map((r) => `<tr>${r.map((h) => `<td>${e(OS.hucreMetni(h, p))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
       $("#aktarGelismis", k).ontoggle = (ev) => { X.gelismisAcik = ev.target.open; };
       $("#sorulariKopyala", k).onclick = () => UI.soruTanimiKopyala();
+      $("#sistemDosyasi", k).onclick = async () => {
+        const f = await dosyaSec(".csv,.txt");
+        if (!f) return;
+        let r;
+        try { r = OS.sistemDosyasiniDoldur(new Uint8Array(await baytOku(f)), s); } catch (err) { bilgi("Dosya doldurulamadı", err.message); return; }
+        const ad = OS.ciktiAdi(D.proje.sinav, "sistem_puanlari").replace(/\.[^.]+$/, "") + ".csv";
+        indir(r.bayt, ad, "text/csv");
+        const x = r.rapor, m = [UI.sinavKisaAdi(), "", `Puanı yazılan öğrenci: ${x.yazilan}`];
+        if (x.girmedi.length) m.push(`"Girmedi" yapılan (dosyada var, sınavda yok): ${x.girmedi.length}`);
+        if (x.dosyada_olmayan.length) m.push(`Sınava girmiş ama dosyada olmayan numaralar: ${x.dosyada_olmayan.join(", ")}`);
+        bilgi("Puan dosyası dolduruldu", m.concat(x.notlar.length ? [""].concat(x.notlar) : [], ["", `İndirildi: ${ad}`, "", "Bu dosyayı sistemde aynı ekrana yükleyin. İlk kullanımda bir öğrencinin satırını programdaki puanla karşılaştırın."]).join("\n"));
+      };
       const sutunKopyala = async (sut, ne, profilAdi = "akreditasyon_soru_bazli_varsayilan") => {
         const pr = Object.assign({}, OS.PROFILLER[profilAdi], { sutunlar: sut });
         const metin = OS.panoMetni(pr, s);
@@ -722,10 +733,10 @@
         }
         bilgi(baslik, `${UI.sinavKisaAdi()}\n\n${adlar.join("\n")}${notlar.length ? "\n\n" + notlar.join("\n") : ""}\n\nDosyalar tarayıcının İndirilenler klasörüne kaydedildi.`);
       };
-      $("#girisDosyalari", k).onclick = async () => { await UI.ciktilariHazirla(); UI.otomatikKaydet(); toplu(["soru_tanimi", "akreditasyon", "not"], "Sisteme giriş dosyaları indirildi"); };
+      $("#girisDosyalari", k).onclick = async () => { await UI.ciktilariHazirla(); UI.otomatikKaydet(); toplu(["soru_tanimi"], "Soru tanımı dosyası indirildi"); };
       $("#digerRaporlar", k).onclick = async () => {
-        const secenek = [["sonuc", "Sonuç (ayrıntılı: cevaplar, uyarılar, düzeltme kaydı)"], ["istatistik", "İstatistik (madde analizi, çeldiriciler ve ötekiler)"], ["cikti", "Öğrenme çıktısı raporu"]];
-        const secim = await pencere("Diğer raporlar", `<p>İndirilecek raporları işaretleyin:</p>${secenek.map(([id, t]) => `<label style="display:block;margin:4px 0"><input type="checkbox" data-rapor="${id}" checked> ${t}</label>`).join("")}
+        const secenek = [["akreditasyon", "Öğrenci soru puanları (programın Excel biçimi)", false], ["not", "Not girişi (öğrenci numarası ve puan)", false], ["sonuc", "Sonuç (ayrıntılı: cevaplar, uyarılar, düzeltme kaydı)"], ["istatistik", "İstatistik (madde analizi, çeldiriciler ve ötekiler)"], ["cikti", "Öğrenme çıktısı raporu"]];
+        const secim = await pencere("Diğer raporlar", `<p>İndirilecek raporları işaretleyin:</p>${secenek.map(([id, t, acik]) => `<label style="display:block;margin:4px 0"><input type="checkbox" data-rapor="${id}" ${acik === false ? "" : "checked"}> ${t}</label>`).join("")}
           <p class="soluk">Yazdırılabilir rapor ve öğrenci karneleri için bu adımdaki ayrı düğmeleri kullanın.</p>`,
           [{ metin: "Vazgeç", deger: null }, { metin: "İndir", ana: true, deger: (q) => $$("[data-rapor]", q).filter((x) => x.checked).map((x) => x.dataset.rapor) }]);
         if (!secim || !secim.length) return;

@@ -18,6 +18,16 @@ require(join(KOK, "web/src/donem.js"));
 const kesir = (k) => `${k.p}/${k.q}`;
 const mapObj = (m) => (m instanceof Map ? Object.fromEntries([...m].map(([k, v]) => [k, mapObj(v)])) : m);
 
+function sistemDosyasi(sonuc) {
+  const n = OS.aktarimSorulari(sonuc.anahtar).length;
+  const nolar = sonuc.ogrenciler.map((o) => o.no).sort().concat(["99999999"]);
+  const metin = "Ogrenci No;Adi;Girme Durum;" + Array.from({ length: n }, (_, i) => `Soru${i + 1}(%6,67)`).join(";") + ";Sinav Notu\r\n"
+    + nolar.map((no) => `${no}\xa0;AD;Girdi;` + ";".repeat(n) + "\r\n").join("");
+  try {
+    const { bayt, rapor } = OS.sistemDosyasiniDoldur(Uint8Array.from([...metin].map((c) => c.charCodeAt(0))), sonuc);
+    return { cikti: Buffer.from(bayt).toString("base64"), yazilan: rapor.yazilan, girmedi: rapor.girmedi, dosyada_olmayan: rapor.dosyada_olmayan, notlar: rapor.notlar };
+  } catch (e) { return { hata: e.message }; }
+}
 function hesapla(sen, proje, sonuc) {
   const esik = proje.ayarlar.basari_esigi;
   const [m, g] = OS.maddeAnalizi(sonuc, { basari_esigi: esik, cikti_esigi: esik });
@@ -34,6 +44,7 @@ function hesapla(sen, proje, sonuc) {
       bonus_ile: o.sorular.map((s, i) => (s.bonus_ile ? i + 1 : 0)).filter(Boolean) })),
     aktarim: OS.tabloUret(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, sonuc)[1].map((r) => r.map((h) => OS.hucreMetni(h, OS.PROFILLER.akreditasyon_soru_bazli_varsayilan))),
     aktarim_basliklar: OS.tabloUret(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, sonuc)[0],
+    sistem_dosyasi: sistemDosyasi(sonuc),
     girmeyenler: sonuc.girmeyenler.map((x) => x.no),
     soru_puanlari: sonuc.soru_puanlari.map(kesir),
     maddeler: m.map((x) => ({ soru_no: x.soru_no, analiz_disi: x.analiz_disi, guclik: x.guclik, ayirt: x.ayirt_edicilik, r: x.nokta_cift_serili,

@@ -180,7 +180,8 @@
   "klasik_giris_sirasi": [],
   "final_puanlar": {},
   "harf_ayarlari": {},
-  "cikti_elle": false
+  "cikti_elle": false,
+  "cikti_sayisi": 0
  },
  "ders_kodlari": [
   "Ö01",
@@ -867,6 +868,20 @@
    "S8",
    "S9"
   ],
+  "sistem_dosyasi": {
+   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NvcnU1KCU2LDY3KTtTb3J1NiglNiw2Nyk7U29ydTcoJTYsNjcpO1NvcnU4KCU2LDY3KTtTb3J1OSglNiw2Nyk7U2luYXYgTm90dQ0KOTkwMDAqMDA0oDtBRDtHaXJkaTs7Ozs7Ozs7OzsNCjk5MDAwMDAwMaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwMqA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwM6A7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7MDswOzYsNjc7Niw2Nzs2LDY3OzA7NDAsMDINCjk5MDAwMDAwNaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwNqA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwN6A7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwOaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwOaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAxMKA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzA7MDswOzA7MzMsMzUNCjk5MDAwMDA4OKA7QUQ7R2lyZGk7MDs2LDY3OzA7MDswOzA7Niw2NzswOzA7MTMsMzQNCjk5OTk5OTk5oDtBRDtHaXJtZWRpOzs7Ozs7Ozs7Ow0K",
+   "yazilan": 10,
+   "girmedi": [
+    "99999999"
+   ],
+   "dosyada_olmayan": [
+    "99000*004"
+   ],
+   "notlar": [
+    "Dosyadaki soru ağırlıklarının toplamı 60,03 (100 değil).",
+    "Yanlış cezası soru puanlarına dağıtılamaz: dosyadaki soru puanları ve sınav notu cezasızdır."
+   ]
+  },
   "girmeyenler": [
    "990000004",
    "990000008",

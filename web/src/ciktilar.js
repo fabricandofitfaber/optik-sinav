@@ -103,5 +103,95 @@
     return tabloUret(profil, sonuc, sira)[1].map((s) => s.map((h) => hucreMetni(h, profil)).join("\t")).join("\n");
   }
 
-  Object.assign(OS, { dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
+  // ---------------------------------------------------------------- sistemin soru bazlı puan dosyası (Python: sistem_puan_dosyasi)
+  let cp1254 = null;
+  function cp1254Kodla(m) {
+    if (!cp1254) {
+      cp1254 = new Map();
+      const d = new TextDecoder("windows-1254").decode(Uint8Array.from({ length: 256 }, (_, i) => i));
+      [...d].forEach((c, i) => { if (!cp1254.has(c)) cp1254.set(c, i); });
+    }
+    return Uint8Array.from([...m].map((c) => (cp1254.has(c) ? cp1254.get(c) : 63)));
+  }
+  function sayiMetni(y) {
+    let s = OS.ondalikMetni(y, ".");
+    if (s.includes(".")) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    if (s === "-0" || s === "") s = "0";
+    return s.replace(".", ",");
+  }
+  const SORU_DESENI = /^\s*soru\s*(\d+)\s*\(\s*%?\s*([0-9]+(?:[.,][0-9]+)?)\s*\)\s*$/i;
+  function sistemDosyasiniCoz(metin) {
+    const ilk = metin.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")[0];
+    const say = (c) => ilk.split(c).length - 1;
+    const ayirici = [";", "\t", ","].reduce((a, c) => (say(c) > say(a) ? c : a));
+    const basliklar = ilk.split(ayirici);
+    let no = null, durum = null, not = null;
+    const sorular = [];
+    basliklar.forEach((b, j) => {
+      const m = SORU_DESENI.exec(b.trim().replace(/^"|"$/g, ""));
+      if (m) { sorular.push([parseInt(m[1], 10), j, OS.Kesir.ondaliktan(m[2].replace(",", "."))]); return; }
+      const s = OS.sade(b);
+      if (no === null && ["ogrencino", "ogrencinumarasi", "numara", "ogrno", "no"].includes(s)) no = j;
+      else if (durum === null && s.startsWith("girme")) durum = j;
+      else if (not === null && ["sinavnotu", "not", "notu", "puan", "sinavpuani"].includes(s)) not = j;
+    });
+    if (no === null) throw new Error("Dosyada \"Öğrenci No\" sütunu bulunamadı. Sistemden indirilen soru bazlı puan dosyasını seçin.");
+    if (!sorular.length) throw new Error("Dosyada \"Soru1(%…)\" biçiminde soru sütunu bulunamadı. Önce soruları sisteme tanımlayın, sonra sistemden puan dosyasını indirin.");
+    sorular.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    return { basliklar, no_sutun: no, durum_sutun: durum, not_sutun: not, soru_sutunlari: sorular.map((x) => x[1]), agirliklar: sorular.map((x) => x[2]), ayirici };
+  }
+  /** Baytları alır; { bayt, rapor } döndürür. Dosyanın geri kalanı (kodlama, ayırıcı, satır sonu, öteki hücreler) korunur. */
+  function sistemDosyasiniDoldur(veri, sonuc) {
+    const [metin, kodlama] = OS.baytlariCoz(veri);
+    const d = sistemDosyasiniCoz(metin);
+    const sira = OS.aktarimSorulari(sonuc.anahtar);
+    if (sira.length !== d.soru_sutunlari.length) throw new Error(`Dosyada ${d.soru_sutunlari.length} soru var, programda sisteme giden ${sira.length} soru var. Sistemde tanımlanan sorular bu sınavla aynı olmalı (önce soruları yeniden tanımlayın).`);
+    const rapor = { yazilan: 0, girmedi: [], dosyada_olmayan: [], notlar: [] };
+    const toplamW = d.agirliklar.reduce((a, w) => a.ekle(w), new OS.Kesir(0n));
+    if (!toplamW.esit(100)) rapor.notlar.push(`Dosyadaki soru ağırlıklarının toplamı ${sayiMetni(OS.yuvarla(toplamW, 2))} (100 değil).`);
+    if (!sonuc.klasik && sonuc.ayarlar.yanlis_cezasi) rapor.notlar.push("Yanlış cezası soru puanlarına dağıtılamaz: dosyadaki soru puanları ve sınav notu cezasızdır.");
+    const okunan = new Map(sonuc.ogrenciler.map((o) => [o.no, o]));
+    const satirSonu = metin.includes("\r\n") ? "\r\n" : (metin.includes("\r") && !metin.includes("\n") ? "\r" : "\n");
+    const satirlar = metin.split(satirSonu);
+    const dosyadaki = new Set();
+    const en = Math.max(d.no_sutun, ...d.soru_sutunlari, ...[d.durum_sutun, d.not_sutun].filter((x) => x !== null));
+    for (let r = 1; r < satirlar.length; r++) {
+      if (!satirlar[r].trim()) continue;
+      const h = satirlar[r].split(d.ayirici);
+      while (h.length < en + 1) h.push("");
+      const no = h[d.no_sutun].replace(/\s/g, "").replace(/^"|"$/g, "");
+      if (!/^\d+$/.test(no)) continue;
+      dosyadaki.add(no);
+      const o = okunan.get(no);
+      if (!o) {
+        rapor.girmedi.push(no);
+        for (const j of d.soru_sutunlari) h[j] = "";
+        if (d.not_sutun !== null) h[d.not_sutun] = "";
+        if (d.durum_sutun !== null) h[d.durum_sutun] = "Girmedi";
+      } else {
+        let toplam = 0n;
+        d.soru_sutunlari.forEach((j, k) => {
+          const i = sira[k];
+          const tam = sonuc.soru_puanlari[i];
+          const pay = tam.sifirMi() ? new OS.Kesir(0n) : OS.Kesir.of(o.sorular[i].puan).bol(tam);
+          const y = OS.yuvarla(pay.carp(d.agirliklar[k]), 2);
+          toplam += y.n;
+          h[j] = sayiMetni(y);
+        });
+        if (d.not_sutun !== null) h[d.not_sutun] = sayiMetni({ n: toplam, ondalik: 2 });
+        if (d.durum_sutun !== null) h[d.durum_sutun] = "Girdi";
+        rapor.yazilan++;
+      }
+      satirlar[r] = h.join(d.ayirici);
+    }
+    rapor.dosyada_olmayan = sonuc.ogrenciler.filter((o) => !dosyadaki.has(o.no)).map((o) => o.no);
+    if (dosyadaki.size && !rapor.yazilan) throw new Error(`Dosyadaki ${dosyadaki.size} öğrencinin hiçbiri bu sınavda yok. Sistemde başka bir dersin ya da sınavın puan dosyası indirilmiş olabilir: dersi ve sınavı kontrol edip dosyayı yeniden indirin.`);
+    const yeni = satirlar.join(satirSonu);
+    let bayt;
+    if (kodlama === "windows-1254") bayt = cp1254Kodla(yeni);
+    else { const u = new TextEncoder().encode(yeni); bayt = kodlama === "utf-8-sig" ? Uint8Array.from([0xef, 0xbb, 0xbf, ...u]) : u; }
+    return { bayt, rapor };
+  }
+
+  Object.assign(OS, { sistemDosyasiniCoz, sistemDosyasiniDoldur, dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
 })(typeof globalThis !== "undefined" ? globalThis : window);

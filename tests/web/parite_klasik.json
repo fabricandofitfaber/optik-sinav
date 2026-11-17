@@ -191,7 +191,8 @@
   ],
   "final_puanlar": {},
   "harf_ayarlari": {},
-  "cikti_elle": false
+  "cikti_elle": false,
+  "cikti_sayisi": 0
  },
  "ders_kodlari": null,
  "beklenen": {
@@ -574,6 +575,17 @@
    "S3",
    "S4"
   ],
+  "sistem_dosyasi": {
+   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NpbmF2IE5vdHUNCjk5MDAwMDAwMaA7QUQ7R2lyZGk7MywzNDsxLDI7MywyOzYsODQ7MTQsNTgNCjk5MDAwMDAwMqA7QUQ7R2lyZGk7MDswLDUzOzQsNTQ7MTs2LDA3DQo5OTAwMDAwMDSgO0FEO0dpcmRpOzI7MCwyNzswOzAsODM7MywxDQo5OTAwMDAwMDWgO0FEO0dpcmRpOzQ7Myw0NzswLDUzOzIsNTsxMCw1DQo5OTAwMDAwMDagO0FEO0dpcmRpOzAsNjc7NCw2NzszLDQ3OzAsNTs5LDMxDQo5OTAwMDAwMDegO0FEO0dpcmRpOzY7MCw5MzsxLDg3OzYsNjc7MTUsNDcNCjk5MDAwMDAwOKA7QUQ7R2lyZGk7Niw2Nzs0LDk0OzAsMjc7NjsxNyw4OA0KOTkwMDAwMDA5oDtBRDtHaXJkaTs2OzMsMzQ7MCwyNzsyLDMzOzExLDk0DQo5OTAwMDAwMTCgO0FEO0dpcmRpOzA7NCw2NzsxLDA3OzM7OCw3NA0KOTk5OTk5OTmgO0FEO0dpcm1lZGk7Ozs7Ow0K",
+   "yazilan": 9,
+   "girmedi": [
+    "99999999"
+   ],
+   "dosyada_olmayan": [],
+   "notlar": [
+    "Dosyadaki soru ağırlıklarının toplamı 26,68 (100 değil)."
+   ]
+  },
   "girmeyenler": [
    "990000003",
    "990000011",
