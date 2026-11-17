@@ -203,7 +203,8 @@
   "final_puanlar": {},
   "harf_ayarlari": {},
   "cikti_elle": false,
-  "cikti_sayisi": 0
+  "cikti_sayisi": 0,
+  "otomatik_kapali": []
  },
  "ders_kodlari": [
   "Ö01",
@@ -345,11 +346,20 @@
     ],
     "listede": true,
     "oneriler": [],
-    "uyarilar": [],
+    "uyarilar": [
+     [
+      "ad_uyusmuyor",
+      "Okunan ad (AYŞE GÜNEŞ) listede bu numaradaki öğrenciyle (HASAN KAYA) uyuşmuyor: öğrenci başkasının numarasını kodlamış olabilir."
+     ],
+     [
+      "tekrar_numara",
+      "Aynı numara başka satırda da var (satır 8)"
+     ]
+    ],
     "bonus_ile": []
    },
    {
-    "no": "99000*004",
+    "no": "990000004",
     "ad": "MEHMET ÇAKIR",
     "puan": "30/1",
     "ham": "30/1",
@@ -383,19 +393,12 @@
      9,
      10
     ],
-    "listede": false,
-    "oneriler": [
-     "990000004",
-     "990000003"
-    ],
+    "listede": true,
+    "oneriler": [],
     "uyarilar": [
      [
-      "numara_okunamadi",
-      "Öğrenci numarasında okunamayan karakter: 99000*004"
-     ],
-     [
-      "listede_yok",
-      "Numara öğrenci listesinde yok. Olası numaralar: 990000004, 990000003"
+      "otomatik_numara",
+      "Okunan numara 99000*004 listede yok; okunan ad (MEHMET ÇAKIR) listedeki MEHMET ÇAKIR ile eşleştiği için numara 990000004 yapıldı. Yanlışsa geri alın."
      ]
     ],
     "bonus_ile": []
@@ -531,7 +534,7 @@
     "bonus_ile": []
    },
    {
-    "no": "990000088",
+    "no": "990000008",
     "ad": "HASAN KAYA",
     "puan": "20/1",
     "ham": "20/1",
@@ -565,16 +568,16 @@
      9,
      10
     ],
-    "listede": false,
-    "oneriler": [
-     "990000003",
-     "990000004",
-     "990000011"
-    ],
+    "listede": true,
+    "oneriler": [],
     "uyarilar": [
      [
-      "listede_yok",
-      "Numara öğrenci listesinde yok. Olası numaralar: 990000003, 990000004, 990000011"
+      "otomatik_numara",
+      "Okunan numara 990000088 listede yok; okunan ad (HASAN KAYA) listedeki HASAN KAYA ile eşleştiği için numara 990000008 yapıldı. Yanlışsa geri alın."
+     ],
+     [
+      "tekrar_numara",
+      "Aynı numara başka satırda da var (satır 3)"
      ]
     ],
     "bonus_ile": []
@@ -761,16 +764,16 @@
    [
     "990000004",
     "MEHMET ÇAKIR",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G"
+    "0,00",
+    "10,00",
+    "0,00",
+    "0,00",
+    "10,00",
+    "0,00",
+    "0,00",
+    "0,00",
+    "0,00",
+    "10,00"
    ],
    [
     "990000005",
@@ -817,14 +820,14 @@
    [
     "990000008",
     "HASAN KAYA",
-    "10,00",
-    "10,00",
+    "0,00",
     "10,00",
     "0,00",
     "0,00",
+    "0,00",
+    "0,00",
     "10,00",
-    "10,00",
-    "10,00",
+    "0,00",
     "0,00",
     "0,00"
    ],
@@ -900,32 +903,28 @@
    "S10"
   ],
   "sistem_dosyasi": {
-   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NvcnU1KCU2LDY3KTtTb3J1NiglNiw2Nyk7U29ydTcoJTYsNjcpO1NvcnU4KCU2LDY3KTtTb3J1OSglNiw2Nyk7U29ydTEwKCU2LDY3KTtTaW5hdiBOb3R1DQo5OTAwMCowMDSgO0FEO0dpcmRpOzs7Ozs7Ozs7OzsNCjk5MDAwMDAwMaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDKgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzA7NjAsMDMNCjk5MDAwMDAwNaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDagO0FEO0dpcmRpOzYsNjc7Niw2NzswOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwN6A7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDigO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzA7MDs2LDY3OzYsNjc7Niw2NzswOzA7NDAsMDINCjk5MDAwMDAwOaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDmgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDEwoDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7MDswOzA7MDswOzMzLDM1DQo5OTAwMDAwODigO0FEO0dpcmRpOzA7Niw2NzswOzA7MDswOzYsNjc7MDswOzA7MTMsMzQNCjk5OTk5OTk5oDtBRDtHaXJtZWRpOzs7Ozs7Ozs7OzsNCg==",
-   "yazilan": 10,
+   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NvcnU1KCU2LDY3KTtTb3J1NiglNiw2Nyk7U29ydTcoJTYsNjcpO1NvcnU4KCU2LDY3KTtTb3J1OSglNiw2Nyk7U29ydTEwKCU2LDY3KTtTaW5hdiBOb3R1DQo5OTAwMDAwMDGgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDAyoDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2NzswOzYwLDAzDQo5OTAwMDAwMDSgO0FEO0dpcmRpOzA7Niw2NzswOzA7Niw2NzswOzA7MDswOzYsNjc7MjAsMDENCjk5MDAwMDAwNaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDagO0FEO0dpcmRpOzYsNjc7Niw2NzswOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjAsMDMNCjk5MDAwMDAwN6A7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDigO0FEO0dpcmRpOzA7Niw2NzswOzA7MDswOzYsNjc7MDswOzA7MTMsMzQNCjk5MDAwMDAwOKA7QUQ7R2lyZGk7MDs2LDY3OzA7MDswOzA7Niw2NzswOzA7MDsxMywzNA0KOTkwMDAwMDA5oDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzY2LDcNCjk5MDAwMDAwOaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMTCgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2NzswOzA7MDswOzA7MzMsMzUNCjk5OTk5OTk5oDtBRDtHaXJtZWRpOzs7Ozs7Ozs7OzsNCg==",
+   "yazilan": 11,
    "girmedi": [
     "99999999"
    ],
-   "dosyada_olmayan": [
-    "99000*004"
-   ],
+   "dosyada_olmayan": [],
    "notlar": [
     "Dosyadaki soru ağırlıklarının toplamı 66,7 (100 değil)."
    ]
   },
   "sistem_uret": {
-   "cikti": "1vByZW5jaSBObztBZP07U295YWT9O1NuZjtHaXJtZSBEdXJ1bTtTb3J1MSglMTApO1NvcnUyKCUxMCk7U29ydTMoJTEwKTtTb3J1NCglMTApO1NvcnU1KCUxMCk7U29ydTYoJTEwKTtTb3J1NyglMTApO1NvcnU4KCUxMCk7U29ydTkoJTEwKTtTb3J1MTAoJTEwKTtT/W5hdiBOb3R1DQo5OTAwMDAwMDE7x93QREVNO9ZaVNxSSzs7R2lyZGk7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTAwDQo5OTAwMDAwMDI73txLUtw7Sd5JSzs7R2lyZGk7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MDs5MA0KOTkwMDAwMDAzO0FZ3kU7R9xORd47O0dpcm1lZGk7Ozs7Ozs7Ozs7Ow0KOTkwMDAwMDA0O01FSE1FVDvHQUtJUjs7R2lybWVkaTs7Ozs7Ozs7Ozs7DQo5OTAwMDAwMDU7QlVSQUs7RVJET9BBTjs7R2lyZGk7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTAwDQo5OTAwMDAwMDY7WkVZTkVQO0RFTd1SOztHaXJkaTsxMDsxMDswOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzkwDQo5OTAwMDAwMDc7QUzdO1ZFTN07O0dpcmRpOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwMA0KOTkwMDAwMDA4O0hBU0FOO0tBWUE7O0dpcmRpOzEwOzEwOzEwOzA7MDsxMDsxMDsxMDswOzA7NjANCjk5MDAwMDAwOTtGQVRNQTtZSUxESVo7O0dpcmRpOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwMA0KOTkwMDAwMDEwO0VNUkU73kFI3U47O0dpcmRpOzEwOzEwOzEwOzEwOzEwOzA7MDswOzA7MDs1MA0KOTkwMDAwMDExO0fcTDvWWkRFTd1SOztHaXJtZWRpOzs7Ozs7Ozs7OzsNCjk5MDAwMDAxMjvdU01B3Uw7S0/HOztHaXJtZWRpOzs7Ozs7Ozs7OzsNCg==",
-   "yazilan": 8,
+   "cikti": "1vByZW5jaSBObztBZP07U295YWT9O1NuZjtHaXJtZSBEdXJ1bTtTb3J1MSglMTApO1NvcnUyKCUxMCk7U29ydTMoJTEwKTtTb3J1NCglMTApO1NvcnU1KCUxMCk7U29ydTYoJTEwKTtTb3J1NyglMTApO1NvcnU4KCUxMCk7U29ydTkoJTEwKTtTb3J1MTAoJTEwKTtT/W5hdiBOb3R1DQo5OTAwMDAwMDE7x93QREVNO9ZaVNxSSzs7R2lyZGk7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTAwDQo5OTAwMDAwMDI73txLUtw7Sd5JSzs7R2lyZGk7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MTA7MDs5MA0KOTkwMDAwMDAzO0FZ3kU7R9xORd47O0dpcm1lZGk7Ozs7Ozs7Ozs7Ow0KOTkwMDAwMDA0O01FSE1FVDvHQUtJUjs7R2lyZGk7MDsxMDswOzA7MTA7MDswOzA7MDsxMDszMA0KOTkwMDAwMDA1O0JVUkFLO0VSRE/QQU47O0dpcmRpOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwMA0KOTkwMDAwMDA2O1pFWU5FUDtERU3dUjs7R2lyZGk7MTA7MTA7MDsxMDsxMDsxMDsxMDsxMDsxMDsxMDs5MA0KOTkwMDAwMDA3O0FM3TtWRUzdOztHaXJkaTsxMDsxMDsxMDsxMDsxMDsxMDsxMDsxMDsxMDsxMDsxMDANCjk5MDAwMDAwODtIQVNBTjtLQVlBOztHaXJkaTswOzEwOzA7MDswOzA7MTA7MDswOzA7MjANCjk5MDAwMDAwOTtGQVRNQTtZSUxESVo7O0dpcmRpOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwOzEwMA0KOTkwMDAwMDEwO0VNUkU73kFI3U47O0dpcmRpOzEwOzEwOzEwOzEwOzEwOzA7MDswOzA7MDs1MA0KOTkwMDAwMDExO0fcTDvWWkRFTd1SOztHaXJtZWRpOzs7Ozs7Ozs7OzsNCjk5MDAwMDAxMjvdU01B3Uw7S0/HOztHaXJtZWRpOzs7Ozs7Ozs7OzsNCg==",
+   "yazilan": 9,
    "girmedi": [
     "990000003",
-    "990000004",
     "990000011",
     "990000012"
    ]
   },
-  "akreditasyon_metni": "990000001\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000002\t10\t10\t10\t10\t10\t10\t10\t10\t10\t0\n990000003\tG\n990000004\tG\n990000005\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000006\t10\t10\t0\t10\t10\t10\t10\t10\t10\t10\n990000007\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000008\t10\t10\t10\t0\t0\t10\t10\t10\t0\t0\n990000009\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000010\t10\t10\t10\t10\t10\t0\t0\t0\t0\t0\n990000011\tG\n990000012\tG",
+  "akreditasyon_metni": "990000001\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000002\t10\t10\t10\t10\t10\t10\t10\t10\t10\t0\n990000003\tG\n990000004\t0\t10\t0\t0\t10\t0\t0\t0\t0\t10\n990000005\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000006\t10\t10\t0\t10\t10\t10\t10\t10\t10\t10\n990000007\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000008\t0\t10\t0\t0\t0\t0\t10\t0\t0\t0\n990000009\t10\t10\t10\t10\t10\t10\t10\t10\t10\t10\n990000010\t10\t10\t10\t10\t10\t0\t0\t0\t0\t0\n990000011\tG\n990000012\tG",
   "girmeyenler": [
    "990000003",
-   "990000004",
    "990000011",
    "990000012"
   ],
@@ -1604,18 +1603,17 @@
      2,
      9
     ],
-    80.0,
+    80.55555555555556,
     20.0,
-    0.8,
+    0.7777777777777778,
     {
      "990000001": 100.0,
      "990000002": 100.0,
-     "990000008": 75.0,
-     "99000*004": 25.0,
+     "990000008": 25.0,
+     "990000004": 25.0,
      "990000005": 100.0,
      "990000006": 100.0,
      "990000007": 100.0,
-     "990000088": 25.0,
      "990000009": 100.0,
      "990000010": 75.0
     }
@@ -1628,18 +1626,17 @@
      3,
      10
     ],
-    72.0,
+    73.33333333333333,
     25.0,
-    0.9,
+    0.8888888888888888,
     {
      "990000001": 100.0,
      "990000002": 60.0,
-     "990000008": 60.0,
-     "99000*004": 60.0,
+     "990000008": 20.0,
+     "990000004": 60.0,
      "990000005": 100.0,
      "990000006": 60.0,
      "990000007": 100.0,
-     "990000088": 20.0,
      "990000009": 100.0,
      "990000010": 60.0
     }
@@ -1651,18 +1648,17 @@
      4,
      5
     ],
-    74.11764705882352,
+    82.35294117647058,
     17.0,
-    0.7,
+    0.7777777777777778,
     {
      "990000001": 100.0,
      "990000002": 100.0,
      "990000008": 0.0,
-     "99000*004": 41.1764705882353,
+     "990000004": 41.1764705882353,
      "990000005": 100.0,
      "990000006": 100.0,
      "990000007": 100.0,
-     "990000088": 0.0,
      "990000009": 100.0,
      "990000010": 100.0
     }
@@ -1674,18 +1670,17 @@
      5,
      6
     ],
-    72.3076923076923,
+    71.7948717948718,
     13.0,
-    0.7,
+    0.6666666666666666,
     {
      "990000001": 100.0,
      "990000002": 100.0,
-     "990000008": 76.92307692307692,
-     "99000*004": 23.076923076923077,
+     "990000008": 0.0,
+     "990000004": 23.076923076923077,
      "990000005": 100.0,
      "990000006": 100.0,
      "990000007": 100.0,
-     "990000088": 0.0,
      "990000009": 100.0,
      "990000010": 23.076923076923077
     }
@@ -1698,18 +1693,17 @@
      8,
      9
     ],
-    72.0,
+    71.11111111111111,
     25.0,
-    0.7,
+    0.6666666666666666,
     {
      "990000001": 100.0,
      "990000002": 100.0,
-     "990000008": 80.0,
-     "99000*004": 0.0,
+     "990000008": 40.0,
+     "990000004": 0.0,
      "990000005": 100.0,
      "990000006": 100.0,
      "990000007": 100.0,
-     "990000088": 40.0,
      "990000009": 100.0,
      "990000010": 0.0
     }
@@ -1720,18 +1714,17 @@
     [
      1
     ],
-    80.0,
+    77.77777777777777,
     0.0,
-    0.8,
+    0.7777777777777778,
     {
      "990000001": 100.0,
      "990000002": 100.0,
-     "990000008": 100.0,
-     "99000*004": 0.0,
+     "990000008": 0.0,
+     "990000004": 0.0,
      "990000005": 100.0,
      "990000006": 100.0,
      "990000007": 100.0,
-     "990000088": 0.0,
      "990000009": 100.0,
      "990000010": 100.0
     }
@@ -1769,11 +1762,11 @@
   ],
   "final": [
    [
-    "990000088",
+    "990000008",
     70.0
    ],
    [
-    "99000*004",
+    "990000004",
     63.34
    ],
    [
@@ -1832,19 +1825,19 @@
   "kitapcik": null,
   "rasch": [
    {
-    "1": -0.9068582431121932,
-    "3": 0.10148381415171326,
-    "4": 0.10148381415171326,
-    "5": -0.9068582431121932,
-    "6": 0.10148381415171326,
-    "7": -0.9068582431121932,
-    "8": 0.10148381415171326,
-    "9": 1.1573197363648633,
-    "10": 1.1573197363648633
+    "1": -0.6669990270957228,
+    "3": 0.8151544046513308,
+    "4": -0.6669990270957228,
+    "5": -2.074774941969486,
+    "6": 0.8151544046513308,
+    "7": -0.6669990270957228,
+    "8": 0.8151544046513308,
+    "9": 0.8151544046513308,
+    "10": 0.8151544046513308
    },
-   0.0,
-   50.15536643363316,
-   5,
+   0.2,
+   53.03944900836495,
+   6,
    [
     2
    ]
@@ -2002,15 +1995,15 @@
   "donem": {
    "mutlak": [
     "mutlak",
-    65.66666666666667,
-    22.226410716382738,
+    62.26666666666667,
+    22.378859071305072,
     {
      "AA": 0,
      "BA": 1,
      "BB": 0,
      "CB": 0,
-     "CC": 1,
-     "DC": 0,
+     "CC": 0,
+     "DC": 1,
      "DD": 0,
      "FD": 1,
      "FF": 6
@@ -2037,15 +2030,15 @@
      ],
      [
       "990000008",
-      68.4,
+      58.2,
       null,
-      "CC",
+      "DC",
       true,
       "",
       ""
      ],
      [
-      "99000*004",
+      "990000004",
       null,
       null,
       "",
@@ -2081,7 +2074,7 @@
       ""
      ],
      [
-      "990000088",
+      "990000008",
       42.2,
       null,
       "FD",
@@ -2120,8 +2113,8 @@
    ],
    "bagil": [
     "bagil",
-    65.66666666666667,
-    22.226410716382738,
+    62.26666666666667,
+    22.378859071305072,
     {
      "AA": 0,
      "BA": 1,
@@ -2155,15 +2148,15 @@
      ],
      [
       "990000008",
-      68.4,
-      51.22976821053641,
+      58.2,
+      48.182808759951,
       "CB",
       true,
       "",
       ""
      ],
      [
-      "99000*004",
+      "990000004",
       null,
       null,
       "",
@@ -2183,7 +2176,7 @@
      [
       "990000006",
       86.4,
-      59.328241792117666,
+      60.78398735897931,
       "BA",
       true,
       "",
@@ -2199,9 +2192,9 @@
       ""
      ],
      [
-      "990000088",
+      "990000008",
       42.2,
-      39.44198999734593,
+      41.03320388106969,
       "DC",
       false,
       "ortalama 50 altında",
@@ -2247,31 +2240,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       100.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2292,31 +2285,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       60.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2337,42 +2330,45 @@
      [
       "Ö01",
       "",
-      75.0,
-      80.0
+      25.0,
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
-      60.0,
-      72.0
+      20.0,
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       0.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
-      76.92307692307692,
-      72.3076923076923
+      0.0,
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
-      80.0,
-      72.0
+      40.0,
+      71.11111111111111
      ]
     ],
     [],
     [
+     "Ö01",
      "Ö02",
-     "Ö03"
+     "Ö03",
+     "Ö04",
+     "Ö05"
     ]
    ],
    [
-    "99000*004",
+    "990000004",
     10,
     0.09090909090909091,
     [
@@ -2380,31 +2376,31 @@
       "Ö01",
       "",
       25.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       60.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       41.1764705882353,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       23.076923076923077,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       0.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [],
@@ -2425,31 +2421,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       100.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2470,31 +2466,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       60.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2516,31 +2512,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       100.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2553,7 +2549,7 @@
     []
    ],
    [
-    "990000088",
+    "990000008",
     11,
     0.0,
     [
@@ -2561,31 +2557,31 @@
       "Ö01",
       "",
       25.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       20.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       0.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       0.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       40.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [],
@@ -2606,31 +2602,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       100.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2651,31 +2647,31 @@
       "Ö01",
       "",
       100.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       100.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       100.0,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       100.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [
@@ -2696,31 +2692,31 @@
       "Ö01",
       "",
       75.0,
-      80.0
+      80.55555555555556
      ],
      [
       "Ö02",
       "",
       60.0,
-      72.0
+      73.33333333333333
      ],
      [
       "Ö03",
       "",
       100.0,
-      74.11764705882352
+      82.35294117647058
      ],
      [
       "Ö04",
       "",
       23.076923076923077,
-      72.3076923076923
+      71.7948717948718
      ],
      [
       "Ö05",
       "",
       0.0,
-      72.0
+      71.11111111111111
      ]
     ],
     [

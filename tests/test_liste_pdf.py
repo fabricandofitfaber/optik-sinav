@@ -38,3 +38,14 @@ def test_resim_pdf_anlasilir_hata(tmp_path):
         w.write(f)
     with pytest.raises(ValueError, match="öğrenci numarası bulunamadı"):
         liste_oku(yol)
+
+
+def test_sistem_tablosundan_liste():
+    """Akademik Bilgi Sistemi'nin ekrandan kopyalanan öğrenci tablosu (puan satırları araya karışmış) listeye çevrilir."""
+    from optik_sinav.io.liste_okuyucu import sistem_tablosu_coz
+
+    m = ('Ad Soyad \n \n  \n#\t Öğrenci No\tAdı\tSoyadı\tSnf\tGirme Durum\tSoru1\n(%6,25)\tSoru2\n(%6,25)\tSınav Notu\n1\t990000001\tÇİĞDEM\tÖZTÜRK\t4\t\nGirdi\n6,25\n6,25\n12,5\n2\t990000002\tŞÜKRÜ\tIŞIK\t4\t\nGirdi\n \n3\t2641064003\tAHMET YUSUF\tPEKER\t1\t\nGirmedi\n0\n4\t990000002\tŞÜKRÜ\tIŞIK\t4\t\n')
+    assert sistem_tablosu_coz(m) == [["Öğrenci No", "Adı Soyadı"], ["990000001", "ÇİĞDEM ÖZTÜRK"], ["990000002", "ŞÜKRÜ IŞIK"],
+                                     ["2641064003", "AHMET YUSUF PEKER"]]
+    assert sistem_tablosu_coz("990000005;AYŞE;KARA;2")[1] == ["990000005", "AYŞE KARA"]
+    assert sistem_tablosu_coz("") == [["Öğrenci No", "Adı Soyadı"]]

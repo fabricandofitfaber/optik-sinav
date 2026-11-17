@@ -265,6 +265,28 @@ def pdf_hucrelerinden_tablo(satirlar: list[list[str]]) -> Tablo:
     return tablo
 
 
+_SISTEM_SATIRI = re.compile(r"^\s*(?:\d{1,4}\s*[\t;]\s*)?(\d{6,12})\s*[\t;]\s*([^\t;]*?)\s*[\t;]\s*([^\t;]*?)\s*(?:[\t;]|$)")
+
+
+def sistem_tablosu_coz(metin: str) -> list[list[str]]:
+    """Akademik Bilgi Sistemi'nin öğrenci tablosundan (ekrandan kopyalanan: "# Öğrenci No Adı Soyadı Snf …") liste tablosu:
+    [["Öğrenci No", "Adı Soyadı"], [no, "AD SOYAD"], …]. Sıra numarası, sınıf ve puan hücreleri yok sayılır; satır başına
+    gelen puan ve durum satırları (sekmesiz) atlanır. Aynı numara bir kez alınır."""
+    tablo = [["Öğrenci No", "Adı Soyadı"]]
+    gorulen = set()
+    for satir in metin.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        m = _SISTEM_SATIRI.match(satir)
+        if not m:
+            continue
+        no = m.group(1)
+        ad = " ".join(x for x in (m.group(2).strip(), m.group(3).strip()) if x)
+        if no in gorulen or not ad or not _harfli(ad):
+            continue
+        gorulen.add(no)
+        tablo.append([no, ad])
+    return tablo
+
+
 def liste_oku(yol: str | Path, esleme: ListeEslemesi | None = None) -> OgrenciListesi:
     sayfalar = sayfalari_oku(yol)
     if esleme and esleme.no_sutun:

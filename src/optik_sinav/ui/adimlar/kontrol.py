@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from ... import metinler as M
-from ...core.modeller import SIKLAR
+from ...core.modeller import SIKLAR, UyariTuru
 from ...core.puanlama import sayi_yaz
 from ..tablolar import KlasikGirisModeli, SonucModeli, UyariSuzgeci
 from ..tema import renk
@@ -95,6 +95,11 @@ class KontrolAdimi(Adim):
         self.duzeltilecekler.itemClicked.connect(self._duzeltilecege_git)
         self.duzeltilecekler.itemActivated.connect(self._duzeltilecege_git)
         v.addWidget(self.duzeltilecekler)
+        self.geri_al = QPushButton("Otomatik numara düzeltmesini geri al")
+        self.geri_al.setToolTip("Seçili satırdaki, adla eşleştirilerek yapılan numara düzeltmesini kaldırır.")
+        self.geri_al.clicked.connect(self._otomatigi_geri_al)
+        self.geri_al.setVisible(False)
+        v.addWidget(self.geri_al)
         ip = QLabel("Satıra tıklayınca tabloda o öğrenci seçilir; hücreye çift tıklayarak düzeltin. Okunan dosyada sorun yoksa bu bölümü geçebilirsiniz.")
         ip.setWordWrap(True)
         ip.setStyleSheet("color: gray")
@@ -231,6 +236,7 @@ class KontrolAdimi(Adim):
 
     def _duzeltilecekleri_doldur(self, s):
         self.duzeltilecekler.clear()
+        self.geri_al.setVisible(False)
         if s is None or s.klasik:
             self.duzeltilecek_kutusu.setVisible(False)
             self.temiz_etiketi.setVisible(False)
@@ -246,8 +252,23 @@ class KontrolAdimi(Adim):
         self.duzeltilecek_kutusu.setVisible(n > 0)
         self.temiz_etiketi.setVisible(n == 0)
 
+    def _otomatigi_geri_al(self):
+        it = self.duzeltilecekler.currentItem()
+        s = self.durum.sonuc
+        if it is None or s is None:
+            return
+        o = s.ogrenciler[it.data(Qt.ItemDataRole.UserRole)]
+        if not any(u.tur == UyariTuru.OTOMATIK_NUMARA for u in o.uyarilar):
+            return
+        self.durum.proje.otomatik_kapali.append(o.kayit.satir_no)
+        self.durum.degerlendir()
+        self.durumdan_yukle()
+
     def _duzeltilecege_git(self, it):
         i = it.data(Qt.ItemDataRole.UserRole)
+        s = self.durum.sonuc
+        self.geri_al.setVisible(bool(s and i is not None and i < len(s.ogrenciler)
+                                     and any(u.tur == UyariTuru.OTOMATIK_NUMARA for u in s.ogrenciler[i].uyarilar)))
         if i is None:
             return
         self.sekmeler.setCurrentWidget(self.tablo)

@@ -32,7 +32,9 @@ SINAV = SinavBilgisi(ders_kodu="UYD1001", ders_adi="Uydurma Ders", sinav_turu="A
 def sonuc(fix):
     okuma = dat_oku(fix / "uydurma_1254_crlf.dat", OkuyucuSablonu(soru_sayisi=10))
     liste = liste_oku(fix / "uydurma_liste.xlsx")
-    return sinavi_degerlendir(okuma.kayitlar, CevapAnahtari.metinden("ABCDEABCDE"), PuanlamaAyarlari(), liste)
+    # altın dosyalar listede olmayan numara yolunu da içerir: otomatik numara düzeltmesi kapalı
+    return sinavi_degerlendir(okuma.kayitlar, CevapAnahtari.metinden("ABCDEABCDE"), PuanlamaAyarlari(), liste, None,
+                              [k.satir_no for k in okuma.kayitlar])
 
 
 def altin_bayt(ad, veri: bytes):

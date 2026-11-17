@@ -197,6 +197,15 @@ def main():
     p.anahtar.sorular[5].dogru = "AB"
     senaryolar.append(optik_senaryo("soru_bazli_ceza", dat, liste, p))
 
+    # Başkasının numarası: bir kağıtta numara sınava girmemiş öğrencinin numarası; ad listeyle eşleştiği için düzeltilir
+    baskasi = KOK / "tests/fixtures/uydurma_baskasi_numara.dat"
+    ham = dat.read_bytes()
+    assert b"990000001" in ham
+    baskasi.write_bytes(ham.replace(b"990000001", b"990000011", 1))
+    p = SinavProjesi()
+    p.anahtar = anahtar_kur("ABCDEABCDE", 10)
+    senaryolar.append(optik_senaryo("otomatik_numara", baskasi, liste, p))
+
     # 2b) Bonus soru: 10. soru bonus; eşit puan ve yanlış cezasıyla (bir yanlışı ya da boşu doğru sayar, aktarıma girmez)
     for ad, ceza in (("bonus", False), ("bonus_ceza", True)):
         p = SinavProjesi()
@@ -270,6 +279,18 @@ def main():
         kodlar = [f"Ö{j:02d}" for j in range(1, k + 1)]
         ornekler.append({"anahtar": a.to_dict(), "kodlar": kodlar, "beklenen": esit_cikti_atamasi(a, kodlar)})
     (cikis / "cikti_esit.json").write_text(json.dumps(ornekler, ensure_ascii=False, indent=1), encoding="utf-8")
+    from optik_sinav.io.liste_okuyucu import sistem_tablosu_coz
+
+    sistem_ornekleri = ['Ad Soyad \n \n  \n#\t Öğrenci No\tAdı\tSoyadı\tSnf\tGirme Durum\tSoru1\n(%6,25)\tSoru2\n(%6,25)\tSınav Notu\n1\t990000001\tÇİĞDEM\tÖZTÜRK\t4\t\nGirdi\n6,25\n6,25\n12,5\n2\t990000002\tŞÜKRÜ\tIŞIK\t4\t\nGirdi\n \n3\t2641064003\tAHMET YUSUF\tPEKER\t1\t\nGirmedi\n0\n4\t990000002\tŞÜKRÜ\tIŞIK\t4\t\n', "990000005;AYŞE;KARA;2\n990000006\tEMRE\tŞAHİN\n12345\tKISA\tNUMARA\n", ""]
+    (cikis / "sistem_tablosu.json").write_text(json.dumps([{"girdi": g, "beklenen": sistem_tablosu_coz(g)} for g in sistem_ornekleri],
+                                                          ensure_ascii=False, indent=1), encoding="utf-8")
+    from optik_sinav.core.dogrulama import ad_benzerligi
+
+    ciftler = [["HASAN KAYA", "Hasan  Kaya"], ["ZÜLFÜNUR  *LMAN", "ZÜLFÜNUR YALMAN"], ["HASAN KA", "HASAN KAYA"], ["ALİ", "ALİ VELİ"],
+               ["HASAN KAYA", "İSMAİL KOÇ"], ["IŞIL HIŞIM", "ışıl hışım"], ["MEHMET EMİN ÇEPİÇ", "MEHMET EMİN ÇEPİÇ ÖZ"], ["", "AYŞE"],
+               ["ÇİĞDEM ÖZTÜRK", "CIGDEM OZTURK"], ["AHMET YILMAZ", "MEHMET YILMAZ"]]
+    (cikis / "ad_benzerligi.json").write_text(json.dumps([{"a": a, "b": b, "beklenen": ad_benzerligi(a, b)} for a, b in ciftler],
+                                                         ensure_ascii=False, indent=1), encoding="utf-8")
 
     for s in senaryolar:
         (cikis / f"parite_{s['ad']}.json").write_text(json.dumps(s, ensure_ascii=False, indent=1, default=str), encoding="utf-8")

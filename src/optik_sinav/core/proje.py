@@ -38,6 +38,7 @@ class SinavProjesi:
     klasik_giris_sirasi: list[str] = field(default_factory=list)  # öğrencilerin ilk puanının girildiği sıra (okuma sırası etkisi)
     final_puanlar: dict[str, str | None] = field(default_factory=dict)  # dönem sonu notu için: öğrenci no -> final puanı
     harf_ayarlari: dict = field(default_factory=dict)  # core.donem_sonu.HarfAyarlari.to_dict()
+    otomatik_kapali: list[int] = field(default_factory=list)  # otomatik numara düzeltmesi geri alınan optik satırlar
     cikti_sayisi: int = 0  # ders bilgi paketi yoksa hocanın girdiği öğrenme çıktısı sayısı (Ö01, Ö02 …)
     cikti_elle: bool = False  # öğrenme çıktıları hoca tarafından değiştirildi; değilse sorulara kendiliğinden eşit dağıtılır
 
@@ -70,6 +71,7 @@ class SinavProjesi:
             "harf_ayarlari": self.harf_ayarlari,
             "cikti_elle": self.cikti_elle,
             "cikti_sayisi": self.cikti_sayisi,
+            "otomatik_kapali": self.otomatik_kapali,
         }
 
     @classmethod
@@ -99,6 +101,7 @@ class SinavProjesi:
             klasik_toplamlar={str(k): (None if v in (None, "") else str(v)) for k, v in d.get("klasik_toplamlar", {}).items()},
             klasik_girmedi=[str(x) for x in d.get("klasik_girmedi", [])],
             cikti_sayisi=int(d.get("cikti_sayisi") or 0),
+            otomatik_kapali=[int(x) for x in d.get("otomatik_kapali", [])],
             klasik_giris_sirasi=[str(x) for x in d.get("klasik_giris_sirasi", [])],
             final_puanlar={str(k): (None if v in (None, "") else str(v)) for k, v in d.get("final_puanlar", {}).items()},
             harf_ayarlari=dict(d.get("harf_ayarlari", {})),

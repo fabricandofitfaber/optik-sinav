@@ -7,7 +7,7 @@ def test_puanla_komutu(fix, tmp_path, capsys):
                 "--sinav-turu", "Ara Sınav", "--tarih", "2026-11-10", "--pdfsiz", "--proje-kaydet", str(tmp_path / "s.osd")])
     cikti = capsys.readouterr().out
     assert kod == 0
-    assert "Öğrenci: 11  soru: 10" in cikti and "sınava girmeyen: 4" in cikti
+    assert "Öğrenci: 11  soru: 10" in cikti and "sınava girmeyen: 2" in cikti
     assert (tmp_path / "c" / "UYD1001_AraSinav_2026-11-10_sonuc.xlsx").exists()
     # proje dosyasıyla yeniden çalıştır
     assert main(["puanla", "--proje", str(tmp_path / "s.osd")]) == 0

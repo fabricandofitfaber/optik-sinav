@@ -151,13 +151,14 @@
       // Düzeltilmesi gerekenler (optik): uyarılı satırlar okunur listede; tıklayınca tabloda o satır vurgulanır
       const uyarili = s && !kl ? s.ogrenciler.map((o, i) => [o, i]).filter(([o]) => o.uyarilar.length) : [];
       const duzeltilecek = !s || kl ? "" : uyarili.length
-        ? `<div class="kutu duzeltilecek"><h3>Düzeltilmesi gerekenler (${uyarili.length})</h3><ul>${uyarili.map(([o, i]) => `<li><a href="#" data-git-o="${i}">Satır ${o.kayit.satir_no} · ${e(o.no)} ${e(o.ad)}</a>: ${e(o.uyarilar.map((u) => u.mesaj).join("; "))}</li>`).join("")}</ul>
+        ? `<div class="kutu duzeltilecek"><h3>Düzeltilmesi gerekenler (${uyarili.length})</h3><ul>${uyarili.map(([o, i]) => `<li><a href="#" data-git-o="${i}">Satır ${o.kayit.satir_no} · ${e(o.no)} ${e(o.ad)}</a>: ${e(o.uyarilar.map((u) => u.mesaj).join("; "))}${o.uyarilar.some((u) => u.tur === "otomatik_numara") ? ` <button data-geri-al="${o.kayit.satir_no}">Geri al</button>` : ""}</li>`).join("")}</ul>
           <p class="soluk">Satıra tıklayınca tabloda o öğrenci vurgulanır; hücresine tıklayarak düzeltin. Okunan dosyada sorun yoksa bu bölümü geçebilirsiniz.</p></div>`
         : `<p class="yesil"><b>✓ Düzeltilmesi gereken satır yok.</b></p>`;
       k.innerHTML = `${baslik}${duzeltilecek}
         <p id="kontrolOzet">${s ? kontrolOzeti(s) : "Puanları şimdiden girebilirsiniz; sonuç, üstteki eksikler tamamlanınca hesaplanır."}</p>
         <div class="sekmeler">${sek.map(([id, t]) => `<button data-sekme="${id}" class="${K.sekme === id ? "secili" : ""}">${t}</button>`).join("")}</div>${icerik}`;
       $$("[data-sekme]", k).forEach((b) => (b.onclick = () => { K.sekme = b.dataset.sekme; UI.ciz(); }));
+      $$("[data-geri-al]", k).forEach((b) => (b.onclick = () => { D.proje.otomatik_kapali.push(Number(b.dataset.geriAl)); UI.degerlendir(); UI.ciz(); }));
       $$("[data-git-o]", k).forEach((a2) => (a2.onclick = (ev) => {
         ev.preventDefault();
         K.sekme = "sonuc"; K.yalnizUyarili = false; K.vurgu = Number(a2.dataset.gitO);

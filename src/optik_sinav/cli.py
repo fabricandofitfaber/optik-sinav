@@ -83,7 +83,7 @@ def puanla(a: argparse.Namespace) -> int:
 
     okuma = dat_oku(proje.dat_yolu, okuyucu)
     liste = liste_oku(proje.liste_yolu, proje.liste_esleme if proje.liste_esleme.no_sutun else None) if proje.liste_yolu else None
-    sonuc = sinavi_degerlendir(okuma.kayitlar, proje.anahtar, ay, liste, proje.duzeltmeler)
+    sonuc = sinavi_degerlendir(okuma.kayitlar, proje.anahtar, ay, liste, proje.duzeltmeler, proje.otomatik_kapali)
 
     print(f"Dosya: {proje.dat_yolu}  kodlama: {okuma.kodlama}  satır sonu: {okuma.satir_sonu}")
     print(f"Öğrenci: {len(sonuc.ogrenciler)}  soru: {proje.anahtar.soru_sayisi}  anahtar: {proje.anahtar.metne()}")

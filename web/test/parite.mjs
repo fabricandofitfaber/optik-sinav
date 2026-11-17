@@ -140,6 +140,19 @@ if (existsSync(puanOrnek)) {
   if (farklar.length) { hata++; console.log(`✗ Puan dizisi: ${farklar.length} fark`); for (const x of farklar) console.log("   " + x); }
   else console.log("✓ Puan dizisi: bütün örnekler aynı");
 }
+const sistemOrnek = join(KOK, "tests/web/sistem_tablosu.json");
+if (existsSync(sistemOrnek)) {
+  const farklar = [];
+  JSON.parse(readFileSync(sistemOrnek, "utf8")).forEach((o, i) => karsilastir(o.beklenen, OS.sistemTablosuCoz(o.girdi), `sistem_tablosu[${i}]`, farklar));
+  if (farklar.length) { hata++; console.log(`✗ Sistem tablosu: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }
+  else console.log("✓ Sistem tablosu: bütün örnekler aynı");
+}
+const adOrnek = join(KOK, "tests/web/ad_benzerligi.json");
+if (existsSync(adOrnek)) {
+  const farklar = [];
+  JSON.parse(readFileSync(adOrnek, "utf8")).forEach((o) => { const js = OS.adBenzerligi(o.a, o.b); if (Math.abs(js - o.beklenen) > 1e-12) farklar.push(`${o.a} / ${o.b}: python=${o.beklenen} js=${js}`); });
+  if (farklar.length) { console.log("✗ Ad benzerliği:\n  " + farklar.join("\n  ")); hata++; } else console.log("✓ Ad benzerliği: bütün örnekler aynı");
+}
 const esitOrnek = join(KOK, "tests/web/cikti_esit.json");
 if (existsSync(esitOrnek)) {
   const farklar = [];

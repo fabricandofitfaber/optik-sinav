@@ -1,0 +1,52 @@
+[
+ {
+  "a": "HASAN KAYA",
+  "b": "Hasan  Kaya",
+  "beklenen": 1.0
+ },
+ {
+  "a": "ZÜLFÜNUR  *LMAN",
+  "b": "ZÜLFÜNUR YALMAN",
+  "beklenen": 0.8571428571428572
+ },
+ {
+  "a": "HASAN KA",
+  "b": "HASAN KAYA",
+  "beklenen": 1.0
+ },
+ {
+  "a": "ALİ",
+  "b": "ALİ VELİ",
+  "beklenen": 0.0
+ },
+ {
+  "a": "HASAN KAYA",
+  "b": "İSMAİL KOÇ",
+  "beklenen": 0.11111111111111116
+ },
+ {
+  "a": "IŞIL HIŞIM",
+  "b": "ışıl hışım",
+  "beklenen": 1.0
+ },
+ {
+  "a": "MEHMET EMİN ÇEPİÇ",
+  "b": "MEHMET EMİN ÇEPİÇ ÖZ",
+  "beklenen": 1.0
+ },
+ {
+  "a": "",
+  "b": "AYŞE",
+  "beklenen": 0.0
+ },
+ {
+  "a": "ÇİĞDEM ÖZTÜRK",
+  "b": "CIGDEM OZTURK",
+  "beklenen": 1.0
+ },
+ {
+  "a": "AHMET YILMAZ",
+  "b": "MEHMET YILMAZ",
+  "beklenen": 0.8333333333333334
+ }
+]

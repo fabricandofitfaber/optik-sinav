@@ -233,7 +233,8 @@ class Durum(QObject):
         elif self.okuma is None:
             self.sonuc = None
         else:
-            self.sonuc = sinavi_degerlendir(self.okuma.kayitlar, self.proje.anahtar, self.proje.ayarlar, self.liste, self.proje.duzeltmeler)
+            self.sonuc = sinavi_degerlendir(self.okuma.kayitlar, self.proje.anahtar, self.proje.ayarlar, self.liste, self.proje.duzeltmeler,
+                                            self.proje.otomatik_kapali)
         self.sonuc_degisti.emit()
         return self.sonuc
 

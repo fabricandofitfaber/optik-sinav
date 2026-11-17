@@ -158,7 +158,8 @@
   "final_puanlar": {},
   "harf_ayarlari": {},
   "cikti_elle": false,
-  "cikti_sayisi": 0
+  "cikti_sayisi": 0,
+  "otomatik_kapali": []
  },
  "ders_kodlari": null,
  "okuyucu_onerisi": {
@@ -298,7 +299,7 @@
     "bonus_ile": []
    },
    {
-    "no": "99000*004",
+    "no": "990000004",
     "ad": "MEHMET ÇAKIR",
     "puan": "125/8",
     "ham": "65/2",
@@ -332,19 +333,12 @@
      9,
      10
     ],
-    "listede": false,
-    "oneriler": [
-     "990000004",
-     "990000008"
-    ],
+    "listede": true,
+    "oneriler": [],
     "uyarilar": [
      [
-      "numara_okunamadi",
-      "Öğrenci numarasında okunamayan karakter: 99000*004"
-     ],
-     [
-      "listede_yok",
-      "Numara öğrenci listesinde yok. Olası numaralar: 990000004, 990000008"
+      "otomatik_numara",
+      "Okunan numara 99000*004 listede yok; okunan ad (MEHMET ÇAKIR) listedeki MEHMET ÇAKIR ile eşleştiği için numara 990000004 yapıldı. Yanlışsa geri alın."
      ]
     ],
     "bonus_ile": []
@@ -480,7 +474,7 @@
     "bonus_ile": []
    },
    {
-    "no": "990000088",
+    "no": "990000008",
     "ad": "HASAN KAYA",
     "puan": "75/4",
     "ham": "35/1",
@@ -514,16 +508,12 @@
      9,
      10
     ],
-    "listede": false,
-    "oneriler": [
-     "990000008",
-     "990000004",
-     "990000011"
-    ],
+    "listede": true,
+    "oneriler": [],
     "uyarilar": [
      [
-      "listede_yok",
-      "Numara öğrenci listesinde yok. Olası numaralar: 990000008, 990000004, 990000011"
+      "otomatik_numara",
+      "Okunan numara 990000088 listede yok; okunan ad (HASAN KAYA) listedeki HASAN KAYA ile eşleştiği için numara 990000008 yapıldı. Yanlışsa geri alın."
      ]
     ],
     "bonus_ile": []
@@ -710,16 +700,16 @@
    [
     "990000004",
     "MEHMET ÇAKIR",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G"
+    "0,00",
+    "0,00",
+    "7,50",
+    "0,00",
+    "10,00",
+    "0,00",
+    "0,00",
+    "0,00",
+    "0,00",
+    "15,00"
    ],
    [
     "990000005",
@@ -766,16 +756,16 @@
    [
     "990000008",
     "HASAN KAYA",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G",
-    "G"
+    "0,00",
+    "5,00",
+    "7,50",
+    "0,00",
+    "0,00",
+    "10,00",
+    "12,50",
+    "0,00",
+    "0,00",
+    "0,00"
    ],
    [
     "990000009",
@@ -849,33 +839,27 @@
    "S10"
   ],
   "sistem_dosyasi": {
-   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NvcnU1KCU2LDY3KTtTb3J1NiglNiw2Nyk7U29ydTcoJTYsNjcpO1NvcnU4KCU2LDY3KTtTb3J1OSglNiw2Nyk7U29ydTEwKCU2LDY3KTtTaW5hdiBOb3R1DQo5OTAwMCowMDSgO0FEO0dpcmRpOzs7Ozs7Ozs7OzsNCjk5MDAwMDAwMaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDKgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzA7NjAsMDMNCjk5MDAwMDAwM6A7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7MDswOzYsNjc7Niw2Nzs2LDY3OzA7MDs0MCwwMg0KOTkwMDAwMDA1oDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzY2LDcNCjk5MDAwMDAwNqA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDegO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDA5oDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzY2LDcNCjk5MDAwMDAwOaA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMTCgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2NzswOzA7MDswOzA7MzMsMzUNCjk5MDAwMDA4OKA7QUQ7R2lyZGk7MDs2LDY3OzYsNjc7MDswOzYsNjc7Niw2NzswOzA7MDsyNiw2OA0KOTk5OTk5OTmgO0FEO0dpcm1lZGk7Ozs7Ozs7Ozs7Ow0K",
-   "yazilan": 10,
+   "cikti": "T2dyZW5jaSBObztBZGk7R2lybWUgRHVydW07U29ydTEoJTYsNjcpO1NvcnUyKCU2LDY3KTtTb3J1MyglNiw2Nyk7U29ydTQoJTYsNjcpO1NvcnU1KCU2LDY3KTtTb3J1NiglNiw2Nyk7U29ydTcoJTYsNjcpO1NvcnU4KCU2LDY3KTtTb3J1OSglNiw2Nyk7U29ydTEwKCU2LDY3KTtTaW5hdiBOb3R1DQo5OTAwMDAwMDGgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDAyoDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2NzswOzYwLDAzDQo5OTAwMDAwMDOgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzA7MDs2LDY3OzYsNjc7Niw2NzswOzA7NDAsMDINCjk5MDAwMDAwNKA7QUQ7R2lyZGk7MDswOzYsNjc7MDs2LDY3OzA7MDswOzA7Niw2NzsyMCwwMQ0KOTkwMDAwMDA1oDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzY2LDcNCjk5MDAwMDAwNqA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2Niw3DQo5OTAwMDAwMDegO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDA4oDtBRDtHaXJkaTswOzYsNjc7Niw2NzswOzA7Niw2Nzs2LDY3OzA7MDswOzI2LDY4DQo5OTAwMDAwMDmgO0FEO0dpcmRpOzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7NjYsNw0KOTkwMDAwMDA5oDtBRDtHaXJkaTs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzY2LDcNCjk5MDAwMDAxMKA7QUQ7R2lyZGk7Niw2Nzs2LDY3OzYsNjc7Niw2Nzs2LDY3OzA7MDswOzA7MDszMywzNQ0KOTk5OTk5OTmgO0FEO0dpcm1lZGk7Ozs7Ozs7Ozs7Ow0K",
+   "yazilan": 11,
    "girmedi": [
     "99999999"
    ],
-   "dosyada_olmayan": [
-    "99000*004"
-   ],
+   "dosyada_olmayan": [],
    "notlar": [
     "Dosyadaki soru ağırlıklarının toplamı 66,7 (100 değil).",
     "Yanlış cezası soru puanlarına dağıtılamaz: dosyadaki soru puanları ve sınav notu cezasızdır."
    ]
   },
   "sistem_uret": {
-   "cikti": "1vByZW5jaSBObztBZP07U295YWT9O1NuZjtHaXJtZSBEdXJ1bTtTb3J1MSglNSk7U29ydTIoJTUpO1NvcnUzKCU3LDUpO1NvcnU0KCU3LDUpO1NvcnU1KCUxMCk7U29ydTYoJTEwKTtTb3J1NyglMTIsNSk7U29ydTgoJTEyLDUpO1NvcnU5KCUxNSk7U29ydTEwKCUxNSk7U/1uYXYgTm90dQ0KOTkwMDAwMDAxO8fd0ERFTTvWWlTcUks7O0dpcmRpOzU7NTs3LDU7Nyw1OzEwOzEwOzEyLDU7MTIsNTsxNTsxNTsxMDANCjk5MDAwMDAwMjve3EtS3DtJ3klLOztHaXJkaTs1OzU7Nyw1OzcsNTsxMDsxMDsxMiw1OzEyLDU7MTU7MDs4NQ0KOTkwMDAwMDAzO0FZ3kU7R9xORd47O0dpcmRpOzU7NTs3LDU7MDswOzEwOzEyLDU7MTIsNTswOzA7NTIsNQ0KOTkwMDAwMDA0O01FSE1FVDvHQUtJUjs7R2lybWVkaTs7Ozs7Ozs7Ozs7DQo5OTAwMDAwMDU7QlVSQUs7RVJET9BBTjs7R2lyZGk7NTs1OzcsNTs3LDU7MTA7MTA7MTIsNTsxMiw1OzE1OzE1OzEwMA0KOTkwMDAwMDA2O1pFWU5FUDtERU3dUjs7R2lyZGk7NTs1OzcsNTs3LDU7MTA7MTA7MTIsNTsxMiw1OzE1OzE1OzEwMA0KOTkwMDAwMDA3O0FM3TtWRUzdOztHaXJkaTs1OzU7Nyw1OzcsNTsxMDsxMDsxMiw1OzEyLDU7MTU7MTU7MTAwDQo5OTAwMDAwMDg7SEFTQU47S0FZQTs7R2lybWVkaTs7Ozs7Ozs7Ozs7DQo5OTAwMDAwMDk7RkFUTUE7WUlMRElaOztHaXJkaTs1OzU7Nyw1OzcsNTsxMDsxMDsxMiw1OzEyLDU7MTU7MTU7MTAwDQo5OTAwMDAwMTA7RU1SRTveQUjdTjs7R2lyZGk7NTs1OzcsNTs3LDU7MTA7MDswOzA7MDswOzM1DQo5OTAwMDAwMTE7R9xMO9ZaREVN3VI7O0dpcm1lZGk7Ozs7Ozs7Ozs7Ow0KOTkwMDAwMDEyO91TTUHdTDtLT8c7O0dpcm1lZGk7Ozs7Ozs7Ozs7Ow0K",
-   "yazilan": 8,
+   "cikti": "1vByZW5jaSBObztBZP07U295YWT9O1NuZjtHaXJtZSBEdXJ1bTtTb3J1MSglNSk7U29ydTIoJTUpO1NvcnUzKCU3LDUpO1NvcnU0KCU3LDUpO1NvcnU1KCUxMCk7U29ydTYoJTEwKTtTb3J1NyglMTIsNSk7U29ydTgoJTEyLDUpO1NvcnU5KCUxNSk7U29ydTEwKCUxNSk7U/1uYXYgTm90dQ0KOTkwMDAwMDAxO8fd0ERFTTvWWlTcUks7O0dpcmRpOzU7NTs3LDU7Nyw1OzEwOzEwOzEyLDU7MTIsNTsxNTsxNTsxMDANCjk5MDAwMDAwMjve3EtS3DtJ3klLOztHaXJkaTs1OzU7Nyw1OzcsNTsxMDsxMDsxMiw1OzEyLDU7MTU7MDs4NQ0KOTkwMDAwMDAzO0FZ3kU7R9xORd47O0dpcmRpOzU7NTs3LDU7MDswOzEwOzEyLDU7MTIsNTswOzA7NTIsNQ0KOTkwMDAwMDA0O01FSE1FVDvHQUtJUjs7R2lyZGk7MDswOzcsNTswOzEwOzA7MDswOzA7MTU7MzIsNQ0KOTkwMDAwMDA1O0JVUkFLO0VSRE/QQU47O0dpcmRpOzU7NTs3LDU7Nyw1OzEwOzEwOzEyLDU7MTIsNTsxNTsxNTsxMDANCjk5MDAwMDAwNjtaRVlORVA7REVN3VI7O0dpcmRpOzU7NTs3LDU7Nyw1OzEwOzEwOzEyLDU7MTIsNTsxNTsxNTsxMDANCjk5MDAwMDAwNztBTN07VkVM3Ts7R2lyZGk7NTs1OzcsNTs3LDU7MTA7MTA7MTIsNTsxMiw1OzE1OzE1OzEwMA0KOTkwMDAwMDA4O0hBU0FOO0tBWUE7O0dpcmRpOzA7NTs3LDU7MDswOzEwOzEyLDU7MDswOzA7MzUNCjk5MDAwMDAwOTtGQVRNQTtZSUxESVo7O0dpcmRpOzU7NTs3LDU7Nyw1OzEwOzEwOzEyLDU7MTIsNTsxNTsxNTsxMDANCjk5MDAwMDAxMDtFTVJFO95BSN1OOztHaXJkaTs1OzU7Nyw1OzcsNTsxMDswOzA7MDswOzA7MzUNCjk5MDAwMDAxMTtH3Ew71lpERU3dUjs7R2lybWVkaTs7Ozs7Ozs7Ozs7DQo5OTAwMDAwMTI73VNNQd1MO0tPxzs7R2lybWVkaTs7Ozs7Ozs7Ozs7DQo=",
+   "yazilan": 10,
    "girmedi": [
-    "990000004",
-    "990000008",
     "990000011",
     "990000012"
    ]
   },
-  "akreditasyon_metni": "990000001\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000002\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t0\n990000003\t5\t5\t7,5\t0\t0\t10\t12,5\t12,5\t0\t0\n990000004\tG\n990000005\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000006\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000007\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000008\tG\n990000009\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000010\t5\t5\t7,5\t7,5\t10\t0\t0\t0\t0\t0\n990000011\tG\n990000012\tG",
+  "akreditasyon_metni": "990000001\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000002\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t0\n990000003\t5\t5\t7,5\t0\t0\t10\t12,5\t12,5\t0\t0\n990000004\t0\t0\t7,5\t0\t10\t0\t0\t0\t0\t15\n990000005\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000006\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000007\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000008\t0\t5\t7,5\t0\t0\t10\t12,5\t0\t0\t0\n990000009\t5\t5\t7,5\t7,5\t10\t10\t12,5\t12,5\t15\t15\n990000010\t5\t5\t7,5\t7,5\t10\t0\t0\t0\t0\t0\n990000011\tG\n990000012\tG",
   "girmeyenler": [
-   "990000004",
-   "990000008",
    "990000011",
    "990000012"
   ],
@@ -1498,7 +1482,7 @@
   },
   "kisi_uyumu": [
    [
-    "99000*004",
+    "990000004",
     0.5999999999999999,
     [
      1,
@@ -1526,11 +1510,11 @@
   ],
   "final": [
    [
-    "99000*004",
+    "990000004",
     72.92
    ],
    [
-    "990000088",
+    "990000008",
     70.84
    ],
    [
@@ -1762,7 +1746,7 @@
       ""
      ],
      [
-      "99000*004",
+      "990000004",
       null,
       null,
       "",
@@ -1798,7 +1782,7 @@
       ""
      ],
      [
-      "990000088",
+      "990000008",
       41.7,
       null,
       "FD",
@@ -1880,7 +1864,7 @@
       ""
      ],
      [
-      "99000*004",
+      "990000004",
       null,
       null,
       "",
@@ -1916,7 +1900,7 @@
       ""
      ],
      [
-      "990000088",
+      "990000008",
       41.7,
       40.090156993557876,
       "DC",
@@ -1980,7 +1964,7 @@
     []
    ],
    [
-    "99000*004",
+    "990000004",
     11,
     0.0,
     [],
@@ -2012,7 +1996,7 @@
     []
    ],
    [
-    "990000088",
+    "990000008",
     10,
     0.09090909090909091,
     [],

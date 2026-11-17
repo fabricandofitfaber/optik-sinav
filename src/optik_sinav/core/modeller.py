@@ -71,6 +71,8 @@ class UyariTuru(str, Enum):
     TEKRAR_NUMARA = "tekrar_numara"
     LISTEDE_YOK = "listede_yok"
     KITAPCIK_OKUNAMADI = "kitapcik_okunamadi"
+    OTOMATIK_NUMARA = "otomatik_numara"  # listede olmayan numara, adı tek öğrenciyle eşleştiği için düzeltildi
+    AD_UYUSMUYOR = "ad_uyusmuyor"  # numara listede var ama okunan ad listedeki adla uyuşmuyor
 
 
 @dataclass

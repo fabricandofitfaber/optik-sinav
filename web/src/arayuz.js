@@ -180,7 +180,7 @@
     const p = D.proje;
     if (UI.hesapEksikleri().length) D.sonuc = null;
     else if (p.bicim === "klasik") D.sonuc = D.liste ? OS.klasikDegerlendir(D.liste, p.anahtar, p.ayarlar, p.klasik_puanlar, p.klasik_toplamlar, p.klasik_girmedi) : null;
-    else D.sonuc = D.okuma ? OS.sinaviDegerlendir(D.okuma.kayitlar, p.anahtar, p.ayarlar, D.liste, p.duzeltmeler) : null;
+    else D.sonuc = D.okuma ? OS.sinaviDegerlendir(D.okuma.kayitlar, p.anahtar, p.ayarlar, D.liste, p.duzeltmeler, p.otomatik_kapali) : null;
     return D.sonuc;
   };
   UI.duzelt = function (satirNo, alan, yeni) {
@@ -557,6 +557,7 @@
           ${!kl ? birakAlani("birakDat", "Optik okuyucu dosyası", ".dat ya da .txt; puanlama için gerekli", datBilgi, o ? "tamam" : "zorunlu") : ""}
           ${birakAlani("birakListe", "Öğrenci listesi", kl ? "Excel, CSV ya da PDF; klasik sınavda gerekli" : "Excel, CSV ya da PDF; isteğe bağlı ama önerilir (sınava girmeyenler ve doğru adlar için)", listeBilgi, l ? "tamam" : kl ? "zorunlu" : "")}
         </div>
+        <p class="soluk" style="margin:4px 0 10px"><button id="listeYapistir">Öğrenci listesini sistemden yapıştır</button> Akademik Bilgi Sistemi'ndeki öğrenci tablosunu kopyalayıp yapıştırın; liste dosyası gerekmez.</p>
         ${kl && l && UI.soruSayisi() > 0 ? `<p><button class="zorunlu-dugme" id="giriseGec" title="3. adımda öğrenciler satır, sorular sütun olarak açılır. Girdiğiniz her puan bu tarayıcıda kendiliğinden saklanır.">Puan girişine geç: öğrenci listesi ve soru matrisi →</button></p>` : ""}
         <div class="kutu"><h3>Ders <span class="soluk" style="font-weight:400;font-size:13px">isteğe bağlı; öğrenme çıktıları ve rapor başlıkları için</span></h3>
           <div class="satir"><label>Ders</label><input type="text" id="dersKodu" list="dersListesi" placeholder="Ders kodu, örnek: UTL4513" style="width:170px" value="${e(s.ders_kodu)}">
@@ -601,6 +602,17 @@
       };
       birak("birakDat", ".dat,.txt,.DAT,.TXT");
       birak("birakListe", ".xlsx,.xls,.csv,.pdf");
+      $("#listeYapistir", k).onclick = async () => {
+        const metin = await pencere("Öğrenci listesini sistemden yapıştır", `<p>Akademik Bilgi Sistemi'nde sınavın öğrenci tablosunu (Öğrenci No, Adı, Soyadı sütunları olan; örneğin Akreditasyon Not Giriş ekranı) fareyle baştan sona seçip kopyalayın ve aşağıya yapıştırın. Puan ve durum hücreleri karışsa da olur; yalnızca numara ve ad alınır.</p>
+          <textarea id="sistemListe" style="width:100%;height:240px;font-family:Menlo,Consolas,monospace"></textarea>`,
+          [{ metin: "Vazgeç", deger: null }, { metin: "Listeyi al", ana: true, deger: (q) => $("#sistemListe", q).value }]);
+        if (!metin) return;
+        const tablo = OS.sistemTablosuCoz(metin);
+        if (tablo.length < 2) { bilgi("Liste alınamadı", "Yapıştırılan metinde öğrenci numarası ve adı bulunamadı. Tabloyu \"#, Öğrenci No, Adı, Soyadı\" sütunlarıyla birlikte kopyalayın."); return; }
+        UI.listeYukle(new TextEncoder().encode(tablo.map((r) => r.join("\t")).join("\r\n") + "\r\n"), "Sistem listesi.txt");
+        UI.ciz();
+        bilgi("Liste alındı", `Sistemden ${tablo.length - 1} öğrenci alındı.\n\nOptik okuyucunun okuduğu numara listede yoksa, okunan ad tek bir öğrenciyle eşleşiyorsa numara kendiliğinden düzeltilir (3. adımda görünür, geri alınabilir).`);
+      };
       if ($("#giriseGec", k)) $("#giriseGec", k).onclick = () => UI.git(2);
       if ($("#listeKaldir", k)) $("#listeKaldir", k).onclick = () => { UI.listeYukle(null); UI.ciz(); };
       $$("[data-okuyucu]", k).forEach((x) => (x.onchange = () => {

@@ -1,0 +1,49 @@
+[
+ {
+  "girdi": "Ad Soyad \n \n  \n#\t Öğrenci No\tAdı\tSoyadı\tSnf\tGirme Durum\tSoru1\n(%6,25)\tSoru2\n(%6,25)\tSınav Notu\n1\t990000001\tÇİĞDEM\tÖZTÜRK\t4\t\nGirdi\n6,25\n6,25\n12,5\n2\t990000002\tŞÜKRÜ\tIŞIK\t4\t\nGirdi\n \n3\t2641064003\tAHMET YUSUF\tPEKER\t1\t\nGirmedi\n0\n4\t990000002\tŞÜKRÜ\tIŞIK\t4\t\n",
+  "beklenen": [
+   [
+    "Öğrenci No",
+    "Adı Soyadı"
+   ],
+   [
+    "990000001",
+    "ÇİĞDEM ÖZTÜRK"
+   ],
+   [
+    "990000002",
+    "ŞÜKRÜ IŞIK"
+   ],
+   [
+    "2641064003",
+    "AHMET YUSUF PEKER"
+   ]
+  ]
+ },
+ {
+  "girdi": "990000005;AYŞE;KARA;2\n990000006\tEMRE\tŞAHİN\n12345\tKISA\tNUMARA\n",
+  "beklenen": [
+   [
+    "Öğrenci No",
+    "Adı Soyadı"
+   ],
+   [
+    "990000005",
+    "AYŞE KARA"
+   ],
+   [
+    "990000006",
+    "EMRE ŞAHİN"
+   ]
+  ]
+ },
+ {
+  "girdi": "",
+  "beklenen": [
+   [
+    "Öğrenci No",
+    "Adı Soyadı"
+   ]
+  ]
+ }
+]

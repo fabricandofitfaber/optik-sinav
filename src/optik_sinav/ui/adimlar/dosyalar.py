@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QDate, Qt, QTime
 from PySide6.QtWidgets import (
     QButtonGroup, QComboBox, QDateEdit, QFileDialog, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QPushButton, QRadioButton, QSpinBox, QTextEdit, QTimeEdit, QWidget,
+    QMessageBox, QPushButton, QRadioButton, QSpinBox, QTextEdit, QTimeEdit, QVBoxLayout, QWidget,
 )
 
 from ... import metinler as M
@@ -63,6 +63,10 @@ class DosyalarAdimi(Adim):
         b2 = QPushButton("Öğrenci listesini seç…")
         b2.clicked.connect(self._liste_sec)
         self.liste_dugmesi = b2
+        b4 = QPushButton("Sistemden yapıştır…")
+        b4.setToolTip("Akademik Bilgi Sistemi'ndeki öğrenci tablosunu kopyalayıp yapıştırın; liste dosyası gerekmez.")
+        b4.clicked.connect(self._listeyi_yapistir)
+        self.liste_yapistir = b4
         b3 = QPushButton("Kaldır")
         b3.clicked.connect(lambda: self.durum.liste_yukle(None))
         self.liste_kaldir = b3
@@ -74,6 +78,7 @@ class DosyalarAdimi(Adim):
         self.esleme_dugmesi.toggled.connect(lambda _x: self._esleme_gorunurlugu())
         s = QHBoxLayout()
         s.addWidget(b2)
+        s.addWidget(b4)
         s.addWidget(b3)
         s.addWidget(self.liste_etiket, 1)
         s.addWidget(self.esleme_dugmesi)
@@ -298,6 +303,54 @@ class DosyalarAdimi(Adim):
         yol, _ = QFileDialog.getOpenFileName(self, "Öğrenci listesi", "", "Listeler (*.xlsx *.xls *.csv *.txt *.pdf);;Bütün dosyalar (*)")
         if yol:
             self._liste_ac(yol)
+
+    def _listeyi_yapistir(self, metin: str | None = None):
+        """Sistemin öğrenci tablosunu (ekrandan kopyalanan) liste olarak alır: kullanıcı klasörüne metin dosyası yazılıp açılır."""
+        from datetime import datetime
+
+        from PySide6.QtGui import QGuiApplication
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QPlainTextEdit
+
+        from ...io.liste_okuyucu import sistem_tablosu_coz
+        from ...kaynaklar import kullanici_klasoru
+
+        if metin is None:
+            p = QDialog(self)
+            p.setWindowTitle("Öğrenci listesini sistemden yapıştır")
+            p.resize(640, 420)
+            v = QVBoxLayout(p)
+            l = QLabel("Akademik Bilgi Sistemi'nde sınavın öğrenci tablosunu (Öğrenci No, Adı, Soyadı sütunları olan; örneğin "
+                       "Akreditasyon Not Giriş ekranı) fareyle baştan sona seçip kopyalayın ve aşağıya yapıştırın. Puan ve durum "
+                       "hücreleri karışsa da olur; yalnızca numara ve ad alınır.")
+            l.setWordWrap(True)
+            v.addWidget(l)
+            kutu = QPlainTextEdit()
+            pano = QGuiApplication.clipboard().text()
+            if len(sistem_tablosu_coz(pano)) > 1:
+                kutu.setPlainText(pano)
+            v.addWidget(kutu, 1)
+            bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+            bb.button(QDialogButtonBox.StandardButton.Ok).setText("Listeyi al")
+            bb.button(QDialogButtonBox.StandardButton.Cancel).setText("Vazgeç")
+            bb.accepted.connect(p.accept)
+            bb.rejected.connect(p.reject)
+            v.addWidget(bb)
+            if p.exec() != QDialog.DialogCode.Accepted:
+                return
+            metin = kutu.toPlainText()
+        tablo = sistem_tablosu_coz(metin)
+        if len(tablo) < 2:
+            QMessageBox.warning(self, "Liste alınamadı", "Yapıştırılan metinde öğrenci numarası ve adı bulunamadı. Tabloyu "
+                                "\"#, Öğrenci No, Adı, Soyadı\" sütunlarıyla birlikte kopyalayın.")
+            return
+        kod = "".join(c for c in self.durum.proje.sinav.ders_kodu if c.isalnum()) or "sinav"
+        yol = kullanici_klasoru() / "listeler" / f"{kod}_sistem_listesi_{datetime.now():%Y%m%d_%H%M%S}.txt"
+        yol.parent.mkdir(parents=True, exist_ok=True)
+        yol.write_text("\r\n".join("\t".join(r) for r in tablo) + "\r\n", encoding="utf-8")
+        self._liste_ac(str(yol))
+        QMessageBox.information(self, "Liste alındı", f"Sistemden {len(tablo) - 1} öğrenci alındı.\n\nOptik okuyucunun okuduğu numara listede "
+                                "yoksa, okunan ad tek bir öğrenciyle eşleşiyorsa numara kendiliğinden düzeltilir (3. adımda görünür, "
+                                "geri alınabilir).")
 
     def _liste_ac(self, yol):
         try:

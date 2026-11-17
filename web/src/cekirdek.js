@@ -160,6 +160,9 @@
     alan_disi_isaret: "Soru alanı dışında işaret var (konum {konumlar})",
     listede_yok: "Numara öğrenci listesinde yok",
     listede_yok_oneri: "Numara öğrenci listesinde yok. Olası numaralar: {oneriler}",
+    otomatik_numara: "Okunan numara {eski} listede yok; okunan ad ({okunan}) listedeki {ad} ile eşleştiği için numara {yeni} yapıldı. Yanlışsa geri alın.",
+    otomatik_numara_baskasi: "Okunan numara {eski} listede başka öğrenciye ({sahibi}) ait; okunan ad ({okunan}) listedeki {ad} ile eşleştiği için numara {yeni} yapıldı. Yanlışsa geri alın.",
+    ad_uyusmuyor: "Okunan ad ({okunan}) listede bu numaradaki öğrenciyle ({ad}) uyuşmuyor: öğrenci başkasının numarasını kodlamış olabilir.",
     kitapcik_okunamadi: "Kitapçık türü okunamadı: {k}",
     kitapcik_bilinmiyor: "Anahtarı girilmemiş kitapçık {k}; {ana} kitapçığı sayıldı",
     klasik_fazla: "{soru}. soruda girilen puan ({puan}) sorunun puanından ({en_fazla}) büyük",
@@ -203,7 +206,7 @@
       ayarlar: yeniAyarlar(), okuyucu: yeniOkuyucu(), dat_yolu: "", liste_yolu: "",
       liste_esleme: { sayfa: null, baslik_satiri: null, no_sutun: null, ad_sutun: null, soyad_sutun: null },
       duzeltmeler: [], profil_akreditasyon: "akreditasyon_soru_bazli_varsayilan", profil_not_giris: "not_giris_varsayilan",
-      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, klasik_girmedi: [], klasik_giris_sirasi: [], cikti_elle: false, cikti_sayisi: 0, final_puanlar: {}, harf_ayarlari: {},
+      sistem_sablonu_yolu: "", bicim: "optik", klasik_soru_sayisi: 5, klasik_puanlar: {}, klasik_toplamlar: {}, klasik_girmedi: [], klasik_giris_sirasi: [], cikti_elle: false, cikti_sayisi: 0, otomatik_kapali: [], final_puanlar: {}, harf_ayarlari: {},
     };
   }
   /** Masaüstü programın kaydettiği .osd dosyasını eksik alanları tamamlayarak yükler. */
@@ -224,6 +227,7 @@
     p.cikti_elle = d.cikti_elle !== undefined ? !!d.cikti_elle : p.anahtar.sorular.some((s) => (s.ogrenme_ciktilari || []).length);
     p.harf_ayarlari = d.harf_ayarlari || {};
     p.cikti_sayisi = parseInt(d.cikti_sayisi, 10) || 0;
+    p.otomatik_kapali = (d.otomatik_kapali || []).map(Number);
     return p;
   }
 
@@ -515,6 +519,20 @@
   // PDF listesi: satırların hücrelerinden ["Öğrenci No", "Adı Soyadı"] tablosu (Python: pdf_hucrelerinden_tablo)
   const NUMARA = /^\d{6,12}$/;
   const harfli = (h) => !!h && /\p{L}/u.test(h) && !/\d/.test(h);
+  /** Python: sistem_tablosu_coz */
+  const SISTEM_SATIRI = /^\s*(?:\d{1,4}\s*[\t;]\s*)?(\d{6,12})\s*[\t;]\s*([^\t;]*?)\s*[\t;]\s*([^\t;]*?)\s*(?:[\t;]|$)/;
+  function sistemTablosuCoz(metin) {
+    const tablo = [["Öğrenci No", "Adı Soyadı"]], gorulen = new Set();
+    for (const satir of String(metin).replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")) {
+      const m = SISTEM_SATIRI.exec(satir);
+      if (!m) continue;
+      const ad = [m[2].trim(), m[3].trim()].filter(Boolean).join(" ");
+      if (gorulen.has(m[1]) || !ad || !harfli(ad)) continue;
+      gorulen.add(m[1]);
+      tablo.push([m[1], ad]);
+    }
+    return tablo;
+  }
   function pdfHucrelerindenTablo(satirlar) {
     let adKaydir = null, soyadKaydir = null;
     const tablo = [["Öğrenci No", "Adı Soyadı"]];
@@ -668,6 +686,16 @@
     }
     return onceki[b.length];
   }
+  // Python: ad_benzerligi ve eşikler
+  const AD_OTOMATIK_ESIK = 0.80, AD_IKINCI_ESIK = 0.70, AD_UYUSMAZ_ESIK = 0.50;
+  function adBenzerligi(okunan, listeAd) {
+    const s1 = sade(okunan);
+    const s2 = sade(listeAd);
+    if (s1.length < 4 || !s2) return 0;
+    const tam = 1 - duzenlemeUzakligi(s1, s2) / Math.max(s1.length, s2.length);
+    if (s2.length > s1.length) return Math.max(tam, 1 - duzenlemeUzakligi(s1, s2.slice(0, s1.length)) / s1.length);
+    return tam;
+  }
   function numaraOnerileri(no, adaylar, enFazla = 3) {
     if (!no) return [];
     const p = [];
@@ -681,7 +709,8 @@
     p.sort((x, y) => x[0] - y[0] || x[1] - y[1] || x[2] - y[2] || (x[3] < y[3] ? -1 : x[3] > y[3] ? 1 : 0));
     return p.slice(0, enFazla).map((x) => x[3]);
   }
-  function sinaviDegerlendir(kayitlar, anahtar, ayar, liste = null, duzeltmeler = []) {
+  function sinaviDegerlendir(kayitlar, anahtar, ayar, liste = null, duzeltmeler = [], otomatikKapali = []) {
+    const kapali = new Set(otomatikKapali || []);
     const puanlar = soruPuanlari(anahtar, ayar);
     const ls = new Map();
     if (liste) for (const o of liste.ogrenciler) ls.set(o.no, o);
@@ -714,6 +743,27 @@
       }
       ogrenciler.push({ kayit: k, no, ad, okunan_ad: okunanAd, cevaplar, sorular: r.sonuclar, dogru: r.dogru, yanlis: r.yanlis, bos: r.bos,
         ham_puan: r.ham, ceza: r.ceza, puan: r.puan, listede, uyarilar, oneriler: [], kitapcik: kit, kaynak_soru: kaynak });
+    }
+    if (liste) {
+      for (const d of duzeltmeler) if (d.alan === "no") kapali.add(d.satir_no);  // hocanın elle düzelttiği numaraya dokunulmaz
+      const supheli = new Set(ogrenciler.filter((o) => o.listede && ls.has(o.no) && o.okunan_ad.trim().length >= 6 && adBenzerligi(o.okunan_ad, ls.get(o.no).ad) < AD_UYUSMAZ_ESIK));
+      const alinan = new Set(ogrenciler.filter((o) => o.listede && !supheli.has(o)).map((o) => o.no));
+      for (const o of ogrenciler) {
+        if ((o.listede && !supheli.has(o)) || kapali.has(o.kayit.satir_no)) continue;
+        const adaylar = liste.ogrenciler.filter((x) => !alinan.has(x.no) && x.no !== o.no).map((x) => [adBenzerligi(o.okunan_ad, x.ad), x])
+          .sort((p, q) => q[0] - p[0]);
+        if (!adaylar.length || adaylar[0][0] < AD_OTOMATIK_ESIK || (adaylar.length > 1 && adaylar[1][0] >= AD_IKINCI_ESIK)) continue;
+        const hedef = adaylar[0][1], eski = o.no;
+        const sahibi = supheli.has(o) ? ls.get(eski).ad : null;
+        supheli.delete(o);
+        o.no = hedef.no; o.ad = hedef.ad || o.okunan_ad; o.listede = true;
+        alinan.add(hedef.no);
+        o.uyarilar = o.uyarilar.filter((u) => !["numara_bos", "numara_okunamadi", "ad_bozuk_karakter", "ad_okunamadi", "ad_bos"].includes(u.tur));
+        o.uyarilar.push({ tur: "otomatik_numara", mesaj: bicimle(sahibi ? UYARI.otomatik_numara_baskasi : UYARI.otomatik_numara, { eski: eski || "(boş)", okunan: o.okunan_ad.trim(), ad: hedef.ad, yeni: hedef.no, sahibi: sahibi || "" }), satir_no: o.kayit.satir_no, ayrinti: eski });
+      }
+      for (const o of ogrenciler) if (supheli.has(o)) {
+        o.uyarilar.push({ tur: "ad_uyusmuyor", mesaj: bicimle(UYARI.ad_uyusmuyor, { okunan: o.okunan_ad.trim(), ad: ls.get(o.no).ad }), satir_no: o.kayit.satir_no });
+      }
     }
     const sayac = new Map();
     for (const o of ogrenciler) if (o.no) { if (!sayac.has(o.no)) sayac.set(o.no, []); sayac.get(o.no).push(o); }
@@ -920,8 +970,8 @@
     yeniOkuyucu, yeniSoru, yeniAyarlar, yeniProje, projeyiTamamla,
     esitYuzdeler, dogruKume, ciktiDagilimi, kitapciklar, esleme, eslemeSorunlari, kitapcikIcin, anahtarMetinden, anahtarMetne,
     soruPuanlari, esitSoruPuanlari, soruDegerlendir, ogrenciPuanla, net, anahtarEksikleri,
-    baytlariCoz, metinDosyasiOku, satirlaraBol, alanlar, satiriCoz, satirlariOku, soruSayisiOner, sablonOner,
-    sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe, pdfHucrelerindenTablo,
+    adBenzerligi, baytlariCoz, metinDosyasiOku, satirlaraBol, alanlar, satiriCoz, satirlariOku, soruSayisiOner, sablonOner,
+    sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe, pdfHucrelerindenTablo, sistemTablosuCoz,
     duzeltilmisDegerler, duzeltilmisKitapcik, duzeltmeOlustur, numaraOnerileri, sinaviDegerlendir,
     puanCoz, puanListesiCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, tablodanGirmedi, dersPaketiCoz, dogalKarsilastir,
   });

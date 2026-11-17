@@ -76,6 +76,7 @@ def test_butun_adimlar(pencere, fix, tmp_path):
     a._esit_puan()
     assert d.proje.ayarlar.yontem == PuanYontemi.ESIT
     assert not a.baslik_w["Puan"].isVisibleTo(a)  # eşit puanda puan sütunu gizli
+    d.proje.otomatik_kapali = [x.satir_no for x in d.okuma.kayitlar]  # elle düzeltme yolunu sınamak için otomatik kapalı
     pencere.sonraki.click()
     k: KontrolAdimi = pencere.adimlar[2]
     assert pencere.yigin.currentIndex() == 2
@@ -612,3 +613,37 @@ def test_soru_durumu_dugmesi(pencere, fix):
     assert sira == [SoruDurumu.IPTAL, SoruDurumu.COKLU, SoruDurumu.BONUS, SoruDurumu.NORMAL]
     a.satirlar[3].durum.click()
     assert a.satirlar[3].durum.text().startswith("İptal")
+
+
+def test_sistemden_liste_ve_otomatik_numara(pencere, fix, monkeypatch):
+    """1. adımda sistemin öğrenci tablosu yapıştırılır; listede olmayan numara adla düzeltilir; 3. adımda geri alınır."""
+    from PySide6.QtWidgets import QMessageBox
+
+    monkeypatch.setattr(QMessageBox, "information", lambda *x, **k: None)
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    from optik_sinav.io.liste_okuyucu import liste_oku
+
+    l = liste_oku(fix / "uydurma_liste.xlsx")
+    tablo = "#\t Öğrenci No\tAdı\tSoyadı\tSnf\n" + "".join(
+        f"{i}\t{o.no}\t{' '.join(o.ad.split()[:-1])}\t{o.ad.split()[-1]}\t4\t\nGirdi\n6,25\n" for i, o in enumerate(l.ogrenciler, 1))
+    p1._listeyi_yapistir(tablo)
+    assert d.liste is not None and len(d.liste.ogrenciler) == len(l.ogrenciler)
+    assert d.proje.liste_yolu.endswith(".txt") and "sistem_listesi" in d.proje.liste_yolu
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    a.hizli.setText("ABCDEABCDE")
+    a._hizli_uygula()
+    pencere.adim_listesi.setCurrentRow(2)
+    k = pencere.adimlar[2]
+    s = d.sonuc
+    o = next(x for x in s.ogrenciler if x.kayit.ogrenci_no == "990000088")
+    assert o.no == "990000008" and not s.listede_olmayanlar
+    sira = next(i for i in range(k.duzeltilecekler.count()) if "990000008 " in k.duzeltilecekler.item(i).text())
+    k.duzeltilecekler.setCurrentRow(sira)
+    k._duzeltilecege_git(k.duzeltilecekler.item(sira))
+    assert k.geri_al.isVisibleTo(k)
+    k._otomatigi_geri_al()
+    assert o.kayit.satir_no in d.proje.otomatik_kapali
+    assert next(x for x in d.sonuc.ogrenciler if x.kayit.ogrenci_no == "990000088").no == "990000088"

@@ -102,6 +102,27 @@ def numara_onerileri(no: str, adaylar: list[str], en_fazla: int = 3) -> list[str
     return [a for *_, a in puanli[:en_fazla]]
 
 
+# Ad benzerliği eşikleri (gerçek 61 kişilik sınavda: aynı öğrenci 1,00; farklı öğrenciler en çok 0,64)
+AD_OTOMATIK_ESIK = 0.80  # bu ve üstü, tek aday: numara kendiliğinden düzeltilir
+AD_IKINCI_ESIK = 0.70  # ikinci en yakın aday bunun altında kalmalı
+AD_UYUSMAZ_ESIK = 0.50  # listedeki numarada okunan ad bunun altındaysa uyarı
+
+
+def ad_benzerligi(okunan: str, liste_ad: str) -> float:
+    """Optik formdan okunan ad ile listedeki adın benzerliği (0-1). Türkçe harf, boşluk ve noktalama farkı yok sayılır;
+    formdaki ad alanı kısa kalıp kesildiyse listedeki ad aynı uzunlukta karşılaştırılır. Okunan ad 4 harften kısaysa 0."""
+    from ..io.liste_okuyucu import _sade
+
+    s1, s2 = _sade(okunan), _sade(liste_ad)
+    if len(s1) < 4 or not s2:
+        return 0.0
+    tam = 1 - _duzenleme_uzakligi(s1, s2) / max(len(s1), len(s2))
+    if len(s2) > len(s1):
+        kesik = s2[:len(s1)]
+        return max(tam, 1 - _duzenleme_uzakligi(s1, kesik) / len(s1))
+    return tam
+
+
 def _duzenleme_uzakligi(a: str, b: str) -> int:
     onceki = list(range(len(b) + 1))
     for i, ca in enumerate(a, 1):
@@ -118,8 +139,11 @@ def sinavi_degerlendir(
     ayarlar: PuanlamaAyarlari,
     liste: OgrenciListesi | None = None,
     duzeltmeler: list[Duzeltme] | None = None,
+    otomatik_kapali: list[int] | None = None,
 ) -> SinavSonucu:
+    """`otomatik_kapali`: otomatik numara düzeltmesi geri alınmış satırlar (hoca reddetti)."""
     duzeltmeler = duzeltmeler or []
+    kapali = set(otomatik_kapali or [])
     puanlar = soru_puanlari(anahtar, ayarlar)
     liste_sozluk: dict[str, Ogrenci] = {o.no: o for o in liste.ogrenciler} if liste else {}
 
@@ -157,6 +181,38 @@ def sinavi_degerlendir(
                 listede=listede, uyarilar=uyarilar, oneriler=oneriler, kitapcik=kitapcik, kaynak_soru=kaynak,
             )
         )
+
+    if liste is not None:
+        # Numara listede ama okunan ad bambaşka: başkasının numarası kodlanmış olabilir (şüpheli).
+        elle = {d.satir_no for d in duzeltmeler if d.alan == "no"}  # hocanın elle düzelttiği numaraya dokunulmaz
+        kapali = kapali | elle
+        supheli = {id(o) for o in ogrenciler if o.listede and o.no in liste_sozluk and len(o.okunan_ad.strip()) >= 6
+                   and ad_benzerligi(o.okunan_ad, liste_sozluk[o.no].ad) < AD_UYUSMAZ_ESIK}
+        # Listede olmayan ya da şüpheli numara: okunan ad, listede henüz kağıdı olmayan tek bir öğrenciyle güçlü
+        # eşleşiyorsa numara düzeltilir.
+        alinan = {o.no for o in ogrenciler if o.listede and id(o) not in supheli}
+        for o in ogrenciler:
+            if (o.listede and id(o) not in supheli) or o.kayit.satir_no in kapali:
+                continue
+            adaylar = sorted(((ad_benzerligi(o.okunan_ad, x.ad), x) for x in liste.ogrenciler if x.no not in alinan and x.no != o.no),
+                             key=lambda t: -t[0])
+            if not adaylar or adaylar[0][0] < AD_OTOMATIK_ESIK or (len(adaylar) > 1 and adaylar[1][0] >= AD_IKINCI_ESIK):
+                continue
+            hedef = adaylar[0][1]
+            eski = o.no
+            sahibi = liste_sozluk[eski].ad if id(o) in supheli else None
+            supheli.discard(id(o))
+            o.no, o.ad, o.listede = hedef.no, hedef.ad or o.okunan_ad, True
+            alinan.add(hedef.no)
+            o.uyarilar = [u for u in o.uyarilar if u.tur not in (UyariTuru.NUMARA_BOS, UyariTuru.NUMARA_OKUNAMADI, UyariTuru.AD_BOZUK_KARAKTER,
+                                                                  UyariTuru.AD_OKUNAMADI, UyariTuru.AD_BOS)]
+            anahtar_metin = "otomatik_numara_baskasi" if sahibi else "otomatik_numara"
+            o.uyarilar.append(Uyari(UyariTuru.OTOMATIK_NUMARA, M.UYARI[anahtar_metin].format(
+                eski=eski or "(boş)", okunan=o.okunan_ad.strip(), ad=hedef.ad, yeni=hedef.no, sahibi=sahibi or ""), o.kayit.satir_no, eski))
+        for o in ogrenciler:
+            if id(o) in supheli:
+                o.uyarilar.append(Uyari(UyariTuru.AD_UYUSMUYOR, M.UYARI["ad_uyusmuyor"].format(
+                    okunan=o.okunan_ad.strip(), ad=liste_sozluk[o.no].ad), o.kayit.satir_no))
 
     # Tekrar eden numaralar düzeltmelerden sonra yeniden denetlenir.
     sayac: dict[str, list[OgrenciSonucu]] = {}

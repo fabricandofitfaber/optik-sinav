@@ -192,7 +192,8 @@
   "final_puanlar": {},
   "harf_ayarlari": {},
   "cikti_elle": false,
-  "cikti_sayisi": 0
+  "cikti_sayisi": 0,
+  "otomatik_kapali": []
  },
  "ders_kodlari": null,
  "beklenen": {
