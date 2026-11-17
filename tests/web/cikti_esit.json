@@ -1,0 +1,680 @@
+[
+ {
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 5,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 6,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "kodlar": [
+   "Ö01",
+   "Ö02",
+   "Ö03",
+   "Ö04",
+   "Ö05",
+   "Ö06"
+  ],
+  "beklenen": [
+   [
+    "Ö01"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö04"
+   ],
+   [
+    "Ö05"
+   ],
+   [
+    "Ö06"
+   ]
+  ]
+ },
+ {
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 5,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 6,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "kodlar": [
+   "Ö01",
+   "Ö02",
+   "Ö03"
+  ],
+  "beklenen": [
+   [
+    "Ö01"
+   ],
+   [
+    "Ö01"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö03"
+   ]
+  ]
+ },
+ {
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 5,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 6,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 7,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 8,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 9,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 10,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "kodlar": [
+   "Ö01",
+   "Ö02",
+   "Ö03",
+   "Ö04"
+  ],
+  "beklenen": [
+   [
+    "Ö01"
+   ],
+   [
+    "Ö01"
+   ],
+   [
+    "Ö01"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö04"
+   ],
+   [
+    "Ö04"
+   ]
+  ]
+ },
+ {
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 5,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "kodlar": [
+   "Ö01",
+   "Ö02",
+   "Ö03",
+   "Ö04",
+   "Ö05",
+   "Ö06",
+   "Ö07"
+  ],
+  "beklenen": [
+   [
+    "Ö01"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö05"
+   ],
+   [
+    "Ö06"
+   ]
+  ]
+ },
+ {
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 5,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 6,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 7,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 8,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 9,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 10,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 11,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 12,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 13,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 14,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 15,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 16,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 17,
+     "dogru": "A",
+     "durum": "bonus",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "kodlar": [
+   "Ö01",
+   "Ö02",
+   "Ö03",
+   "Ö04",
+   "Ö05",
+   "Ö06"
+  ],
+  "beklenen": [
+   [
+    "Ö01"
+   ],
+   [
+    "Ö01"
+   ],
+   [
+    "Ö01"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö02"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö03"
+   ],
+   [
+    "Ö04"
+   ],
+   [
+    "Ö04"
+   ],
+   [
+    "Ö04"
+   ],
+   [
+    "Ö05"
+   ],
+   [
+    "Ö05"
+   ],
+   [
+    "Ö05"
+   ],
+   [
+    "Ö06"
+   ],
+   [
+    "Ö06"
+   ],
+   []
+  ]
+ },
+ {
+  "anahtar": {
+   "sorular": [
+    {
+     "no": 1,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 2,
+     "dogru": "A",
+     "durum": "bonus",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 3,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    },
+    {
+     "no": 4,
+     "dogru": "A",
+     "durum": "normal",
+     "puan": null,
+     "ogrenme_ciktilari": [],
+     "program_ciktilari": [],
+     "cikti_yuzdeleri": {}
+    }
+   ],
+   "kitapcik_eslemesi": {},
+   "ana_kitapcik": "A",
+   "kitapcik_anahtarlari": {}
+  },
+  "kodlar": [
+   "Ö01",
+   "Ö02"
+  ],
+  "beklenen": [
+   [
+    "Ö01"
+   ],
+   [],
+   [
+    "Ö01"
+   ],
+   [
+    "Ö02"
+   ]
+  ]
+ }
+]

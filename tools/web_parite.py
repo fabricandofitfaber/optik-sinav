@@ -215,6 +215,18 @@ def main():
     (cikis / "puan_listesi.json").write_text(json.dumps([{"girdi": m, "beklenen": coz(m)} for m in ornekler], ensure_ascii=False, indent=1),
                                              encoding="utf-8")
 
+    # Öğrenme çıktılarını sorulara eşit dağıtma (bonus soru dahil edilmez)
+    from optik_sinav.core.madde_analizi import esit_cikti_atamasi
+
+    ornekler = []
+    for n, k, bonus in ((6, 6, None), (6, 3, None), (10, 4, None), (5, 7, None), (17, 6, 17), (4, 2, 2)):
+        a = anahtar_kur("A" * n, n)
+        if bonus:
+            a.sorular[bonus - 1].durum = a.sorular[bonus - 1].durum.__class__("bonus")
+        kodlar = [f"Ö{j:02d}" for j in range(1, k + 1)]
+        ornekler.append({"anahtar": a.to_dict(), "kodlar": kodlar, "beklenen": esit_cikti_atamasi(a, kodlar)})
+    (cikis / "cikti_esit.json").write_text(json.dumps(ornekler, ensure_ascii=False, indent=1), encoding="utf-8")
+
     for s in senaryolar:
         (cikis / f"parite_{s['ad']}.json").write_text(json.dumps(s, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     print("Yazıldı:", ", ".join(s["ad"] for s in senaryolar))

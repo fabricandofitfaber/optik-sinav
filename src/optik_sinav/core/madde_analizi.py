@@ -511,6 +511,34 @@ def tam_sayi_dagilim(dagilim: dict[str, Fraction]) -> dict[str, int]:
     return taban
 
 
+def esit_cikti_atamasi(anahtar, kodlar: list[str]) -> list[list[str]]:
+    """Soruları dersin öğrenme çıktılarına sırayla, eşit sayıda paylaştırır: her soru tek bir çıktıya bağlanır.
+
+    6 soru ve 3 çıktıda 1-2 → Ö01, 3-4 → Ö02, 5-6 → Ö03. Bonus soru çıktı almaz (sayılmaz da). Kodlar boşsa hepsi boş.
+    """
+    sira = [i for i, s in enumerate(anahtar.sorular) if s.durum != SoruDurumu.BONUS]
+    sonuc: list[list[str]] = [[] for _ in anahtar.sorular]
+    if not kodlar or not sira:
+        return sonuc
+    n, k = len(sira), len(kodlar)
+    for j, i in enumerate(sira):
+        sonuc[i] = [kodlar[min(k - 1, j * k // n)]]
+    return sonuc
+
+
+def ciktilari_esit_dagit(anahtar, kodlar: list[str]) -> None:
+    """`esit_cikti_atamasi`nı anahtara yazar (yüzdeler sıfırlanır: her soru tek çıktıya %100)."""
+    for s, c in zip(anahtar.sorular, esit_cikti_atamasi(anahtar, kodlar)):
+        s.ogrenme_ciktilari = c
+        s.cikti_yuzdeleri = {}
+
+
+def cikti_atamasi_esit_mi(anahtar, kodlar: list[str]) -> bool:
+    """Anahtardaki çıktılar eşit dağıtımla aynı mı (hoca değiştirdiyse False)."""
+    return bool(kodlar) and [list(s.ogrenme_ciktilari) for s in anahtar.sorular] == esit_cikti_atamasi(anahtar, kodlar) \
+        and not any(s.cikti_yuzdeleri for s in anahtar.sorular)
+
+
 def cikti_denetimi(anahtar, ders_ciktilari: list[str] | None = None) -> tuple[list[str], list[str]]:
     """Öğrenme çıktısı eşlemesinin sisteme girilebilirliği.
 

@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from ... import metinler as M
-from ...core.madde_analizi import cikti_dagilimi, cikti_denetimi
+from ...core.madde_analizi import cikti_atamasi_esit_mi, cikti_dagilimi, cikti_denetimi, ciktilari_esit_dagit
 from ...core.modeller import SIKLAR, CevapAnahtari, PuanYontemi, SoruDurumu, esit_yuzdeler
 from ...core.klasik import puan_listesi_coz
 from ...core.puanlama import anahtar_eksikleri, esit_soru_puanlari, sayi_yaz, soru_puanlari
@@ -237,6 +237,17 @@ class AnahtarAdimi(Adim):
         self.izgara_duzen = QGridLayout(self.izgara)
         self.izgara_duzen.setHorizontalSpacing(6)
         self.izgara_duzen.setVerticalSpacing(3)
+        self.cikti_serit = QWidget()
+        s = QHBoxLayout(self.cikti_serit)
+        s.setContentsMargins(0, 2, 0, 2)
+        self.cikti_bilgi = QLabel()
+        self.cikti_bilgi.setWordWrap(True)
+        s.addWidget(self.cikti_bilgi, 1)
+        self.esit_dagit_dugmesi = QPushButton("Öğrenme çıktılarını eşit dağıt")
+        self.esit_dagit_dugmesi.setToolTip("Soruları dersin öğrenme çıktılarına sırayla, eşit sayıda paylaştırır; her soru bir çıktıya bağlanır.")
+        self.esit_dagit_dugmesi.clicked.connect(self._sirayla_dagit)
+        s.addWidget(self.esit_dagit_dugmesi)
+        self.duzen.addWidget(self.cikti_serit)
         self.kaydirma = QScrollArea()
         self.kaydirma.setWidgetResizable(True)
         self.kaydirma.setWidget(self.izgara)
@@ -295,7 +306,6 @@ class AnahtarAdimi(Adim):
         s = QHBoxLayout()
         s.addWidget(self.sistem_dugmesi)
         s.addWidget(menu_dugmesi("Diğer işlemler", [
-            ("Bütün sorulara çıktıyı sırayla dağıt", self._sirayla_dagit, b1.toolTip()),
             ("Ders eşlemesini kaydet", self._eslemeyi_kaydet, b2.toolTip()),
             ("Kayıtlı ders eşlemesini yükle", self._eslemeyi_yukle, ""),
         ], self))
@@ -408,6 +418,7 @@ class AnahtarAdimi(Adim):
         if self.klasik and self.anahtar.sorular and all(s.puan in (None, "") for s in self.anahtar.sorular):
             for s, p in zip(self.anahtar.sorular, esit_soru_puanlari(self.durum.proje.ayarlar.toplam_puan, self.anahtar.soru_sayisi)):
                 s.puan = p
+        self._ciktilari_varsayilan_dagit()
         self._yukleniyor = True
         try:
             self._sekmeleri_kur()
@@ -757,6 +768,8 @@ class AnahtarAdimi(Adim):
         except ValueError as e:
             QMessageBox.warning(self, "Öğrenme çıktısı", str(e))
             return
+        if (kodlar, yuzde) != (s.ogrenme_ciktilari, s.cikti_yuzdeleri):
+            self.durum.proje.cikti_elle = True  # hoca değiştirdi: artık kendiliğinden dağıtılmaz
         s.ogrenme_ciktilari = kodlar
         s.cikti_yuzdeleri = yuzde
         r.oc.setText(ciktilari_yaz(s.ogrenme_ciktilari, s.cikti_dagilimi()))
@@ -768,6 +781,7 @@ class AnahtarAdimi(Adim):
                            self.durum.cikti_aciklamalari(), self)
         if p.exec() == QDialog.DialogCode.Accepted:
             s.ogrenme_ciktilari, s.cikti_yuzdeleri = p.sonuc()
+            self.durum.proje.cikti_elle = True
             self.satirlar[i].oc.setText(ciktilari_yaz(s.ogrenme_ciktilari, s.cikti_dagilimi()))
             self._ozet()
 
@@ -824,15 +838,43 @@ class AnahtarAdimi(Adim):
         self.sekmeler.setCurrentIndex(0)
         self.durumdan_yukle()
 
+    def _ciktilari_varsayilan_dagit(self):
+        """Varsayılan: dersin öğrenme çıktıları biliniyorsa sorulara eşit dağıtılır ve hoca bir soruyu değiştirene kadar
+        (soru sayısı ya da ders değişse de) eşit tutulur. Hoca değiştirince (`cikti_elle`) bir daha dokunulmaz."""
+        kodlar = self.durum.ogrenme_kodlari()
+        if (kodlar and self.anahtar.sorular and not self.durum.proje.cikti_elle
+                and not cikti_atamasi_esit_mi(self.anahtar, kodlar)):
+            ciktilari_esit_dagit(self.anahtar, kodlar)  # soru sayısı ya da ders değişse de eşit kalır
+
+    def _cikti_seridi(self):
+        """Tablonun üstündeki satır: çıktılar eşit mi dağıtıldı, elle mi düzenlendi, yoksa ders çıktıları bilinmiyor mu."""
+        kodlar = self.durum.ogrenme_kodlari()
+        self.cikti_serit.setVisible(self.ana_mi)
+        if not kodlar:
+            self.cikti_bilgi.setText("<span style='color:gray'>Dersin öğrenme çıktıları bilinmiyor: 1. adımda ders kodunu yazın ya da ders "
+                                     "bilgi paketini yükleyin; sorulara kendiliğinden eşit dağıtılır. Çıktı kodlarını aşağıya elle de yazabilirsiniz.</span>")
+            self.esit_dagit_dugmesi.setVisible(False)
+        elif cikti_atamasi_esit_mi(self.anahtar, kodlar):
+            self.cikti_bilgi.setText(f"<b>Öğrenme çıktıları sorulara eşit dağıtıldı</b> (her soru bir çıktıya; {', '.join(kodlar)}). "
+                                     "<span style='color:gray'>Değiştirmek için sorunun çıktı kutusuna yazın ya da Seç…'e basın.</span>")
+            self.esit_dagit_dugmesi.setVisible(False)
+        else:
+            self.cikti_bilgi.setText("<b>Öğrenme çıktıları elle düzenlendi.</b> <span style='color:gray'>İsterseniz yeniden eşit dağıtabilirsiniz.</span>")
+            self.esit_dagit_dugmesi.setText("Yeniden eşit dağıt")
+            self.esit_dagit_dugmesi.setVisible(True)
+
     def _sirayla_dagit(self):
         kodlar = self.durum.ogrenme_kodlari()
         if not kodlar:
-            QMessageBox.information(self, "Öğrenme çıktıları", "Önce 1. adımda ders bilgi paketini yükleyin.")
+            QMessageBox.information(self, "Öğrenme çıktıları", "Önce 1. adımda ders kodunu yazın ya da ders bilgi paketini yükleyin.")
             return
-        n = self.anahtar.soru_sayisi
-        for i, s in enumerate(self.anahtar.sorular):
-            s.ogrenme_ciktilari = [kodlar[min(len(kodlar) - 1, i * len(kodlar) // n)]]
-            s.cikti_yuzdeleri = {}
+        if any(s.ogrenme_ciktilari for s in self.anahtar.sorular) and not cikti_atamasi_esit_mi(self.anahtar, kodlar):
+            if QMessageBox.question(self, "Yeniden eşit dağıt", "Sorulara elle seçtiğiniz öğrenme çıktıları silinip eşit dağıtılsın mı?") \
+                    != QMessageBox.StandardButton.Yes:
+                return
+        ciktilari_esit_dagit(self.anahtar, kodlar)
+        self.durum.proje.cikti_elle = False
+        self._kurulu = None
         self.durumdan_yukle()
 
     def _sisteme_kopyala(self):
@@ -844,12 +886,14 @@ class AnahtarAdimi(Adim):
 
     def _eslemeyi_yukle(self):
         if self.durum.ders_eslemesi_yukle():
+            self.durum.proje.cikti_elle = True
             self.durumdan_yukle()
         else:
             QMessageBox.information(self, "Ders eşlemesi", f"Bu ders kodu için kayıtlı eşleme yok:\n{self.durum.ders_eslemesi_yolu()}")
 
     # ---------------------------------------------------------------- özet ve denetim
     def _ozet(self):
+        self._cikti_seridi()
         p = self.durum.proje
         a = self.anahtar
         try:

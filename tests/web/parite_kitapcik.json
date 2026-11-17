@@ -190,7 +190,8 @@
   "klasik_girmedi": [],
   "klasik_giris_sirasi": [],
   "final_puanlar": {},
-  "harf_ayarlari": {}
+  "harf_ayarlari": {},
+  "cikti_elle": false
  },
  "ders_kodlari": null,
  "okuyucu_onerisi": {

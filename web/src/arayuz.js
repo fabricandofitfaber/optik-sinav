@@ -688,6 +688,12 @@
     if (!etkilenen.length) return true;
     return onay("Soru çıkarılsın mı?", `Çıkarılacak sorulara puan girilmiş: ${etkilenen.join(", ")}. Bu puanlar hesaba katılmaz ama silinmez; soruyu geri eklerseniz geri gelir. Devam edilsin mi?`);
   }
+  function ciktiSeridi(a) {
+    const kodlar = UI.ogrenmeKodlari();
+    if (!kodlar.length) return `<p class="soluk" style="margin:4px 0 8px">Dersin öğrenme çıktıları bilinmiyor: 1. adımda ders kodunu yazın ya da ders bilgi paketini yükleyin; sorulara kendiliğinden eşit dağıtılır. Çıktı kodlarını aşağıya elle de yazabilirsiniz.</p>`;
+    if (OS.ciktiAtamasiEsitMi(a, kodlar)) return `<p style="margin:4px 0 8px"><b>Öğrenme çıktıları sorulara eşit dağıtıldı</b> (her soru bir çıktıya; ${e(kodlar.join(", "))}). <span class="soluk">Değiştirmek için sorunun çıktı kutusuna yazın ya da Seç…'e basın.</span></p>`;
+    return `<div class="satir" style="margin:4px 0 8px"><span><b>Öğrenme çıktıları elle düzenlendi.</b> <span class="soluk">İsterseniz yeniden eşit dağıtabilirsiniz.</span></span><button id="esitDagitCikti">Yeniden eşit dağıt</button></div>`;
+  }
   function ayarOzeti() {
     const a = D.proje.ayarlar;
     if (D.proje.bicim === "klasik") return `başarı eşiği ${a.basari_esigi}, geçme ortalaması ${a.gecme_ortalamasi}`;
@@ -717,6 +723,9 @@
     },
     ciz(k) {
       adim2.girildi();
+      // Varsayılan: öğrenme çıktıları sorulara eşit dağıtılır ve hoca değiştirene kadar eşit tutulur
+      const dk = UI.ogrenmeKodlari();
+      if (dk.length && D.proje.anahtar.sorular.length && !D.proje.cikti_elle && !OS.ciktiAtamasiEsitMi(D.proje.anahtar, dk)) OS.ciktilariEsitDagit(D.proje.anahtar, dk);
       const st = anahtarDurum();
       const { a, kitler, kl, ana, kit } = st;
       const n = a.sorular.length;
@@ -733,6 +742,7 @@
         ${!ana ? `<p class="soluk">${e(kit)} kitapçığı: şıkları bu kitapçığın kendi soru sırasıyla işaretleyin. "Ana kitapçıktaki karşılığı" sütununa bu sorunun ana kitapçıkta kaçıncı soru olduğunu yazın (sıra aynıysa dokunmayın). Puan ve öğrenme çıktısı ana kitapçıktan gelir.</p>` : ""}
         <div class="satir"><label>Hızlı giriş</label><input type="text" id="hizli" style="flex:1;font-family:Menlo,Consolas,monospace" placeholder="Harfleri sırayla yazın, örneğin BEDAC DEDBC BEAAC ('-' soruyu atlar) ve Enter'a basın" value="${e(hizli)}"><button id="hizliUygula">Uygula</button></div>`}
         <div class="kutu izgara" id="izgara" tabindex="0">
+          ${ana ? ciktiSeridi(a) : ""}
           <table class="sorular ${D.proje.ayarlar.yontem === "esit" && !kl ? "puan-yok" : ""} ${pcGoster ? "" : "pc-yok"}"><thead><tr>${basliklar.map((b) => `<th class="${b === "Puan" ? "puanSutun" : b === "Program çıktıları" ? "pcSutun" : ""}">${b}</th>`).join("")}</tr></thead>
           <tbody>${Array.from({ length: n }, (_, i) => soruSatiri(i, st)).join("")}</tbody></table>
         </div>
@@ -741,8 +751,7 @@
         ${ana ? `<div class="kutu ozet-panel"><div id="anahtarOzet">${anahtarOzetHtml()}</div>
           <div class="satir" style="margin-top:8px"><button class="ana" id="sistemeKopyala" title="Sınav Akreditasyon İşlemleri > Toplu Aktarım Yap > Aktarım Kutusu'na yapıştırılır">Soru tanımını sistem için kopyala</button>
           <button id="esitDagit">Puanları eşit dağıt</button>
-          ${UI.acilirMenu("Diğer işlemler", ['<button id="siraylaDagit">Çıktıları sorulara sırayla dağıt</button>',
-            '<button id="eslemeKaydet">Ders eşlemesini kaydet</button>', '<button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button>'])}</div></div>` : ""}
+          ${UI.acilirMenu("Diğer işlemler", ['<button id="eslemeKaydet">Ders eşlemesini kaydet</button>', '<button id="eslemeYukle">Kayıtlı ders eşlemesini yükle</button>'])}</div></div>` : ""}
         ${ana ? `<label class="soluk"><input type="checkbox" id="pcGoster" ${pcGoster ? "checked" : ""}> Program çıktıları sütununu göster (genellikle gerekmez: sistem bunları ders öğrenme çıktılarından hesaplar)</label>
         <details class="kutu" id="ayarlarBolumu" ${D.ayarAcik ? "open" : ""}><summary><b>Puanlama ayarları</b> <span class="soluk">${e(ayarOzeti())}</span></summary><div id="puanlamaAyarlari"></div></details>` : ""}`;
       UI.anahtarOlaylari(k, st);
@@ -804,15 +813,17 @@
       };
       const cikti = $(".cikti", tr);
       if (cikti) cikti.onchange = () => {
+        const once = JSON.stringify([s.ogrenme_ciktilari, s.cikti_yuzdeleri]);
         try { [s.ogrenme_ciktilari, s.cikti_yuzdeleri] = ciktilariCoz(cikti.value, UI.ogrenmeKodlari(), "Ö"); }
         catch (h) { bilgi("Öğrenme çıktısı", h.message); return; }
+        if (JSON.stringify([s.ogrenme_ciktilari, s.cikti_yuzdeleri]) !== once) D.proje.cikti_elle = true;
         cikti.value = ciktilariYaz(s);
         ozetGuncelle();
       };
       const sec = $(".ciktiSec", tr);
       if (sec) sec.onclick = async () => {
         const r = await UI.ciktiPenceresi(i + 1, s);
-        if (r) { [s.ogrenme_ciktilari, s.cikti_yuzdeleri] = r; cikti.value = ciktilariYaz(s); ozetGuncelle(); }
+        if (r) { [s.ogrenme_ciktilari, s.cikti_yuzdeleri] = r; D.proje.cikti_elle = true; cikti.value = ciktilariYaz(s); ozetGuncelle(); }
       };
       const pc = $(".pc", tr);
       if (pc) pc.onchange = () => {
@@ -911,11 +922,10 @@
       else { ay.yontem = "esit"; for (const s of a.sorular) s.puan = null; }
       yenidenCiz();
     };
-    if ($("#siraylaDagit", k)) $("#siraylaDagit", k).onclick = () => {
-      const kodlar = UI.ogrenmeKodlari();
-      if (!kodlar.length) { bilgi("Öğrenme çıktıları", "Önce 1. adımda ders bilgi paketini yükleyin."); return; }
-      const n = a.sorular.length;
-      a.sorular.forEach((s, i) => { s.ogrenme_ciktilari = [kodlar[Math.min(kodlar.length - 1, Math.floor((i * kodlar.length) / n))]]; s.cikti_yuzdeleri = {}; });
+    if ($("#esitDagitCikti", k)) $("#esitDagitCikti", k).onclick = async () => {
+      if (!(await onay("Yeniden eşit dağıt", "Sorulara elle seçtiğiniz öğrenme çıktıları silinip eşit dağıtılsın mı?"))) return;
+      OS.ciktilariEsitDagit(a, UI.ogrenmeKodlari());
+      D.proje.cikti_elle = false;
       yenidenCiz();
     };
     if ($("#eslemeKaydet", k)) $("#eslemeKaydet", k).onclick = () => {
@@ -928,6 +938,7 @@
       const t = (yerel.al("os_ders_eslemeleri", {}) || {})[D.proje.sinav.ders_kodu || "ders"];
       if (!t) { bilgi("Ders eşlemesi", "Bu ders kodu için kayıtlı eşleme yok."); return; }
       for (const s of a.sorular) { const x = t[String(s.no)]; if (x) { s.ogrenme_ciktilari = [...(x.ogrenme_ciktilari || [])]; s.program_ciktilari = [...(x.program_ciktilari || [])]; s.cikti_yuzdeleri = Object.assign({}, x.cikti_yuzdeleri || {}); } }
+      D.proje.cikti_elle = true;
       yenidenCiz();
     };
     if ($("#sistemeKopyala", k)) $("#sistemeKopyala", k).onclick = () => UI.soruTanimiKopyala();

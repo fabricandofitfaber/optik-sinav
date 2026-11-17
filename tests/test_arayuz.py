@@ -438,3 +438,41 @@ def test_sisteme_aktar_adimi(pencere, fix):
     e._notlari_kopyala()
     assert len(QGuiApplication.clipboard().text().splitlines()[0].split("\t")) == 2
     assert "kopyalandı" in e.durum_satiri.text()
+
+
+def test_ogrenme_ciktilari_varsayilan_esit(pencere, fix, monkeypatch):
+    """Ders çıktıları biliniyorsa sorulara kendiliğinden eşit dağıtılır; soru sayısı değişse de eşit kalır;
+    hoca bir soruyu değiştirince dokunulmaz; "Yeniden eşit dağıt" eşit dağıtıma döner."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from optik_sinav.core.madde_analizi import cikti_atamasi_esit_mi
+    from optik_sinav.core.proje import SinavProjesi
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1.ders_kodu.setText("EKF4507")  # programla gelen ders paketi: 6 öğrenme çıktısı
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(1)
+    a = pencere.adimlar[1]
+    kodlar = d.ogrenme_kodlari()
+    assert len(kodlar) == 6 and cikti_atamasi_esit_mi(d.proje.anahtar, kodlar)
+    assert "eşit dağıtıldı" in a.cikti_bilgi.text() and not a.esit_dagit_dugmesi.isVisibleTo(a)
+    a.hizli.setText("10 10 10 10 20 40")
+    a._hizli_uygula()  # 6 soru: her soru bir çıktıya
+    assert [s.ogrenme_ciktilari for s in d.proje.anahtar.sorular] == [[k] for k in kodlar]
+    a._soru_ekle()  # 7 soru: yine eşit
+    assert d.proje.anahtar.soru_sayisi == 7 and cikti_atamasi_esit_mi(d.proje.anahtar, kodlar)
+    a.satirlar[0].oc.setText("2")
+    a._oc_degisti(0)  # hoca değiştirdi
+    assert d.proje.cikti_elle and d.proje.anahtar.sorular[0].ogrenme_ciktilari == ["Ö02"]
+    a._soru_cikar()
+    assert d.proje.anahtar.sorular[0].ogrenme_ciktilari == ["Ö02"]  # dokunulmadı
+    assert "elle düzenlendi" in a.cikti_bilgi.text() and a.esit_dagit_dugmesi.isVisibleTo(a)
+    monkeypatch.setattr(QMessageBox, "question", lambda *x, **k: QMessageBox.StandardButton.Yes)
+    a._sirayla_dagit()
+    assert not d.proje.cikti_elle and cikti_atamasi_esit_mi(d.proje.anahtar, kodlar)
+    # eski dosya (alan yok, çıktı girilmiş): hocanın girdiği sayılır
+    sozluk = d.proje.to_dict()
+    sozluk.pop("cikti_elle")
+    assert SinavProjesi.from_dict(sozluk).cikti_elle

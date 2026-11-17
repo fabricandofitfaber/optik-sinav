@@ -127,4 +127,11 @@ if (existsSync(puanOrnek)) {
   if (farklar.length) { hata++; console.log(`✗ Puan dizisi: ${farklar.length} fark`); for (const x of farklar) console.log("   " + x); }
   else console.log("✓ Puan dizisi: bütün örnekler aynı");
 }
+const esitOrnek = join(KOK, "tests/web/cikti_esit.json");
+if (existsSync(esitOrnek)) {
+  const farklar = [];
+  JSON.parse(readFileSync(esitOrnek, "utf8")).forEach((o, i) => karsilastir(o.beklenen, OS.esitCiktiAtamasi(OS.projeyiTamamla({ anahtar: o.anahtar }).anahtar, o.kodlar), `cikti_esit[${i}]`, farklar));
+  if (farklar.length) { hata++; console.log(`✗ Çıktı eşit dağıtımı: ${farklar.length} fark`); for (const x of farklar) console.log("   " + x); }
+  else console.log("✓ Çıktı eşit dağıtımı: bütün örnekler aynı");
+}
 process.exit(hata ? 1 : 0);

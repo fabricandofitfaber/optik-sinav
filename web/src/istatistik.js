@@ -310,6 +310,23 @@
     for (const k of sira.slice(0, Math.max(0, Number(kalan)))) taban.set(k, taban.get(k) + 1n);
     return new Map([...taban].map(([k, x]) => [k, Number(x)]));
   }
+  /** Soruları öğrenme çıktılarına sırayla, eşit sayıda paylaştırır; her soru tek çıktıya (Python: esit_cikti_atamasi). */
+  function esitCiktiAtamasi(anahtar, kodlar) {
+    const sira = anahtar.sorular.map((s, i) => [s, i]).filter(([s]) => s.durum !== "bonus").map(([, i]) => i);
+    const sonuc = anahtar.sorular.map(() => []);
+    if (!kodlar || !kodlar.length || !sira.length) return sonuc;
+    const n = sira.length, k = kodlar.length;
+    sira.forEach((i, j) => { sonuc[i] = [kodlar[Math.min(k - 1, Math.floor((j * k) / n))]]; });
+    return sonuc;
+  }
+  function ciktilariEsitDagit(anahtar, kodlar) {
+    esitCiktiAtamasi(anahtar, kodlar).forEach((c, i) => { anahtar.sorular[i].ogrenme_ciktilari = c; anahtar.sorular[i].cikti_yuzdeleri = {}; });
+  }
+  function ciktiAtamasiEsitMi(anahtar, kodlar) {
+    if (!kodlar || !kodlar.length) return false;
+    const e2 = esitCiktiAtamasi(anahtar, kodlar);
+    return anahtar.sorular.every((s, i) => JSON.stringify(s.ogrenme_ciktilari || []) === JSON.stringify(e2[i]) && !Object.keys(s.cikti_yuzdeleri || {}).length);
+  }
   function ciktiDenetimi(anahtar, dersCiktilari = null) {
     const hatalar = [], bilgiler = [];
     if (!anahtar.sorular.some((s) => (s.ogrenme_ciktilari || []).length)) return [hatalar, bilgiler];
@@ -573,7 +590,7 @@
   }
 
   Object.assign(OS, {
-    varsayilanEsikler, maddeAnalizi, ogrenmeCiktisiRaporu, ciktiDagilimiSinav, tamSayiDagilim, ciktiDenetimi,
+    varsayilanEsikler, maddeAnalizi, ogrenmeCiktisiRaporu, ciktiDagilimiSinav, tamSayiDagilim, ciktiDenetimi, esitCiktiAtamasi, ciktilariEsitDagit, ciktiAtamasiEsitMi,
     sinirdakiOgrenciler, finalGereken, sansPuani, tIkiYonluP, kitapcikKarsilastirma, spearman, tasarimDenetimi, rasch, araAgirligi, arsivKaydi,
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

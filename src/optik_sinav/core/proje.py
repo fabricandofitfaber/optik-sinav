@@ -38,6 +38,7 @@ class SinavProjesi:
     klasik_giris_sirasi: list[str] = field(default_factory=list)  # öğrencilerin ilk puanının girildiği sıra (okuma sırası etkisi)
     final_puanlar: dict[str, str | None] = field(default_factory=dict)  # dönem sonu notu için: öğrenci no -> final puanı
     harf_ayarlari: dict = field(default_factory=dict)  # core.donem_sonu.HarfAyarlari.to_dict()
+    cikti_elle: bool = False  # öğrenme çıktıları hoca tarafından değiştirildi; değilse sorulara kendiliğinden eşit dağıtılır
 
     @property
     def klasik(self) -> bool:
@@ -66,10 +67,18 @@ class SinavProjesi:
             "klasik_giris_sirasi": self.klasik_giris_sirasi,
             "final_puanlar": self.final_puanlar,
             "harf_ayarlari": self.harf_ayarlari,
+            "cikti_elle": self.cikti_elle,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "SinavProjesi":
+        p = cls._sozlukten(d)
+        # eski dosyalarda alan yok: çıktı girilmişse hoca girmiş sayılır (üzerine yazılmasın)
+        p.cikti_elle = bool(d.get("cikti_elle", any(s.ogrenme_ciktilari for s in p.anahtar.sorular)))
+        return p
+
+    @classmethod
+    def _sozlukten(cls, d: dict) -> "SinavProjesi":
         return cls(
             sinav=SinavBilgisi.from_dict(d.get("sinav")),
             anahtar=CevapAnahtari.from_dict(d.get("anahtar", {})),
