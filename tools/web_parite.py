@@ -287,6 +287,17 @@ def main():
     sistem_ornekleri = ['Ad Soyad \n \n  \n#\t Öğrenci No\tAdı\tSoyadı\tSnf\tGirme Durum\tSoru1\n(%6,25)\tSoru2\n(%6,25)\tSınav Notu\n1\t990000001\tÇİĞDEM\tÖZTÜRK\t4\t\nGirdi\n6,25\n6,25\n12,5\n2\t990000002\tŞÜKRÜ\tIŞIK\t4\t\nGirdi\n \n3\t2641064003\tAHMET YUSUF\tPEKER\t1\t\nGirmedi\n0\n4\t990000002\tŞÜKRÜ\tIŞIK\t4\t\n', "990000005;AYŞE;KARA;2\n990000006\tEMRE\tŞAHİN\n12345\tKISA\tNUMARA\n", ""]
     (cikis / "sistem_tablosu.json").write_text(json.dumps([{"girdi": g, "beklenen": sistem_tablosu_coz(g)} for g in sistem_ornekleri],
                                                           ensure_ascii=False, indent=1), encoding="utf-8")
+    from optik_sinav.core.klasik import giris_durumu
+    from optik_sinav.core.modeller import Ogrenci
+
+    ogr = [Ogrenci(no=str(n), ad=f"Ö{n}") for n in range(1, 7)]
+    puanlar = {"1": ["5", "5", "20"], "2": ["5", None, ""], "3": [], "4": ["0"], "6": ["1", "2", "3", "4"]}
+    ornek = []
+    for girmedi, n in (([], 3), (["3"], 3), (["2", "5"], 2), ([], 4)):
+        k, e = giris_durumu(ogr, puanlar, girmedi, n)
+        ornek.append({"ogrenciler": [[o.no, o.ad] for o in ogr], "puanlar": puanlar, "girmedi": girmedi, "n": n,
+                      "beklenen": [[o.no for o in k], [[o.no, b] for o, b in e]]})
+    (cikis / "giris_durumu.json").write_text(json.dumps(ornek, ensure_ascii=False, indent=1), encoding="utf-8")
     from optik_sinav.core.dogrulama import ad_benzerligi
 
     ciftler = [["HASAN KAYA", "Hasan  Kaya"], ["ZÜLFÜNUR  *LMAN", "ZÜLFÜNUR YALMAN"], ["HASAN KA", "HASAN KAYA"], ["ALİ", "ALİ VELİ"],

@@ -147,6 +147,16 @@ if (existsSync(sistemOrnek)) {
   if (farklar.length) { hata++; console.log(`✗ Sistem tablosu: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }
   else console.log("✓ Sistem tablosu: bütün örnekler aynı");
 }
+const girisOrnek = join(KOK, "tests/web/giris_durumu.json");
+if (existsSync(girisOrnek)) {
+  const farklar = [];
+  JSON.parse(readFileSync(girisOrnek, "utf8")).forEach((o, i) => {
+    const [k2, e2] = OS.girisDurumu(o.ogrenciler.map(([no, ad]) => ({ no, ad })), o.puanlar, o.girmedi, o.n);
+    karsilastir(o.beklenen, [k2.map((x) => x.no), e2.map(([x, b]) => [x.no, b])], `giris_durumu[${i}]`, farklar);
+  });
+  if (farklar.length) { hata++; console.log(`✗ Giriş durumu: ${farklar.length} fark`); for (const x of farklar.slice(0, 25)) console.log("   " + x); }
+  else console.log("✓ Giriş durumu: bütün örnekler aynı");
+}
 const adOrnek = join(KOK, "tests/web/ad_benzerligi.json");
 if (existsSync(adOrnek)) {
   const farklar = [];

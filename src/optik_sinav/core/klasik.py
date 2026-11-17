@@ -151,6 +151,24 @@ def _yaz(x: Fraction | None) -> str:
     return sayi_yaz(x, 2).rstrip("0").rstrip(",")
 
 
+def giris_durumu(ogrenciler, klasik_puanlar: dict, girmedi: list[str], soru_sayisi: int) -> tuple[list, list[tuple[object, list[int]]]]:
+    """Klasik puan girişinin eksikleri: (kalanlar, eksikler). Kalan: hiç puanı girilmemiş ve "girmedi" işaretlenmemiş öğrenci.
+    Eksik: bazı soruları girilmiş, bazıları boş öğrenci (boş soruların 1'den numaraları). Liste sırasıyla."""
+    g = set(girmedi or [])
+    kalanlar, eksikler = [], []
+    for o in ogrenciler:
+        if o.no in g:
+            continue
+        d = list(klasik_puanlar.get(o.no) or [])[:soru_sayisi]
+        d += [None] * (soru_sayisi - len(d))
+        bos = [k + 1 for k, x in enumerate(d) if x in (None, "")]
+        if len(bos) == soru_sayisi:
+            kalanlar.append(o)
+        elif bos:
+            eksikler.append((o, bos))
+    return kalanlar, eksikler
+
+
 def tablodan_girmedi(tablo: list[list[object]]) -> list[str]:
     """Excel'den puan alırken "Girmedi" sütunu doluysa (herhangi bir işaret) o öğrenci sınava girmedi sayılır."""
     from ..io.liste_okuyucu import _sade, esleme_tahmin_et, numara_normalle

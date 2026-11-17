@@ -707,3 +707,40 @@ def test_testte_sorulara_ayri_puan(pencere, fix):
     assert a.esit_puan_dugmesi.isVisibleTo(a) and not a.ayri_puan_dugmesi.isVisibleTo(a)
     a._esit_puan()
     assert d.proje.ayarlar.yontem == PuanYontemi.ESIT and a.ayri_puan_dugmesi.isVisibleTo(a)
+
+
+
+def test_kalanlar_ve_toplu_girmedi(pencere, fix, monkeypatch):
+    """Klasik puan girişinde kalanlar (hiç puanı yok) ve eksik sorulular bulunur; kalanlar topluca "girmedi" işaretlenir."""
+    from PySide6.QtWidgets import QDialog, QMessageBox, QPushButton
+
+    from optik_sinav.core.klasik import giris_durumu
+
+    d = pencere.durum
+    p1 = pencere.adimlar[0]
+    p1.bicim_klasik.setChecked(True)
+    p1._liste_ac(str(fix / "uydurma_liste.xlsx"))
+    pencere.adim_listesi.setCurrentRow(2)
+    k = pencere.adimlar[2]
+    L = d.liste.ogrenciler
+    n = d.proje.anahtar.soru_sayisi
+    d.proje.klasik_puanlar[L[0].no] = ["1"] * n
+    d.proje.klasik_puanlar[L[1].no] = ["1"] + [None] * (n - 1)
+    kalanlar, eksikler = giris_durumu(L, d.proje.klasik_puanlar, d.proje.klasik_girmedi, n)
+    assert len(kalanlar) == len(L) - 2 and [o.no for o, _ in eksikler] == [L[1].no] and eksikler[0][1] == list(range(2, n + 1))
+    k.kagit._temizle()
+    assert "Eksik sorulu: 1" in k.kagit.kalan.text()
+    # pencere: toplu "girmedi" düğmesine basılır, onay evet
+    monkeypatch.setattr(QMessageBox, "question", lambda *x, **kw: QMessageBox.StandardButton.Yes)
+
+    def ac(self):
+        b = next(x for x in self.findChildren(QPushButton) if "Sınava girmedi" in x.text())
+        b.click()
+        return 1
+
+    monkeypatch.setattr(QDialog, "exec", ac)
+    k.kagit.kalanlari_goster()
+    assert set(d.proje.klasik_girmedi) == {o.no for o in kalanlar}
+    assert "Kalan: 0" in k.kagit.kalan.text()
+    s = d.degerlendir()
+    assert {g.no for g in s.girmeyenler} == {o.no for o in kalanlar}

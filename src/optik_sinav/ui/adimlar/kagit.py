@@ -41,7 +41,13 @@ class KagitPaneli(QGroupBox):
         self.kim.setStyleSheet("font-weight: bold")
         s.addWidget(self.kim, 1)
         self.kalan = QLabel()
+        self.kalan.setTextFormat(Qt.TextFormat.RichText)
         s.addWidget(self.kalan)
+        self.kalanlar_dugmesi = QPushButton("Kalanlar…")
+        self.kalanlar_dugmesi.setToolTip("Puanı girilmemiş ve bazı soruları boş öğrencileri gösterir; kalanları topluca "
+                                         "\"Sınava girmedi\" işaretleyebilirsiniz.")
+        self.kalanlar_dugmesi.clicked.connect(self.kalanlari_goster)
+        s.addWidget(self.kalanlar_dugmesi)
         v.addLayout(s)
         self.oneriler = QLabel()
         self.oneriler.setStyleSheet("color: gray")
@@ -176,6 +182,76 @@ class KagitPaneli(QGroupBox):
         self.durum_etiketi.setText(f"<b>{o.ad}:</b> sınava girmedi olarak işaretlendi.")
         self._temizle()
 
+    def kalanlari_goster(self):
+        """Puanı girilmeyen ve bazı soruları boş öğrenciler; çift tıklayınca kâğıdı açılır; kalanlar topluca "girmedi"."""
+        from PySide6.QtWidgets import QDialog, QListWidget, QListWidgetItem, QMessageBox
+
+        from ...core.klasik import giris_durumu
+
+        p = self.durum.proje
+        kalanlar, eksikler = giris_durumu(self._liste(), p.klasik_puanlar, p.klasik_girmedi, p.anahtar.soru_sayisi)
+        pen = QDialog(self)
+        pen.setWindowTitle("Puanı girilmeyenler")
+        pen.resize(560, 520)
+        v = QVBoxLayout(pen)
+        if not kalanlar and not eksikler:
+            v.addWidget(QLabel("✓ Bütün öğrencilerin puanı girildi ya da \"sınava girmedi\" işaretlendi. Not girişi eksiksiz."))
+        secim = {}
+
+        def ac(it):
+            secim["o"] = it.data(Qt.ItemDataRole.UserRole)
+            pen.accept()
+
+        if kalanlar:
+            v.addWidget(QLabel(f"<b>Hiç puanı girilmeyen: {len(kalanlar)}</b> (kâğıdı atlanmış ya da sınava girmemiş olabilir; "
+                               "çift tıklayınca kâğıdı açılır)"))
+            l1 = QListWidget()
+            for o in kalanlar:
+                it = QListWidgetItem(f"{o.no}  {o.ad}")
+                it.setData(Qt.ItemDataRole.UserRole, o)
+                l1.addItem(it)
+            l1.itemActivated.connect(ac)
+            l1.itemDoubleClicked.connect(ac)
+            v.addWidget(l1, 2)
+        if eksikler:
+            v.addWidget(QLabel(f"<b>Bazı soruları boş: {len(eksikler)}</b> (boş soru sıfır sayılır; çift tıklayınca kâğıdı açılır)"))
+            l2 = QListWidget()
+            for o, bos in eksikler:
+                it = QListWidgetItem(f"{o.no}  {o.ad}: boş soru {', '.join(map(str, bos))}")
+                it.setData(Qt.ItemDataRole.UserRole, o)
+                l2.addItem(it)
+            l2.itemActivated.connect(ac)
+            l2.itemDoubleClicked.connect(ac)
+            v.addWidget(l2, 1)
+        s = QHBoxLayout()
+        if kalanlar:
+            b = QPushButton(f"Kalan {len(kalanlar)} öğrenciyi \"Sınava girmedi\" işaretle…")
+
+            def toplu():
+                ad = "\n".join(f"{o.no} {o.ad}" for o in kalanlar[:25]) + (f"\n… ve {len(kalanlar) - 25} öğrenci daha" if len(kalanlar) > 25 else "")
+                if QMessageBox.question(pen, "Sınava girmedi", f"Şu {len(kalanlar)} öğrenci sınava girmedi olarak işaretlensin mi?\n\n{ad}\n\n"
+                                        "Sisteme \"G\" (Girmedi) olarak gider. Sonradan puan girerseniz işaret kendiliğinden kalkar.") \
+                        != QMessageBox.StandardButton.Yes:
+                    return
+                for o in kalanlar:
+                    self.durum.girmedi_isaretle(o.no, True)
+                self.durum.degerlendir()
+                self.kontrol.klasik_model.yenile()
+                self.durum_etiketi.setText(f"{len(kalanlar)} öğrenci sınava girmedi olarak işaretlendi.")
+                pen.accept()
+
+            b.clicked.connect(toplu)
+            s.addWidget(b)
+        s.addStretch(1)
+        k = QPushButton("Kapat")
+        k.clicked.connect(pen.reject)
+        s.addWidget(k)
+        v.addLayout(s)
+        pen.exec()
+        self._temizle()
+        if "o" in secim:
+            self.sec(secim["o"])
+
     def _temizle(self):
         self.secili = None
         self.ara.clear()
@@ -193,5 +269,10 @@ class KagitPaneli(QGroupBox):
         girilen = sum(1 for o in self._liste() if o.no not in p.klasik_girmedi
                       and any(x not in (None, "") for x in (p.klasik_puanlar.get(o.no) or [])))
         kalan = len(self._liste()) - girilen - girmedi
-        self.kalan.setText(f"Girilen: {girilen} · Girmedi: {girmedi} · Kalan: {kalan}")
+        from ...core.klasik import giris_durumu
+
+        _, eksikler = giris_durumu(self._liste(), p.klasik_puanlar, p.klasik_girmedi, p.anahtar.soru_sayisi)
+        self.kalan.setText(f"Girilen: {girilen} · Girmedi: {girmedi} · Kalan: {kalan}"
+                           + (f" · <span style='color:#C0504D'>Eksik sorulu: {len(eksikler)}</span>" if eksikler else "")
+                           + (" ✓ tamam" if not kalan and not eksikler and self._liste() else ""))
         self.ara.setFocus(Qt.FocusReason.OtherFocusReason)

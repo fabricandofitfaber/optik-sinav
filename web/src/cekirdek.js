@@ -795,6 +795,19 @@
     return Kesir.ondaliktan(s);
   }
   /** "10 10 10 10 20 40" gibi soru puanı dizisi (Python: puan_listesi_coz). Virgül ondalıktır; sondaki ya da çoklu virgül ayırıcıdır. */
+  /** Python: giris_durumu */
+  function girisDurumu(ogrenciler, klasikPuanlar, girmedi, n) {
+    const g = new Set(girmedi || []), kalanlar = [], eksikler = [];
+    for (const o of ogrenciler) {
+      if (g.has(o.no)) continue;
+      const d = (klasikPuanlar[o.no] || []).slice(0, n);
+      while (d.length < n) d.push(null);
+      const bos = d.map((x, k) => (x === null || x === undefined || x === "" ? k + 1 : 0)).filter(Boolean);
+      if (bos.length === n) kalanlar.push(o);
+      else if (bos.length) eksikler.push([o, bos]);
+    }
+    return [kalanlar, eksikler];
+  }
   function puanListesiCoz(metin) {
     const parcalar = [];
     for (let p of String(metin ?? "").trim().split(/[\s;+/|]+/)) {
@@ -975,6 +988,6 @@
     adBenzerligi, baytlariCoz, metinDosyasiOku, satirlaraBol, alanlar, satiriCoz, satirlariOku, soruSayisiOner, sablonOner,
     sade, numaraNormalle, eslemeTahminEt, sayfaSec, tablodanListe, pdfHucrelerindenTablo, sistemTablosuCoz,
     duzeltilmisDegerler, duzeltilmisKitapcik, duzeltmeOlustur, numaraOnerileri, sinaviDegerlendir,
-    puanCoz, puanListesiCoz, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, tablodanGirmedi, dersPaketiCoz, dogalKarsilastir,
+    puanCoz, puanListesiCoz, girisDurumu, klasikYaz, klasikDegerlendir, tablodanKlasikPuanlar, tablodanGirmedi, dersPaketiCoz, dogalKarsilastir,
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);

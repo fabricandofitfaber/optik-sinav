@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const OS = window.OS, UI = window.UI, D = UI.D;
-  const { e, $, $$, bildir, pencere, bilgi, dosyaSec, baytOku, indir, kopyala, yerel } = UI;
+  const { e, $, $$, bildir, pencere, bilgi, onay, dosyaSec, baytOku, indir, kopyala, yerel } = UI;
   const v = OS.v;
   const pct = (x) => {
     if (x === null || x === undefined) return "-";
@@ -73,7 +73,9 @@
     const L = D.liste ? D.liste.ogrenciler : [];
     const gm = L.filter((o) => girmediMi(o.no)).length;
     const gi = L.filter((o) => !girmediMi(o.no) && (D.proje.klasik_puanlar[o.no] || []).some((x) => x !== null && x !== "")).length;
-    return `Girilen: ${gi} · Girmedi: ${gm} · Kalan: ${L.length - gi - gm}`;
+    const [, eksik] = OS.girisDurumu(L, D.proje.klasik_puanlar, D.proje.klasik_girmedi || [], D.proje.anahtar.sorular.length);
+    const kalan = L.length - gi - gm;
+    return `Girilen: ${gi} · Girmedi: ${gm} · Kalan: ${kalan}${eksik.length ? ` · Eksik sorulu: ${eksik.length}` : ""}${!kalan && !eksik.length && L.length ? " ✓ tamam" : ""}`;
   }
   function toplamSinifi(d, kt) {
     if (kt === null || kt === undefined || kt === "") return "";
@@ -88,7 +90,8 @@
     const L = D.liste ? D.liste.ogrenciler : [];
     return `<div class="kutu" id="kagitPaneli"><h3>Kâğıt sırasıyla giriş</h3>
       <div class="satir"><label>Öğrenci</label><input type="text" id="kagitAra" placeholder="Numaranın ya da adın birkaç harfi, sonra Enter" style="width:300px" autocomplete="off">
-        <span id="kagitKim" class="kalin"></span><span id="kagitKalan" class="soluk">${ilerlemeMetni()}</span></div>
+        <span id="kagitKim" class="kalin"></span><span id="kagitKalan" class="soluk">${ilerlemeMetni()}</span>
+        <button id="kagitKalanlar" title="Puanı girilmemiş ve bazı soruları boş öğrencileri gösterir; kalanları topluca &quot;Sınava girmedi&quot; işaretleyebilirsiniz.">Kalanlar…</button></div>
       <div id="kagitOneri" class="satir" style="min-height:8px"></div>
       <div class="satir" id="kagitKutular">${Array.from({ length: n }, (_, k) => `<label>S${k + 1}${tam[k] ? ` (${OS.klasikYaz(tam[k])})` : ""}</label><input type="text" class="kagitPuan" data-k="${k}" style="width:62px" inputmode="decimal" disabled>`).join("")}
         <label>Kâğıttaki toplam</label><input type="text" id="kagitToplam" style="width:70px" inputmode="decimal" disabled title="İsteğe bağlı: kâğıdın üstüne yazdığınız toplam; tutmazsa uyarılır">
@@ -193,6 +196,27 @@
   }
   function kagitOlaylari(k, satirGuncelle) {
     const ara = $("#kagitAra", k);
+    $("#kagitKalanlar", k).onclick = async () => {
+      const [kalanlar, eksikler] = OS.girisDurumu(L, D.proje.klasik_puanlar, D.proje.klasik_girmedi || [], D.proje.anahtar.sorular.length);
+      const oge = (o, ek) => `<li><a href="#" data-ac="${e(o.no)}">${e(o.no)} ${e(o.ad)}</a>${ek ? ` <span class="soluk">${e(ek)}</span>` : ""}</li>`;
+      const icerik = !kalanlar.length && !eksikler.length ? "<p>✓ Bütün öğrencilerin puanı girildi ya da &quot;sınava girmedi&quot; işaretlendi. Not girişi eksiksiz.</p>"
+        : (kalanlar.length ? `<p><b>Hiç puanı girilmeyen: ${kalanlar.length}</b> (kâğıdı atlanmış ya da sınava girmemiş olabilir; tıklayınca kâğıdı açılır)</p><ul style="max-height:220px;overflow:auto">${kalanlar.map((o) => oge(o)).join("")}</ul>` : "")
+        + (eksikler.length ? `<p><b>Bazı soruları boş: ${eksikler.length}</b> (boş soru sıfır sayılır)</p><ul style="max-height:160px;overflow:auto">${eksikler.map(([o, b]) => oge(o, `boş soru ${b.join(", ")}`)).join("")}</ul>` : "");
+      let acilacak = null;
+      const dugmeler = [{ metin: "Kapat", deger: null }];
+      if (kalanlar.length) dugmeler.unshift({ metin: `Kalan ${kalanlar.length} öğrenciyi "Sınava girmedi" işaretle`, deger: "toplu" });
+      const sonuc = await pencere("Puanı girilmeyenler", icerik, dugmeler, (perde) => {
+        $$("[data-ac]", perde).forEach((a2) => (a2.onclick = (ev) => { ev.preventDefault(); acilacak = a2.dataset.ac; $(".dugmeler button:last-child", perde).click(); }));
+      });
+      if (sonuc === "toplu") {
+        if (!(await onay("Sınava girmedi", `Şu ${kalanlar.length} öğrenci sınava girmedi olarak işaretlensin mi?\n\n${kalanlar.slice(0, 25).map((o) => `${o.no} ${o.ad}`).join("\n")}${kalanlar.length > 25 ? `\n… ve ${kalanlar.length - 25} öğrenci daha` : ""}\n\nSisteme "G" (Girmedi) olarak gider. Sonradan puan girerseniz işaret kendiliğinden kalkar.`))) return;
+        kalanlar.forEach((o) => girmediIsaretle(o.no, true));
+        bildir(`${kalanlar.length} öğrenci sınava girmedi olarak işaretlendi.`, 3000);
+        UI.ciz();
+        return;
+      }
+      if (acilacak) { const o = L.find((x) => x.no === acilacak); if (o) sec(o); }
+    };
     if (!ara) return;
     const L = D.liste ? D.liste.ogrenciler : [];
     const kutular = $$(".kagitPuan", k), toplam = $("#kagitToplam", k), kaydet = $("#kagitKaydet", k), girmediB = $("#kagitGirmedi", k);
@@ -647,6 +671,11 @@
       const notlar = [];
       if (s.ogrenciler.some((o) => o.uyarilar.some((u) => u.tur === "tekrar_numara"))) notlar.push("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.");
       if (!D.proje.anahtar.sorular.some((q) => (q.ogrenme_ciktilari || []).length)) notlar.push("Soru tanımı için her soruya bir öğrenme çıktısı gerekiyor: dosyaları indirirken ya da soruları kopyalarken dersin öğrenme çıktısı sayısı sorulacak (ders bilgi paketini 1. adımda yüklediyseniz sorulmaz).");
+      if (D.proje.bicim === "klasik" && D.liste) {
+        const [kalanlar, eksikler] = OS.girisDurumu(D.liste.ogrenciler, D.proje.klasik_puanlar, D.proje.klasik_girmedi || [], D.proje.anahtar.sorular.length);
+        if (kalanlar.length) notlar.push(`${kalanlar.length} öğrencinin puanı girilmedi ve "sınava girmedi" işaretlenmedi; sisteme "G" (Girmedi) olarak gider. Atlanan kâğıt olmadığından emin olmak için 3. adımda "Kalanlar…"a bakın.`);
+        if (eksikler.length) notlar.push(`${eksikler.length} öğrencinin bazı soruları boş (sıfır sayılır). 3. adımda "Kalanlar…"da görünür.`);
+      }
       if (s.listede_olmayanlar.length) notlar.push(`Listede olmayan ${s.listede_olmayanlar.length} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).`);
       const adim = (id, metin, aciklama) => `<div class="aktar-satir"><button class="aktar-dugme" id="${id}">${metin}</button><span class="soluk">${aciklama}</span></div>`;
       k.innerHTML = `<h2>4. Sisteme aktar ve raporlar</h2>

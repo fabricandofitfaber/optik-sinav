@@ -269,6 +269,16 @@ class DisaAktarAdimi(Adim):
             notlar.append("Aynı numara birden çok satırda var; aktarımda yalnızca sonuncusu kullanılır. 3. adımda düzeltin.")
         if not any(q.ogrenme_ciktilari for q in self.durum.proje.anahtar.sorular):
             notlar.append("Soru tanımı için her soruya bir öğrenme çıktısı gerekiyor: dosyaları kaydederken ya da soruları kopyalarken dersin öğrenme çıktısı sayısı sorulacak (ders bilgi paketini 1. adımda yüklediyseniz sorulmaz).")
+        p = self.durum.proje
+        if p.klasik and self.durum.liste:
+            from ...core.klasik import giris_durumu
+
+            kalanlar, eksikler = giris_durumu(self.durum.liste.ogrenciler, p.klasik_puanlar, p.klasik_girmedi, p.anahtar.soru_sayisi)
+            if kalanlar:
+                notlar.append(f"{len(kalanlar)} öğrencinin puanı girilmedi ve \"sınava girmedi\" işaretlenmedi; sisteme \"G\" (Girmedi) olarak gider. "
+                              "Atlanan kâğıt olmadığından emin olmak için 3. adımda \"Kalanlar…\"a bakın.")
+            if eksikler:
+                notlar.append(f"{len(eksikler)} öğrencinin bazı soruları boş (sıfır sayılır). 3. adımda \"Kalanlar…\"da görünür.")
         if s and s.listede_olmayanlar:
             notlar.append(f"Listede olmayan {len(s.listede_olmayanlar)} numara sisteme aktarılmaz (önce 3. adımda numarasını düzeltin).")
         self.bilgi.setText(" ".join(notlar))
