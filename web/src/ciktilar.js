@@ -215,10 +215,12 @@
     const [m] = OS.baytlariCoz(bayt);
     const d = sistemDosyasiniCoz(m);
     return m.split("\r\n").filter((x) => x.trim()).slice(1).map((x) => x.split(d.ayirici))
-      .filter((h) => d.durum_sutun === null || h[d.durum_sutun] === "Girdi")
-      .map((h) => [h[d.no_sutun].replace(/\s/g, "").replace(/^"|"$/g, "")].concat(d.soru_sutunlari.map((j) => h[j])));
+      .map((h) => {
+        const no = h[d.no_sutun].replace(/\s/g, "").replace(/^"|"$/g, "");
+        return d.durum_sutun !== null && h[d.durum_sutun] !== "Girdi" ? [no, "G"] : [no].concat(d.soru_sutunlari.map((j) => h[j]));
+      });
   }
-  const akreditasyonMetni = (sonuc) => akreditasyonSatirlari(sonuc).map((s) => s.join("\t")).join("\n");
+  const akreditasyonMetni = (sonuc, ondalik = ",") => akreditasyonSatirlari(sonuc).map((s) => [s[0]].concat(s.slice(1).map((x) => x.replace(",", ondalik))).join("\t")).join("\n");
 
   Object.assign(OS, { akreditasyonSatirlari, akreditasyonMetni, sistemDosyasiUret, sistemDosyasiniCoz, sistemDosyasiniDoldur, dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
 })(typeof globalThis !== "undefined" ? globalThis : window);

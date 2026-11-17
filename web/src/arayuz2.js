@@ -652,7 +652,8 @@
         ${notlar.length ? `<div class="serit">${notlar.map((x) => e(x)).join("<br>")}</div>` : ""}
         <div class="kutu"><h3>Akademik Bilgi Sistemi'ne aktarım (sırasıyla)</h3>
           ${adim("sorulariKopyala", "1. Soruları kopyala", "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez.")}
-          ${adim("puanlariKopyala", "2. Öğrenci puanlarını kopyala", "Sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranını açın; Kolon Ayracı \"Excel'den Kopyalandı\" olsun, Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Her satırda öğrenci numarası ve soru puanları (sınava girenler; bonus soru yok). Not girişi için ayrıca bir şey gerekmez.")}
+          ${adim("puanlariKopyala", "2. Öğrenci puanlarını kopyala", "Sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranını açın; Kolon Ayracı \"Excel'den Kopyalandı\" olsun, Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Her satırda öğrenci numarası ve soru puanları; sınava girmeyenlerde G (Girmedi); bonus soru yok. Not girişi için ayrıca bir şey gerekmez.")}
+          <label class="soluk" style="display:block;margin-top:6px"><input type="checkbox" id="ondalikNokta" ${X.nokta ? "checked" : ""}> Öğrenci puanlarında ondalık ayırıcı nokta olsun (6.67); sistem virgüllü puanları (6,67) kabul etmezse deneyin</label>
         </div>
         <div class="kutu"><h3>Dosyalar</h3>
           <div class="aktar-satir"><button class="zorunlu-dugme" id="girisDosyalari">Sisteme giriş dosyalarını indir</button>
@@ -667,6 +668,7 @@
           <tbody>${veri.slice(0, 200).map((r) => `<tr>${r.map((h) => `<td>${e(OS.hucreMetni(h, p))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
       $("#aktarGelismis", k).ontoggle = (ev) => { X.gelismisAcik = ev.target.open; };
       $("#sorulariKopyala", k).onclick = () => UI.soruTanimiKopyala();
+      $("#ondalikNokta", k).onchange = (ev) => { X.nokta = ev.target.checked; };
       $("#sistemDosyasi", k).onclick = async () => {
         const f = await dosyaSec(".csv,.txt");
         if (!f) return;
@@ -687,7 +689,7 @@
       };
       $("#puanlariKopyala", k).onclick = async () => {
         let metin;
-        try { metin = OS.akreditasyonMetni(s); } catch (err) { bilgi("Kopyalanamadı", err.message); return; }
+        try { metin = OS.akreditasyonMetni(s, $("#ondalikNokta", k).checked ? "." : ","); } catch (err) { bilgi("Kopyalanamadı", err.message); return; }
         const n = metin ? metin.split("\n").length : 0;
         const adimlar = "Akademik Bilgi Sistemi'nde aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranında:\n1. \"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.\n2. Aktarım Kutusu'na yapıştırın (Cmd+V ya da Ctrl+V).\n3. \"Aktar\" düğmesine basın.";
         if (await kopyala(metin)) bilgi("Panoya kopyalandı", `${UI.sinavKisaAdi()} için ${n} öğrencinin soru puanları kopyalandı.\n\n${adimlar}`);

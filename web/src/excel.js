@@ -456,7 +456,7 @@
       "\"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.", "Bu dosyanın ilk sayfasında (Aktarım) bütün hücreleri seçip kopyalayın (Cmd+A, Cmd+C ya da Ctrl+A, Ctrl+C).",
       "Sistemdeki Aktarım Kutusu'na yapıştırıp \"Aktar\" düğmesine basın."].forEach((x, i) => metin(a, 3 + i, 1, `${i + 1}. ${x}`));
     metin(a, 9, 1, "Aktarım sayfası").font = { bold: true };
-    [["1. sütun", "Öğrenci numarası."], ["Sonraki sütunlar", "Soru 1, Soru 2 … puanları: öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı. Bonus soru yok; sınava girmeyenler yok."]]
+    [["1. sütun", "Öğrenci numarası."], ["Sonraki sütunlar", "Soru 1, Soru 2 … puanları: öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı. Bonus soru yok. Sınava girmeyenlerde B sütununda yalnızca G (Girmedi)."]]
       .forEach(([b, m], i) => { metin(a, 10 + i, 1, b).font = { bold: true }; metin(a, 10 + i, 2, m); });
     a.getColumn(1).width = 20; a.getColumn(2).width = 90;
     return kitabe(wb);

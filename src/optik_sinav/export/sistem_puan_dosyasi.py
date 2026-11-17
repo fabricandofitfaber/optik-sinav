@@ -198,21 +198,25 @@ AKREDITASYON_ADIMLARI = [
 def akreditasyon_satirlari(sonuc: SinavSonucu) -> list[list[str]]:
     """Sistemin öğrenci puanı aktarım kutusu biçimi: her satırda öğrenci numarası ve soru puanları, başlıksız
     (sistemin örneği: 2023050601;7;10;8;10;0;0;5;5;10;10). Soru puanı = alınan pay × soru tanımındaki puan (iki ondalık,
-    virgül). Yalnızca sınava girenler, liste sırasıyla; bonus soru yok."""
+    virgül). Liste sırasıyla; sınava girmeyenlerde puanlar yerine yalnızca "G" (sistemin örneği: G Girmedi,
+    D Devamsız, U Uygulamadan Kaldı); bonus soru yok."""
     bayt, _ = sistem_dosyasi_uret(sonuc)
     metin = bayt.decode("cp1254")
     d = sistem_dosyasini_coz(metin)
     cikti = []
     for satir in sistem_satirlari(bayt)[1:]:
+        no = _numara(satir[d.no_sutun])
         if d.durum_sutun is not None and satir[d.durum_sutun] != GIRDI:
+            cikti.append([no, "G"])
             continue
-        cikti.append([_numara(satir[d.no_sutun])] + [satir[j] for j in d.soru_sutunlari])
+        cikti.append([no] + [satir[j] for j in d.soru_sutunlari])
     return cikti
 
 
-def akreditasyon_metni(sonuc: SinavSonucu) -> str:
-    """Aktarım kutusuna yapıştırılacak metin (Excel'den kopyalanmış gibi sekmeyle ayrılmış)."""
-    return "\n".join("\t".join(s) for s in akreditasyon_satirlari(sonuc))
+def akreditasyon_metni(sonuc: SinavSonucu, ondalik: str = ",") -> str:
+    """Aktarım kutusuna yapıştırılacak metin (Excel'den kopyalanmış gibi sekmeyle ayrılmış). `ondalik`: puanlardaki
+    ondalık ayırıcı (sistem virgülü kabul etmezse nokta denenir)."""
+    return "\n".join("\t".join([s[0]] + [x.replace(",", ondalik) for x in s[1:]]) for s in akreditasyon_satirlari(sonuc))
 
 
 def akreditasyon_excel_yaz(sonuc: SinavSonucu, yol) -> Path:
@@ -235,7 +239,7 @@ def akreditasyon_excel_yaz(sonuc: SinavSonucu, yol) -> Path:
     a.cell(row=9, column=1, value="Aktarım sayfası").font = Font(bold=True)
     for i, (b, m) in enumerate((("1. sütun", "Öğrenci numarası."),
                                 ("Sonraki sütunlar", "Soru 1, Soru 2 … puanları: öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı. "
-                                                     "Bonus soru yok; sınava girmeyenler yok.")), start=10):
+                                                     "Bonus soru yok. Sınava girmeyenlerde B sütununda yalnızca G (Girmedi).")), start=10):
         a.cell(row=i, column=1, value=b).font = Font(bold=True)
         a.cell(row=i, column=2, value=m)
     a.column_dimensions["A"].width = 20

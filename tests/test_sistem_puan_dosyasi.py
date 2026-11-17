@@ -77,3 +77,24 @@ def test_basliksiz_dosya_reddedilir(fix):
 def test_baska_dersin_dosyasi_reddedilir(fix):
     with pytest.raises(ValueError, match="hiçbiri bu sınavda yok"):
         sistem_dosyasini_doldur(_dosya([], ["10"] * 10, ("11111111", "22222222")), _sonuc(fix))
+
+
+def test_aktarim_kutusu_girmeyen_G(fix):
+    """Sistemin örneği: A numara, B.. soru puanları; girmeyende B'de yalnızca G. Liste sırasıyla herkes."""
+    from optik_sinav.export.sistem_puan_dosyasi import akreditasyon_satirlari
+
+    s = _sonuc(fix)
+    satirlar = akreditasyon_satirlari(s)
+    assert [r[0] for r in satirlar] == list(dict.fromkeys(o.no for o in s.liste.ogrenciler))
+    girmeyen = {g.no for g in s.girmeyenler}
+    assert girmeyen and all((r[1:] == ["G"]) == (r[0] in girmeyen) for r in satirlar)
+    assert all(len(r) == 11 for r in satirlar if r[0] not in girmeyen)
+
+
+def test_ondalik_nokta_secenegi(fix):
+    from optik_sinav.export.sistem_puan_dosyasi import akreditasyon_metni
+
+    s = _sonuc(fix)
+    s.ayarlar.toplam_puan = "95"  # 9,5 puanlık sorular: ondalık çıksın
+    v, n = akreditasyon_metni(s), akreditasyon_metni(s, ".")
+    assert "9,5" in v and "9.5" in n and v.replace(",", ".") == n

@@ -86,7 +86,7 @@ class DisaAktarAdimi(Adim):
             ("2. Öğrenci puanlarını kopyala", self._ogrenci_puanlarini_kopyala,
              "Sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranını açın; Kolon Ayracı "
              "\"Excel'den Kopyalandı\" olsun, Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Her satırda öğrenci numarası ve soru "
-             "puanları (sınava girenler; bonus soru yok). Not girişi için ayrıca bir şey gerekmez."),
+             "puanları; sınava girmeyenlerde G (Girmedi); bonus soru yok. Not girişi için ayrıca bir şey gerekmez."),
         ):
             s = QHBoxLayout()
             b = QPushButton(metin)
@@ -100,6 +100,11 @@ class DisaAktarAdimi(Adim):
             l.setStyleSheet("color: gray")
             s.addWidget(l, 1)
             v.addLayout(s)
+        from PySide6.QtWidgets import QCheckBox
+
+        self.nokta = QCheckBox("Öğrenci puanlarında ondalık ayırıcı nokta olsun (6.67); sistem virgüllü puanları (6,67) kabul etmezse deneyin")
+        self.nokta.setStyleSheet("color: gray")
+        v.addWidget(self.nokta)
         self.duzen.addWidget(g)
 
         # --- Dosyalar: sisteme giriş için gerekenler önde; öteki raporlar seçimli
@@ -212,7 +217,7 @@ class DisaAktarAdimi(Adim):
             QMessageBox.information(self, "Önce sonuç", "Puanlar henüz hesaplanmadı: önceki adımlardaki eksikleri tamamlayın.")
             return
         try:
-            metin = akreditasyon_metni(self.durum.sonuc)
+            metin = akreditasyon_metni(self.durum.sonuc, "." if self.nokta.isChecked() else ",")
         except ValueError as e:
             QMessageBox.warning(self, "Kopyalanamadı", str(e))
             return

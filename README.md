@@ -129,7 +129,7 @@ Uyarı türleri: numarada okunamayan karakter, boş ad, Türkçe karakteri bozuk
 Akademik Bilgi Sistemi'ne aktarım iki adımdır:
 
 1. **Soruları kopyala:** Sınav Akreditasyon İşlemleri'nde sınavı açın → "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap"; Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez. Ders bilgi paketi yüklü değilse program dersin öğrenme çıktısı sayısını sorar ve çıktıları sorulara eşit dağıtır.
-2. **Öğrenci puanlarını kopyala:** sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranında Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Her satırda öğrenci numarası ve soru puanları, başlıksız (sistemin örneği: `2023050601;7;10;8;10;0;0;5;5;10;10`). Soru puanı = öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı (iki ondalık, virgül). Yalnızca sınava girenler; bonus soru yok. Not girişi için ayrıca bir şey gerekmez.
+2. **Öğrenci puanlarını kopyala:** sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranında Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Her satırda öğrenci numarası ve soru puanları, başlıksız (sistemin örneği: `2023050601;7;10;8;10;0;0;5;5;10;10`). Soru puanı = öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı (iki ondalık, virgül). Sınava girmeyenlerde B sütununda yalnızca G (Girmedi), sistemin örneğindeki gibi; bonus soru yok. Sistem virgüllü puanları kabul etmezse "ondalık ayırıcı nokta olsun" kutusunu işaretleyip yeniden kopyalayın. Not girişi için ayrıca bir şey gerekmez.
 
 Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür.
 
