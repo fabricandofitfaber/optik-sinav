@@ -669,7 +669,7 @@
       const sutunKopyala = async (sut, ne, profilAdi = "akreditasyon_soru_bazli_varsayilan") => {
         const pr = Object.assign({}, OS.PROFILLER[profilAdi], { sutunlar: sut });
         const metin = OS.panoMetni(pr, s);
-        if (await kopyala(metin)) bildir(`Panoya ${metin.split("\n").length} ${ne} kopyalandı (${s.liste_var ? "öğrenci listesi sırası" : "optik dosya sırası"}). Sistemdeki tablonun ilk hücresine yapıştırın.`, 6000);
+        if (await kopyala(metin)) bildir(`${UI.sinavKisaAdi()} için panoya ${metin.split("\n").length} ${ne} kopyalandı (${s.liste_var ? "öğrenci listesi sırası" : "optik dosya sırası"}). Sistemde aynı dersin ekranında olduğunuzdan emin olun; tablonun ilk hücresine yapıştırın.`, 7000);
         else bilgi("Kopyalanamadı", "Tarayıcı panoya yazmaya izin vermedi.");
       };
       $("#puanlariKopyala", k).onclick = () => sutunKopyala([{ alan: "ogrenci_no", baslik: "Öğrenci No" }, { alan: "soru_puanlari", baslik: "S{n}" }], "öğrencinin soru puanları");

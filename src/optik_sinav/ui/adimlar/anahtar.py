@@ -976,7 +976,8 @@ def soru_tanimini_kopyala(ebeveyn, durum) -> bool:
         return False
     QGuiApplication.clipboard().setText(metin)
     QMessageBox.information(ebeveyn, "Panoya kopyalandı",
-                            f"{len(a.aktarim_sorulari())} sorunun tanımı kopyalandı.\n\n"
+                            f"{durum.sinav_kisa_adi()} için {len(a.aktarim_sorulari())} sorunun tanımı kopyalandı. "
+                            "Sistemde aynı dersin ve sınavın ekranını açtığınızdan emin olun.\n\n"
                             "Akademik Bilgi Sistemi'nde:\n"
                             "1. Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.\n"
                             "2. \"Toplu Sınav Soru Tanım\" kutusunda \"Toplu Aktarım Yap\" seçin.\n"

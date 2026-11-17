@@ -19,7 +19,7 @@ from .adimlar.disa_aktar import DisaAktarAdimi
 from .adimlar.dosyalar import DosyalarAdimi
 from .adimlar.istatistik import IstatistikAdimi
 from .adimlar.kontrol import KontrolAdimi
-from .durum import Durum, kurtarma_ozeti, kurtarmayi_yedekle, son_acilanlar
+from .durum import Durum, kurtarma_ozeti, kurtarmayi_yedekle, osd_okunur_adi, son_acilanlar
 
 
 class KaydirmaAlani(QScrollArea):
@@ -71,6 +71,15 @@ class AnaPencere(QMainWindow):
         yatay.addWidget(self.adim_listesi)
 
         sag = QVBoxLayout()
+        # Sınav kimliği: her adımın üstünde hangi sınavla çalışıldığı; tıklayınca 1. adıma gider
+        self.kimlik = QLabel()
+        self.kimlik.setWordWrap(True)
+        self.kimlik.setTextFormat(Qt.TextFormat.RichText)
+        self.kimlik.setStyleSheet("QLabel { background: rgba(47, 85, 151, 0.10); border: 1px solid rgba(47, 85, 151, 0.35); "
+                                  "border-radius: 6px; padding: 6px 10px; font-size: 14px; }")
+        self.kimlik.setToolTip("Açık sınav. Bilgileri değiştirmek için \"düzenle\"ye tıklayın.")
+        self.kimlik.linkActivated.connect(lambda _x: self.adim_listesi.setCurrentRow(0))
+        sag.addWidget(self.kimlik)
         self.serit = QLabel()
         self.serit.setWordWrap(True)
         self.serit.setStyleSheet("background: #fff4e5; color: #7a4100; border: 1px solid #f0c27a; border-radius: 6px; padding: 8px;")
@@ -185,7 +194,9 @@ class AnaPencere(QMainWindow):
         if not yollar:
             self.son_menu.addAction("(boş)").setEnabled(False)
         for y in yollar:
-            self.son_menu.addAction(y, lambda y=y: self.proje_ac(y))
+            e = self.son_menu.addAction(osd_okunur_adi(y), lambda y=y: self.proje_ac(y))
+            e.setToolTip(y)
+        self.son_menu.setToolTipsVisible(True)
 
     # ---------------------------------------------------------------- gezinme
     def _adima_git(self, i: int):
@@ -239,9 +250,11 @@ class AnaPencere(QMainWindow):
             self.serit.setVisible(bool(satirlar) and self.durum.sonuc is None)
         else:
             self.serit.setVisible(False)
-        baslik = M.UYGULAMA_ADI
+        self.kimlik.setText(self.durum.sinav_kimligi() + "  <a href='duzenle' style='font-size:12px'>düzenle</a>")
+        # pencere başlığı: Dock'ta ve görev çubuğunda hangi sınavın açık olduğu görünsün
+        baslik = f"{self.durum.sinav_kisa_adi()} — {M.UYGULAMA_ADI}"
         if self.durum.proje_yolu:
-            baslik += f" — {self.durum.proje_yolu.name}"
+            baslik += f" ({self.durum.proje_yolu.name})"
         self.setWindowTitle(baslik)
 
     # ---------------------------------------------------------------- proje dosyası

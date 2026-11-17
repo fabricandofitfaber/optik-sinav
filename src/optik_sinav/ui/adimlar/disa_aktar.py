@@ -186,7 +186,8 @@ class DisaAktarAdimi(Adim):
         from .anahtar import soru_tanimini_kopyala
 
         if soru_tanimini_kopyala(self, self.durum):
-            self.durum_satiri.setText(f"✓ {len(self.durum.proje.anahtar.aktarim_sorulari())} sorunun tanımı panoya kopyalandı.")
+            self.durum_satiri.setText(f"✓ {self.durum.sinav_kisa_adi()} için {len(self.durum.proje.anahtar.aktarim_sorulari())} sorunun tanımı "
+                                      "panoya kopyalandı. Sistemde aynı dersin ekranında olduğunuzdan emin olun.")
 
     def _ogrenci_puanlarini_kopyala(self):
         self._kopyala([Sutun("ogrenci_no", "Öğrenci No"), Sutun("soru_puanlari", "S{n}")], "öğrencinin soru puanları")
@@ -352,7 +353,8 @@ class DisaAktarAdimi(Adim):
                 sira = None
         QGuiApplication.clipboard().setText(pano_metni(p, s, sira))
         satir = len(sira) if sira is not None else len(tablo_uret(p, s)[2])
-        self.durum_satiri.setText(f"✓ Panoya {satir} {ne} kopyalandı ({kaynak}). Sistemdeki tablonun ilk hücresine yapıştırın.")
+        self.durum_satiri.setText(f"✓ {self.durum.sinav_kisa_adi()} için panoya {satir} {ne} kopyalandı ({kaynak}). "
+                                  "Sistemde aynı dersin ekranında olduğunuzdan emin olun; tablonun ilk hücresine yapıştırın.")
 
     def _karneler(self):
         from PySide6.QtCore import QUrl

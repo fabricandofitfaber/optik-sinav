@@ -60,6 +60,36 @@ class Durum(QObject):
         self.degisti.emit()
         return d
 
+    def sinav_kisa_adi(self) -> str:
+        """Kısa kimlik: "EKF4507 Ara Sınav"; ders kodu yoksa ders adı, o da yoksa dosya adı, hiçbiri yoksa "Yeni sınav"."""
+        return sinav_kisa_adi(self.proje)
+
+    def sinav_kimligi(self) -> str:
+        """Her adımın üstündeki şerit için zengin metin: ders, sınav türü, tarih, biçim, öğrenci ve soru sayısı."""
+        p = self.proje
+        s = p.sinav
+        ders = " ".join(x for x in (s.ders_kodu, s.ders_adi) if x)
+        if not ders:
+            dosya = Path(p.liste_yolu if p.klasik else p.dat_yolu).name if (p.liste_yolu if p.klasik else p.dat_yolu) else ""
+            ders = f"Adsız sınav · {dosya}" if dosya else "Yeni sınav"
+        parca = [f"<b>{_kacis(ders)}</b>"]
+        if s.sinav_turu:
+            parca.append(_kacis(s.sinav_turu))
+        if s.tarih:
+            parca.append(_tarih_yaz(s.tarih))
+        parca.append("Klasik" if p.klasik else "Optik")
+        ogrenci = len(self.liste.ogrenciler) if (p.klasik and self.liste) else (len(self.okuma.kayitlar) if self.okuma else 0)
+        n = len(p.anahtar.aktarim_sorulari())
+        bonus = p.anahtar.soru_sayisi - n
+        sayilar = []
+        if ogrenci:
+            sayilar.append(f"{ogrenci} öğrenci")
+        if n:
+            sayilar.append(f"{n} soru" + (f" (+{bonus} bonus)" if bonus else ""))
+        if sayilar:
+            parca.append(", ".join(sayilar))
+        return " · ".join(parca)
+
     def ogrenme_kodlari(self) -> list[str]:
         return self.ders.ogrenme_kodlari() if self.ders else []
 
@@ -329,6 +359,37 @@ def son_acilanlar() -> list[str]:
     if isinstance(v, str):
         v = [v]
     return [x for x in (v or []) if Path(x).exists()]
+
+
+def _kacis(m: str) -> str:
+    return str(m).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _tarih_yaz(t: str) -> str:
+    """2026-11-17 → 17.11.2026 (başka biçimse olduğu gibi)."""
+    p = str(t).split("-")
+    return f"{p[2]}.{p[1]}.{p[0]}" if len(p) == 3 and all(x.isdigit() for x in p) else str(t)
+
+
+def sinav_kisa_adi(proje) -> str:
+    s = proje.sinav
+    bas = s.ders_kodu or s.ders_adi
+    if bas:
+        return " ".join(x for x in (bas, s.sinav_turu) if x)
+    dosya = proje.liste_yolu if proje.klasik else proje.dat_yolu
+    return f"Adsız sınav ({Path(dosya).name})" if dosya else "Yeni sınav"
+
+
+def osd_okunur_adi(yol: str) -> str:
+    """Son açılanlar menüsü için: "EKF4507 Ara Sınav (17.11.2026) — dosya.osd"; okunamazsa dosya yolu."""
+    try:
+        v = json.loads(Path(yol).read_text(encoding="utf-8"))
+        s = v.get("sinav") or {}
+        bas = " ".join(x for x in (s.get("ders_kodu") or s.get("ders_adi") or "", s.get("sinav_turu") or "") if x)
+        tarih = f" ({_tarih_yaz(s['tarih'])})" if s.get("tarih") else ""
+        return f"{bas}{tarih} — {Path(yol).name}" if bas else Path(yol).name
+    except (OSError, ValueError, KeyError, AttributeError):
+        return str(yol)
 
 
 def kurtarma_klasoru() -> Path:

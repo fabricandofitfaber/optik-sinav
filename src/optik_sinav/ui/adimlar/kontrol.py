@@ -197,6 +197,7 @@ class KontrolAdimi(Adim):
         self.tablo.verticalHeader().setDefaultSectionSize(22)
         if not s:
             self.ozet.setText("Değerlendirilecek okuma yok.")
+            self._duzeltilecekleri_doldur(None)
             return
         n = s.anahtar.soru_sayisi
         h = self.tablo.horizontalHeader()

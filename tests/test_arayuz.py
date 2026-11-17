@@ -476,3 +476,23 @@ def test_ogrenme_ciktilari_varsayilan_esit(pencere, fix, monkeypatch):
     sozluk = d.proje.to_dict()
     sozluk.pop("cikti_elle")
     assert SinavProjesi.from_dict(sozluk).cikti_elle
+
+
+def test_sinav_kimligi_seridi(pencere, fix, tmp_path):
+    """Her adımın üstünde sınav kimliği; pencere başlığında kısa ad; son açılanlarda okunur ad; ders değişince güncellenir."""
+    from optik_sinav.ui.durum import osd_okunur_adi
+
+    d = pencere.durum
+    assert "Yeni sınav" in pencere.kimlik.text() and pencere.windowTitle().startswith("Yeni sınav")
+    p1 = pencere.adimlar[0]
+    p1._dat_ac(str(fix / "uydurma_1254_crlf.dat"))
+    assert "Adsız sınav · uydurma_1254_crlf.dat" in pencere.kimlik.text() and "11 öğrenci, 10 soru" in pencere.kimlik.text()
+    p1.ders_kodu.setText("EKF4507")
+    assert "<b>EKF4507 Sermaye Piyasası ve Portföy Yönetimi</b>" in pencere.kimlik.text()
+    assert pencere.windowTitle().startswith("EKF4507 Ara Sınav")
+    pencere.adim_listesi.setCurrentRow(3)
+    assert pencere.kimlik.isVisibleTo(pencere)  # her adımda görünür
+    yol = d.kaydet(str(tmp_path / "s.osd"))
+    assert osd_okunur_adi(str(yol)).startswith("EKF4507 Ara Sınav (") and osd_okunur_adi(str(yol)).endswith("— s.osd")
+    p1.ders_kodu.setText("UTL4513")  # başka derse geçildi
+    assert "UTL4513" in pencere.kimlik.text() and pencere.windowTitle().startswith("UTL4513")

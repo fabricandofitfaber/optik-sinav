@@ -66,7 +66,7 @@ python -m optik_sinav            # arayüz
 
 ## Kullanım
 
-Program tek pencerede, soldaki beş adımla ilerler: dördü zorunlu iş (sınav, sorular, kontrol, sisteme aktarım), beşincisi isteğe bağlı istatistiklerdir. Zorunlu olanlar önde, seyrek kullanılan ayarlar katlanır bölümlerde ve menülerdedir. Adımlar arasında serbestçe dolaşabilirsiniz; eksik olan alt satırda yazar, tamamlanan adımın yanında ✓ görünür. Optik (test) ve klasik (yazılı) sınavlar desteklenir. `Ctrl+Enter` bir sonraki adıma geçer.
+Program tek pencerede, soldaki beş adımla ilerler: dördü zorunlu iş (sınav, sorular, kontrol, sisteme aktarım), beşincisi isteğe bağlı istatistiklerdir. Zorunlu olanlar önde, seyrek kullanılan ayarlar katlanır bölümlerde ve menülerdedir. Her adımın üstündeki şerit hangi sınavla çalıştığınızı gösterir (ders kodu ve adı, sınav türü, tarih, öğrenci ve soru sayısı); pencere ve sekme başlığı da dersle başlar, Dosya > Son açılanlar menüsü sınavları ders adlarıyla listeler. Adımlar arasında serbestçe dolaşabilirsiniz; eksik olan alt satırda yazar, tamamlanan adımın yanında ✓ görünür. Optik (test) ve klasik (yazılı) sınavlar desteklenir. `Ctrl+Enter` bir sonraki adıma geçer.
 
 ### 1. Sınav ve dosyalar
 

@@ -347,7 +347,34 @@
     }
     UI.otomatikKaydet();
   };
+  // Sınav kimliği (masaüstündeki Durum.sinav_kimligi ile aynı metin) ve kısa adı
+  const tarihYaz = (t) => { const p = String(t || "").split("-"); return p.length === 3 && p.every((x) => /^\d+$/.test(x)) ? `${p[2]}.${p[1]}.${p[0]}` : String(t || ""); };
+  UI.sinavKisaAdi = function () {
+    const p = D.proje, s = p.sinav, bas = s.ders_kodu || s.ders_adi;
+    if (bas) return [bas, s.sinav_turu].filter(Boolean).join(" ");
+    const dosya = p.bicim === "klasik" ? p.liste_yolu : p.dat_yolu;
+    return dosya ? `Adsız sınav (${dosya})` : "Yeni sınav";
+  };
+  UI.sinavKimligi = function () {
+    const p = D.proje, s = p.sinav, kl = p.bicim === "klasik";
+    let ders = [s.ders_kodu, s.ders_adi].filter(Boolean).join(" ");
+    if (!ders) { const dosya = kl ? p.liste_yolu : p.dat_yolu; ders = dosya ? `Adsız sınav · ${dosya}` : "Yeni sınav"; }
+    const parca = [`<b>${e(ders)}</b>`];
+    if (s.sinav_turu) parca.push(e(s.sinav_turu));
+    if (s.tarih) parca.push(e(tarihYaz(s.tarih)));
+    parca.push(kl ? "Klasik" : "Optik");
+    const ogrenci = kl && D.liste ? D.liste.ogrenciler.length : D.okuma ? D.okuma.kayitlar.length : 0;
+    const n = OS.aktarimSorulari(p.anahtar).length, bonus = p.anahtar.sorular.length - n;
+    const sayilar = [];
+    if (ogrenci) sayilar.push(`${ogrenci} öğrenci`);
+    if (n) sayilar.push(`${n} soru${bonus ? ` (+${bonus} bonus)` : ""}`);
+    if (sayilar.length) parca.push(sayilar.join(", "));
+    return parca.join(" · ");
+  };
   UI.altGuncelle = function () {
+    const km = document.getElementById("kimlik");
+    if (km) { km.innerHTML = UI.sinavKimligi() + ' <a href="#" class="duzenle">düzenle</a>'; km.onclick = (ev) => { ev.preventDefault(); UI.git(0); }; }
+    document.title = `${UI.sinavKisaAdi()} — Optik Sınav Değerlendirme`;
     const ek = UI.adimlar[D.adim].eksikler();
     $("#eksik").textContent = ek.length ? "Eksik: " + ek.join(" ") : "";
     $("#geri").disabled = D.adim === 0;
@@ -377,7 +404,7 @@
         <nav class="adimlar">${ADIMLAR.map((a, i) => `<button data-adim="${i}"><span class="no">${i + 1}.</span>${a}<span class="tamam"></span></button>`).join("")}
           <div class="gizlilik">Program internete bağlanmaz. Öğrenci verisi yalnızca bu tarayıcıda işlenir. Son çalışma bu tarayıcıda saklanır; ortak bilgisayarda işiniz bitince "Yeni sınav"a basın.</div>
         </nav>
-        <main><div id="icerik"></div>
+        <main><div id="kimlik" class="kimlik" title="Açık sınav. Bilgileri değiştirmek için tıklayın."></div><div id="icerik"></div>
           <div class="alt"><span class="eksik" id="eksik"></span><button id="geri">Geri</button><button id="sonraki" class="ana">Sonraki</button></div>
         </main>
       </div>`;
@@ -954,7 +981,7 @@
       const metin = OS.soruTanimiMetni(a, D.proje.ayarlar, UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null);
       const tamam = await kopyala(metin);
       const adimlar = `Akademik Bilgi Sistemi'nde:\n1. Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.\n2. "Toplu Sınav Soru Tanım" kutusunda "Toplu Aktarım Yap" seçin.\n3. "Kolon Ayracı" "Excel'den Kopyalandı" olsun.\n4. Sağdaki Aktarım Kutusu'na tıklayıp yapıştırın (Mac'te Cmd+V, Windows'ta Ctrl+V).\n5. "Aktar" düğmesine basın.`;
-      if (tamam) bilgi("Panoya kopyalandı", `${OS.aktarimSorulari(a).length} sorunun tanımı kopyalandı.\n\n${adimlar}`);
+      if (tamam) bilgi("Panoya kopyalandı", `${UI.sinavKisaAdi()} için ${OS.aktarimSorulari(a).length} sorunun tanımı kopyalandı. Sistemde aynı dersin ve sınavın ekranını açtığınızdan emin olun.\n\n${adimlar}`);
       else pencere("Kopyalamak için seçin", `<p>Tarayıcı panoya yazmaya izin vermedi. Aşağıdaki metni seçip kopyalayın (Cmd+C ya da Ctrl+C):</p><textarea style="width:100%;height:220px;font-family:Menlo,monospace">${e(metin)}</textarea><p style="white-space:pre-wrap">${e(adimlar)}</p>`,
         [{ metin: "Kapat", deger: true, ana: true }], (p) => $("textarea", p).select());
       return tamam;
