@@ -444,6 +444,19 @@
     a.getColumn(1).width = 30; a.getColumn(2).width = 80;
     return kitabe(wb);
   };
+  /** Python: sistem_excel_yaz. satirlar: doldurulmuş sistem dosyasının hücreleri; sayisal: puan sütunlarının sırası (0'dan). */
+  X.sistemPuanlari = async function (satirlar, sayisal) {
+    const wb = yeni();
+    const ws = wb.addWorksheet("Puanlar");
+    satirlar.forEach((satir, i) => satir.forEach((v, j) => {
+      if (i === 0) { metin(ws, 1, j + 1, v).font = { bold: true }; return; }
+      if (sayisal.has(j)) { const c = ws.getCell(i + 1, j + 1); c.value = v === "" ? null : Number(v.replace(",", ".")); c.numFmt = "0.00"; return; }
+      no(ws, i + 1, j + 1, v === "" ? null : v);
+    }));
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+    [14, 18, 16, 6, 12].forEach((w, j) => { ws.getColumn(j + 1).width = w; });
+    return kitabe(wb);
+  };
   X.klasikSablon = async function (ogrenciler, n, puanlar, girmedi = [], tam = []) {
     const wb = yeni();
     const ws = wb.addWorksheet("Puanlar");

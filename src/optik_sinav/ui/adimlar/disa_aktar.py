@@ -113,7 +113,7 @@ class DisaAktarAdimi(Adim):
         b.clicked.connect(self._giris_dosyalari)
         s.addWidget(b, 0, Qt.AlignmentFlag.AlignTop)
         l = QLabel("İki dosya: <b>soru tanımı</b> (Excel; açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → "
-                   "Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (CSV, sistemin puan dosyası biçiminde; sorular tanımlandıktan "
+                   "Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (Excel, sistemin puan dosyası sütunlarıyla; sorular tanımlandıktan "
                    "sonra sisteme yükleyin). Sistem bu dosyayı kabul etmezse sistemden kendi dosyasını indirip 2. düğmeyle doldurun.")
         l.setWordWrap(True)
         l.setStyleSheet("color: gray")
@@ -302,7 +302,7 @@ class DisaAktarAdimi(Adim):
         if p.dosya_turu == "sablon":
             self._sablonu_doldur()
             return
-        oneri = cikti_adi(self.durum.proje.sinav, "akreditasyon" if hangi == "akr" else "not_giris", uzanti(p))
+        oneri = cikti_adi(self.durum.proje.sinav, "soru_puanlari" if hangi == "akr" else "not_giris", uzanti(p))
         yol, _ = QFileDialog.getSaveFileName(self, "Kaydet", str(self._klasor() / oneri))
         if yol:
             try:

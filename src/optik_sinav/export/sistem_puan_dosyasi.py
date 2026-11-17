@@ -179,6 +179,46 @@ def sistem_dosyasi_uret(sonuc: SinavSonucu) -> tuple[bytes, SistemDosyasiRaporu]
     return sistem_dosyasini_doldur(metin.encode("cp1254", errors="replace"), sonuc)
 
 
+def sistem_satirlari(bayt: bytes) -> list[list[str]]:
+    """Doldurulmuş dosyanın hücreleri (Excel'e yazmak için)."""
+    metin, _ = baytlari_coz(bayt)
+    d = sistem_dosyasini_coz(metin)
+    return [s.split(d.ayirici) for s in metin.replace("\r\n", "\n").replace("\r", "\n").split("\n") if s.strip()]
+
+
+def sistem_excel_yaz(sonuc: SinavSonucu, yol) -> SistemDosyasiRaporu:
+    """Sistemin puan dosyası biçimini Excel olarak yazar: aynı sütunlar; numara ve adlar metin, puanlar sayı."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    bayt, rapor = sistem_dosyasi_uret(sonuc)
+    satirlar = sistem_satirlari(bayt)
+    d = sistem_dosyasini_coz(bayt.decode("cp1254"))
+    sayisal = set(d.soru_sutunlari) | ({d.not_sutun} if d.not_sutun is not None else set())
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Puanlar"
+    for r, satir in enumerate(satirlar, start=1):
+        for c, v in enumerate(satir, start=1):
+            h = ws.cell(row=r, column=c)
+            if r == 1:
+                h.value = v
+                h.font = Font(bold=True)
+            elif (c - 1) in sayisal:
+                h.value = float(v.replace(",", ".")) if v != "" else None
+                h.number_format = "0.00"
+            else:
+                h.value = v if v != "" else None
+                h.number_format = "@"
+    ws.freeze_panes = "A2"
+    for c, w in zip("ABCDE", (14, 18, 16, 6, 12)):
+        ws.column_dimensions[c].width = w
+    Path(yol).parent.mkdir(parents=True, exist_ok=True)
+    wb.save(yol)
+    rapor.cikti = Path(yol)
+    return rapor
+
+
 def sistem_dosyasini_yaz(girdi: str | Path, sonuc: SinavSonucu, cikti: str | Path) -> SistemDosyasiRaporu:
     bayt, rapor = sistem_dosyasini_doldur(Path(girdi).read_bytes(), sonuc)
     cikti = Path(cikti)
@@ -187,4 +227,4 @@ def sistem_dosyasini_yaz(girdi: str | Path, sonuc: SinavSonucu, cikti: str | Pat
     return rapor
 
 
-__all__ = ["sistem_dosyasi_uret", "sistem_dosyasini_coz", "sistem_dosyasini_doldur", "sistem_dosyasini_yaz", "SistemDosyasiRaporu", "GIRDI", "GIRMEDI"]
+__all__ = ["sistem_excel_yaz", "sistem_satirlari", "sistem_dosyasi_uret", "sistem_dosyasini_coz", "sistem_dosyasini_doldur", "sistem_dosyasini_yaz", "SistemDosyasiRaporu", "GIRDI", "GIRMEDI"]

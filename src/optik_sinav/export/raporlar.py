@@ -878,7 +878,7 @@ def pdf_ozet_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, esikl
 
 
 # Sisteme giriş için gerekenler (varsayılan) ve isteğe bağlı raporlar
-GIRIS_DOSYALARI = ("soru_tanimi", "sistem_puanlari")  # sistem_puanlari: sistemin biçiminde akreditasyon (öğrenci soru puanları) CSV
+GIRIS_DOSYALARI = ("soru_tanimi", "sistem_puanlari")  # sistem_puanlari: sistemin biçiminde akreditasyon (öğrenci soru puanları), ..._akreditasyon.xlsx
 DIGER_RAPORLAR = (
     ("akreditasyon", "Öğrenci soru puanları (programın Excel biçimi)"),
     ("not_giris", "Not girişi (öğrenci numarası ve puan)"),
@@ -927,13 +927,11 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
         else:
             t.dosyalar.append(soru_tanimi_yaz(a, sonuc.ayarlar, ders_kodlari, klasor / cikti_adi(sinav, "soru_tanimi")))
     if ister("sistem_puanlari") and sonuc.ogrenciler:
-        from .sistem_puan_dosyasi import sistem_dosyasi_uret
+        from .sistem_puan_dosyasi import sistem_excel_yaz
 
         try:
-            bayt, r = sistem_dosyasi_uret(sonuc)
-            yol = klasor / cikti_adi(sinav, "akreditasyon", ".csv")
-            yol.write_bytes(bayt)
-            t.dosyalar.append(yol)
+            r = sistem_excel_yaz(sonuc, klasor / cikti_adi(sinav, "akreditasyon"))
+            t.dosyalar.append(r.cikti)
             t.notlar.extend(r.notlar)
         except ValueError as e:
             t.notlar.append("Akreditasyon (öğrenci soru puanları) dosyası yazılmadı: " + str(e))
@@ -948,7 +946,7 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
             if rapor.sablonda_olmayan:
                 t.notlar.append("Sonuçta olup şablonda olmayan numaralar: " + ", ".join(rapor.sablonda_olmayan))
         elif akreditasyon_profili.dosya_turu != "sablon":
-            t.dosyalar.append(aktarim_yaz(akreditasyon_profili, sonuc, klasor / cikti_adi(sinav, "akreditasyon", uzanti(akreditasyon_profili)), sinav))
+            t.dosyalar.append(aktarim_yaz(akreditasyon_profili, sonuc, klasor / cikti_adi(sinav, "soru_puanlari", uzanti(akreditasyon_profili)), sinav))
     if not_giris_profili is not None and not_giris_profili.dosya_turu != "sablon" and ister("not_giris"):
         t.dosyalar.append(aktarim_yaz(not_giris_profili, sonuc, klasor / cikti_adi(sinav, "not_giris", uzanti(not_giris_profili)), sinav))
     arsiv = []

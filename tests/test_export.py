@@ -156,10 +156,13 @@ def test_sisteme_giris_dosyalari_ve_soru_tanimi(sonuc, tmp_path):
     t = tum_raporlari_yaz(sonuc, SINAV, tmp_path, [], profil_bul("akreditasyon_soru_bazli_varsayilan"),
                           profil_bul("not_giris_varsayilan"), secim=set(GIRIS_DOSYALARI))
     adlar = sorted(d.name.rsplit("_", 1)[-1] for d in t.dosyalar)
-    assert sorted(d.name.rsplit("_", 1)[-1] for d in t.dosyalar) == ["akreditasyon.csv", "tanimi.xlsx"]
-    akr = next(d for d in t.dosyalar if d.suffix == ".csv").read_bytes().decode("cp1254").split("\r\n")
-    assert akr[0].startswith("Öğrenci No;Adı;Soyadı;Snf;Girme Durum;Soru1(%10);") and akr[0].endswith(";Sınav Notu")
-    assert len(akr) - 2 == len(sonuc.liste.ogrenciler)  # liste sırasıyla herkes (girmeyenler "Girmedi")
+    assert sorted(d.name.rsplit("_", 1)[-1] for d in t.dosyalar) == ["akreditasyon.xlsx", "tanimi.xlsx"]
+    ws = openpyxl.load_workbook(next(d for d in t.dosyalar if d.stem.endswith("_akreditasyon")))["Puanlar"]
+    bas = [c.value for c in ws[1]]
+    assert bas[:6] == ["Öğrenci No", "Adı", "Soyadı", "Snf", "Girme Durum", "Soru1(%10)"] and bas[-1] == "Sınav Notu"
+    assert ws.max_row - 1 == len(sonuc.liste.ogrenciler)  # liste sırasıyla herkes (girmeyenler "Girmedi")
+    s2 = [c.value for c in ws[2]]
+    assert isinstance(s2[0], str) and s2[4] in ("Girdi", "Girmedi") and (s2[-1] is None or isinstance(s2[-1], (int, float)))
     st = next(d for d in t.dosyalar if d.stem.endswith("_soru_tanimi"))
     ws = openpyxl.load_workbook(st)["Aktarım"]
     metin = "\n".join("\t".join(str(c.value) for c in satir if c.value is not None) for satir in ws.iter_rows())

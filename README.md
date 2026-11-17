@@ -135,7 +135,7 @@ Akademik Bilgi Sistemi'ne aktarım iki adımdır:
 
 **Dosyalar** bölümünde **"Sisteme giriş dosyalarını kaydet"** iki dosya yazar:
 - `..._soru_tanimi.xlsx`: 1. adımın dosya hâli. Dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, Aktarım Kutusu'na yapıştırın. İkinci sayfa sütunları ve adımları anlatır.
-- `..._akreditasyon.csv`: öğrenci soru puanları, sistemin puan dosyasıyla aynı biçimde (öğrenci listesi sırasıyla; girmeyenler "Girmedi"; sınıf sütunu boş). Sorular tanımlandıktan sonra sisteme yükleyin. Sistem kabul etmezse sistemden kendi dosyasını indirip "2. Sistemin puan dosyasını doldur" ile doldurun.
+- `..._akreditasyon.xlsx`: öğrenci soru puanları, sistemin puan dosyasıyla aynı sütunlarda (Excel; numara ve adlar metin, puanlar sayı) (öğrenci listesi sırasıyla; girmeyenler "Girmedi"; sınıf sütunu boş). Sorular tanımlandıktan sonra sisteme yükleyin. Sistem kabul etmezse sistemden kendi dosyasını indirip "2. Sistemin puan dosyasını doldur" ile doldurun.
 
 Öteki raporlar (sonuç, istatistik, öğrenme çıktısı, karneler, özet; isterseniz programın kendi biçiminde öğrenci soru puanları ve not girişi) **"Diğer raporlar…"** ile işaretleyerek seçilir; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
 
@@ -147,7 +147,8 @@ Dosya adlarında ders kodu, sınav türü ve tarih bulunur, örneğin `UTL4513_A
 |---|---|
 | `..._soru_tanimi.xlsx` | Soru tanımı: ilk sayfa sisteme yapıştırılacak satırlar (başlıksız), ikinci sayfa açıklama |
 | `..._sonuc.xlsx` | Sonuç (soru puanları, doğru, yanlış, boş, puan, uyarı), Cevaplar, Uyarılar, Düzeltme Kaydı, Anahtar ve Ayarlar sayfaları. Renkli, süzgeçli, ilk satır sabit. |
-| `..._akreditasyon.xlsx` | Soru bazlı puanlar, seçili profile göre |
+| `..._akreditasyon.xlsx` | Sisteme yüklenecek öğrenci soru puanları (sistemin puan dosyası sütunları) |
+| `..._soru_puanlari.xlsx` | Soru bazlı puanlar, seçili profile göre (isteğe bağlı, "Diğer raporlar") |
 | `..._akreditasyon_sablon.xlsx` | Sistem şablonu verildiyse doldurulmuş şablon |
 | `..._not_giris.xlsx` | Öğrenci numarası ve puan, seçili profile göre |
 | `..._istatistik.xlsx` | Grafikli istatistik raporu: Özet ve yorum, Puan Dağılımı (grafik), Madde Analizi (grafik), Çeldiriciler, Beş Grup, Boş Bırakma (grafik), Kişi Uyumu, Benzer Cevaplar, Standart Puanlar. Her sayfanın altında okuma rehberi var. |
