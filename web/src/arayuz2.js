@@ -652,15 +652,15 @@
         ${notlar.length ? `<div class="serit">${notlar.map((x) => e(x)).join("<br>")}</div>` : ""}
         <div class="kutu"><h3>Akademik Bilgi Sistemi'ne aktarım (sırasıyla)</h3>
           ${adim("sorulariKopyala", "1. Soruları kopyala", "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez.")}
-          ${adim("sistemDosyasi", "2. Sistemin puan dosyasını doldur…", "Sorular tanımlandıktan sonra sistemde aynı dersin ve sınavın soru bazlı puan dosyasını indirin (CSV) ve burada seçin. Program her öğrencinin soru puanlarını ve sınav notunu yazar, girmeyenleri \"Girmedi\" yapar ve dosyayı aynı biçimde indirir; o dosyayı sisteme yükleyin. Not girişi için ayrıca bir dosya gerekmez.")}
+          ${adim("puanlariKopyala", "2. Öğrenci puanlarını kopyala", "Sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranını açın; Kolon Ayracı \"Excel'den Kopyalandı\" olsun, Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Her satırda öğrenci numarası ve soru puanları (sınava girenler; bonus soru yok). Not girişi için ayrıca bir şey gerekmez.")}
         </div>
         <div class="kutu"><h3>Dosyalar</h3>
           <div class="aktar-satir"><button class="zorunlu-dugme" id="girisDosyalari">Sisteme giriş dosyalarını indir</button>
-            <span class="soluk">İki dosya: <b>soru tanımı</b> (Excel; açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (Excel, sistemin puan dosyası sütunlarıyla; sorular tanımlandıktan sonra sisteme yükleyin). Sistem bu dosyayı kabul etmezse sistemden kendi dosyasını indirip 2. düğmeyle doldurun.</span></div>
+            <span class="soluk">İki dosya: <b>soru tanımı</b> (Excel; açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (öğrenci soru puanları; sorular tanımlandıktan sonra aynı yolla öğrenci puanı Aktarım Kutusu'na). Düğmelerle panoya kopyalamanın dosya hâlidir.</span></div>
           <div class="satir"><button id="digerRaporlar">Diğer raporlar…</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button></div></div>
         <details class="kutu" id="aktarGelismis" ${X.gelismisAcik ? "open" : ""}><summary class="soluk">Gelişmiş: aktarım biçimi, tek tek dosyalar ve önizleme</summary>
           <div class="satir"><label>Biçim</label><select id="profil">${Object.values(OS.PROFILLER).map((x) => `<option value="${x.ad}" ${x.ad === X.profil ? "selected" : ""}>${e(x.baslik)}</option>`).join("")}</select>
-            <button id="pano">Sütun seçerek panoya kopyala</button><button id="puanlariKopyala">Öğrenci puanlarını kopyala</button><button id="notlariKopyala">Not girişi için puanları kopyala</button>
+            <button id="pano">Sütun seçerek panoya kopyala</button><button id="sistemDosyasi">Sistemin puan dosyasını (CSV) doldur</button><button id="notlariKopyala">Not girişi için puanları kopyala</button>
             ${UI.acilirMenu("Tek tek indir", ['<button data-dosya="sonuc">Sonuç</button>', '<button data-dosya="istatistik">İstatistik</button>',
               '<button data-dosya="cikti">Öğrenme çıktısı</button>', '<button data-dosya="soru_tanimi">Soru tanımı</button>', '<button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button>', '<button data-dosya="not">Not girişi</button>'])}</div>
           <div class="tablo-kap" style="max-height:340px"><table class="veri"><thead><tr>${bas.map((b) => `<th>${e(b)}</th>`).join("")}</tr></thead>
@@ -685,7 +685,14 @@
         if (await kopyala(metin)) bildir(`${UI.sinavKisaAdi()} için panoya ${metin.split("\n").length} ${ne} kopyalandı (${s.liste_var ? "öğrenci listesi sırası" : "optik dosya sırası"}). Sistemde aynı dersin ekranında olduğunuzdan emin olun; tablonun ilk hücresine yapıştırın.`, 7000);
         else bilgi("Kopyalanamadı", "Tarayıcı panoya yazmaya izin vermedi.");
       };
-      $("#puanlariKopyala", k).onclick = () => sutunKopyala([{ alan: "ogrenci_no", baslik: "Öğrenci No" }, { alan: "soru_puanlari", baslik: "S{n}" }], "öğrencinin soru puanları");
+      $("#puanlariKopyala", k).onclick = async () => {
+        let metin;
+        try { metin = OS.akreditasyonMetni(s); } catch (err) { bilgi("Kopyalanamadı", err.message); return; }
+        const n = metin ? metin.split("\n").length : 0;
+        const adimlar = "Akademik Bilgi Sistemi'nde aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranında:\n1. \"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.\n2. Aktarım Kutusu'na yapıştırın (Cmd+V ya da Ctrl+V).\n3. \"Aktar\" düğmesine basın.";
+        if (await kopyala(metin)) bilgi("Panoya kopyalandı", `${UI.sinavKisaAdi()} için ${n} öğrencinin soru puanları kopyalandı.\n\n${adimlar}`);
+        else pencere("Kopyalamak için seçin", `<p>Tarayıcı panoya yazmaya izin vermedi. Aşağıdaki metni seçip kopyalayın:</p><textarea style="width:100%;height:220px;font-family:Menlo,monospace">${e(metin)}</textarea><p style="white-space:pre-wrap">${e(adimlar)}</p>`);
+      };
       $("#notlariKopyala", k).onclick = () => sutunKopyala([{ alan: "ogrenci_no", baslik: "Öğrenci No" }, { alan: "puan", baslik: "Puan" }], "öğrencinin numarası ve puanı", "not_giris_varsayilan");
       $("#profil", k).onchange = (ev) => { X.profil = ev.target.value; UI.ciz(); };
       $("#pano", k).onclick = async () => {
@@ -711,14 +718,7 @@
           return [await UI.excel.soruTanimi(a, D.proje.ayarlar, kodlar), OS.ciktiAdi(sn, "soru_tanimi")];
         }
         if (tur === "sistem_puanlari") {
-          try {
-            const r = OS.sistemDosyasiUret(s);
-            const [m] = OS.baytlariCoz(r.bayt);
-            const d = OS.sistemDosyasiniCoz(m);
-            const satirlar = m.split("\r\n").filter((x) => x.trim()).map((x) => x.split(d.ayirici));
-            const sayisal = new Set(d.soru_sutunlari.concat(d.not_sutun === null ? [] : [d.not_sutun]));
-            return [await UI.excel.sistemPuanlari(satirlar, sayisal), OS.ciktiAdi(sn, "akreditasyon")];
-          } catch (err) { return { not: "Akreditasyon (öğrenci soru puanları) dosyası indirilmedi: " + err.message }; }
+          try { return [await UI.excel.akreditasyon(s), OS.ciktiAdi(sn, "akreditasyon")]; } catch (err) { return { not: "Akreditasyon (öğrenci soru puanları) dosyası indirilmedi: " + err.message }; }
         }
         if (tur === "akreditasyon") return [await UI.excel.profil(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, s), OS.ciktiAdi(sn, "soru_puanlari")];
         if (tur === "not") return [await UI.excel.profil(OS.PROFILLER.not_giris_varsayilan, s), OS.ciktiAdi(sn, "not_giris")];
@@ -732,7 +732,7 @@
       const toplu = async (turler, baslik) => {
         const adlar = [], notlar = [];
         const aciklama = { soru_tanimi: "soruları tanımlamak için: Toplu Sınav Soru Tanım → Toplu Aktarım Yap; dosyayı açıp ilk sayfanın hepsini seçin, kopyalayın, Aktarım Kutusu'na yapıştırın",
-          akreditasyon: "öğrenci soru puanları (programın Excel biçimi)", sistem_puanlari: "akreditasyon: öğrenci soru puanları; sorular tanımlandıktan sonra sisteme yükleyin", not: "Not Giriş ekranı için öğrenci numarası ve puan" };
+          akreditasyon: "öğrenci soru puanları (programın Excel biçimi)", sistem_puanlari: "akreditasyon: öğrenci soru puanları; sorular tanımlandıktan sonra açıp ilk sayfanın hepsini seçin, kopyalayın, öğrenci puanı Aktarım Kutusu'na yapıştırın", not: "Not Giriş ekranı için öğrenci numarası ve puan" };
         for (const t of turler) {
           const r = await dosya(t);
           if (!r) { if (t === "cikti") notlar.push("Sorulara öğrenme çıktısı atanmadığı için öğrenme çıktısı raporu indirilmedi."); continue; }

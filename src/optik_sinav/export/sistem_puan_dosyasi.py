@@ -186,37 +186,63 @@ def sistem_satirlari(bayt: bytes) -> list[list[str]]:
     return [s.split(d.ayirici) for s in metin.replace("\r\n", "\n").replace("\r", "\n").split("\n") if s.strip()]
 
 
-def sistem_excel_yaz(sonuc: SinavSonucu, yol) -> SistemDosyasiRaporu:
-    """Sistemin puan dosyası biçimini Excel olarak yazar: aynı sütunlar; numara ve adlar metin, puanlar sayı."""
+AKREDITASYON_ADIMLARI = [
+    "Önce soruları tanımlayın (soru tanımı dosyası ya da \"Soruları kopyala\").",
+    "Akademik Bilgi Sistemi'nde aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranını açın.",
+    "\"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.",
+    "Bu dosyanın ilk sayfasında (Aktarım) bütün hücreleri seçip kopyalayın (Cmd+A, Cmd+C ya da Ctrl+A, Ctrl+C).",
+    "Sistemdeki Aktarım Kutusu'na yapıştırıp \"Aktar\" düğmesine basın.",
+]
+
+
+def akreditasyon_satirlari(sonuc: SinavSonucu) -> list[list[str]]:
+    """Sistemin öğrenci puanı aktarım kutusu biçimi: her satırda öğrenci numarası ve soru puanları, başlıksız
+    (sistemin örneği: 2023050601;7;10;8;10;0;0;5;5;10;10). Soru puanı = alınan pay × soru tanımındaki puan (iki ondalık,
+    virgül). Yalnızca sınava girenler, liste sırasıyla; bonus soru yok."""
+    bayt, _ = sistem_dosyasi_uret(sonuc)
+    metin = bayt.decode("cp1254")
+    d = sistem_dosyasini_coz(metin)
+    cikti = []
+    for satir in sistem_satirlari(bayt)[1:]:
+        if d.durum_sutun is not None and satir[d.durum_sutun] != GIRDI:
+            continue
+        cikti.append([_numara(satir[d.no_sutun])] + [satir[j] for j in d.soru_sutunlari])
+    return cikti
+
+
+def akreditasyon_metni(sonuc: SinavSonucu) -> str:
+    """Aktarım kutusuna yapıştırılacak metin (Excel'den kopyalanmış gibi sekmeyle ayrılmış)."""
+    return "\n".join("\t".join(s) for s in akreditasyon_satirlari(sonuc))
+
+
+def akreditasyon_excel_yaz(sonuc: SinavSonucu, yol) -> Path:
+    """İlk sayfa "Aktarım": başlıksız, metin hücreler (panodaki akreditasyon_metni ile birebir); ikinci sayfa açıklama."""
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
-    bayt, rapor = sistem_dosyasi_uret(sonuc)
-    satirlar = sistem_satirlari(bayt)
-    d = sistem_dosyasini_coz(bayt.decode("cp1254"))
-    sayisal = set(d.soru_sutunlari) | ({d.not_sutun} if d.not_sutun is not None else set())
     wb = Workbook()
     ws = wb.active
-    ws.title = "Puanlar"
-    for r, satir in enumerate(satirlar, start=1):
+    ws.title = "Aktarım"
+    for r, satir in enumerate(akreditasyon_satirlari(sonuc), start=1):
         for c, v in enumerate(satir, start=1):
-            h = ws.cell(row=r, column=c)
-            if r == 1:
-                h.value = v
-                h.font = Font(bold=True)
-            elif (c - 1) in sayisal:
-                h.value = float(v.replace(",", ".")) if v != "" else None
-                h.number_format = "0.00"
-            else:
-                h.value = v if v != "" else None
-                h.number_format = "@"
-    ws.freeze_panes = "A2"
-    for c, w in zip("ABCDE", (14, 18, 16, 6, 12)):
-        ws.column_dimensions[c].width = w
+            h = ws.cell(row=r, column=c, value=v)
+            h.number_format = "@"
+    ws.column_dimensions["A"].width = 14
+    a = wb.create_sheet("Açıklama")
+    a.cell(row=1, column=1, value="Öğrenci soru puanları: Akademik Bilgi Sistemi'ne nasıl aktarılır?").font = Font(bold=True, size=13)
+    for i, adim in enumerate(AKREDITASYON_ADIMLARI, start=1):
+        a.cell(row=2 + i, column=1, value=f"{i}. {adim}")
+    a.cell(row=9, column=1, value="Aktarım sayfası").font = Font(bold=True)
+    for i, (b, m) in enumerate((("1. sütun", "Öğrenci numarası."),
+                                ("Sonraki sütunlar", "Soru 1, Soru 2 … puanları: öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı. "
+                                                     "Bonus soru yok; sınava girmeyenler yok.")), start=10):
+        a.cell(row=i, column=1, value=b).font = Font(bold=True)
+        a.cell(row=i, column=2, value=m)
+    a.column_dimensions["A"].width = 20
+    a.column_dimensions["B"].width = 90
     Path(yol).parent.mkdir(parents=True, exist_ok=True)
     wb.save(yol)
-    rapor.cikti = Path(yol)
-    return rapor
+    return Path(yol)
 
 
 def sistem_dosyasini_yaz(girdi: str | Path, sonuc: SinavSonucu, cikti: str | Path) -> SistemDosyasiRaporu:
@@ -227,4 +253,4 @@ def sistem_dosyasini_yaz(girdi: str | Path, sonuc: SinavSonucu, cikti: str | Pat
     return rapor
 
 
-__all__ = ["sistem_excel_yaz", "sistem_satirlari", "sistem_dosyasi_uret", "sistem_dosyasini_coz", "sistem_dosyasini_doldur", "sistem_dosyasini_yaz", "SistemDosyasiRaporu", "GIRDI", "GIRMEDI"]
+__all__ = ["akreditasyon_satirlari", "akreditasyon_metni", "akreditasyon_excel_yaz", "sistem_satirlari", "sistem_dosyasi_uret", "sistem_dosyasini_coz", "sistem_dosyasini_doldur", "sistem_dosyasini_yaz", "SistemDosyasiRaporu", "GIRDI", "GIRMEDI"]

@@ -83,10 +83,10 @@ class DisaAktarAdimi(Adim):
              "Sınav Akreditasyon İşlemleri'nde sınavı açın → \"Toplu Sınav Soru Tanım\" → \"Toplu Aktarım Yap\". "
              "Kolon Ayracı \"Excel'den Kopyalandı\" olsun; Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. "
              "Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez."),
-            ("2. Sistemin puan dosyasını doldur…", self._sistem_dosyasi,
-             "Sorular tanımlandıktan sonra sistemde aynı dersin ve sınavın soru bazlı puan dosyasını indirin (CSV) ve burada seçin. "
-             "Program her öğrencinin soru puanlarını ve sınav notunu yazar, girmeyenleri \"Girmedi\" yapar ve dosyayı aynı biçimde "
-             "kaydeder; o dosyayı sisteme yükleyin. Not girişi için ayrıca bir dosya gerekmez."),
+            ("2. Öğrenci puanlarını kopyala", self._ogrenci_puanlarini_kopyala,
+             "Sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranını açın; Kolon Ayracı "
+             "\"Excel'den Kopyalandı\" olsun, Aktarım Kutusu'na yapıştırıp \"Aktar\"a basın. Her satırda öğrenci numarası ve soru "
+             "puanları (sınava girenler; bonus soru yok). Not girişi için ayrıca bir şey gerekmez."),
         ):
             s = QHBoxLayout()
             b = QPushButton(metin)
@@ -113,8 +113,8 @@ class DisaAktarAdimi(Adim):
         b.clicked.connect(self._giris_dosyalari)
         s.addWidget(b, 0, Qt.AlignmentFlag.AlignTop)
         l = QLabel("İki dosya: <b>soru tanımı</b> (Excel; açıp ilk sayfanın hepsini seçin, kopyalayın, Toplu Sınav Soru Tanım → "
-                   "Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (Excel, sistemin puan dosyası sütunlarıyla; sorular tanımlandıktan "
-                   "sonra sisteme yükleyin). Sistem bu dosyayı kabul etmezse sistemden kendi dosyasını indirip 2. düğmeyle doldurun.")
+                   "Aktarım Kutusu'na yapıştırın) ve <b>akreditasyon</b> (öğrenci soru puanları; sorular tanımlandıktan sonra aynı yolla "
+                   "öğrenci puanı Aktarım Kutusu'na). Düğmelerle panoya kopyalamanın dosya hâlidir.")
         l.setWordWrap(True)
         l.setStyleSheet("color: gray")
         s.addWidget(l, 1)
@@ -164,7 +164,7 @@ class DisaAktarAdimi(Adim):
         s.addWidget(menu_dugmesi("Tek tek kaydet", [
             ("Akreditasyon dosyasını kaydet…", lambda: self._tek_dosya("akr"), "Seçili akreditasyon biçimine göre dosya yazar."),
             ("Not giriş dosyasını kaydet…", lambda: self._tek_dosya("ng"), "Seçili not giriş biçimine göre dosya yazar."),
-            ("Öğrenci puanlarını panoya kopyala", self._ogrenci_puanlarini_kopyala, "Öğrenci listesi sırasıyla numara ve soru puanları."),
+            ("Sistemin puan dosyasını (CSV) doldur…", self._sistem_dosyasi, "Sistemden indirilen soru bazlı puan dosyasına puanları yazar."),
             ("Not girişi için puanları panoya kopyala", self._notlari_kopyala, "Öğrenci numarası ve sınav puanı."),
             ("Sistem şablonunu doldur…", self._sablonu_doldur, "Sistemden indirilen şablonun içine, öğrenci sırasını koruyarak puanları yazar."),
         ], self))
@@ -205,7 +205,24 @@ class DisaAktarAdimi(Adim):
                                       "panoya kopyalandı. Sistemde aynı dersin ekranında olduğunuzdan emin olun.")
 
     def _ogrenci_puanlarini_kopyala(self):
-        self._kopyala([Sutun("ogrenci_no", "Öğrenci No"), Sutun("soru_puanlari", "S{n}")], "öğrencinin soru puanları")
+        """Sistemin öğrenci puanı aktarım kutusu biçimi (akreditasyon_metni)."""
+        from ...export.sistem_puan_dosyasi import akreditasyon_metni
+
+        if self.durum.sonuc is None:
+            QMessageBox.information(self, "Önce sonuç", "Puanlar henüz hesaplanmadı: önceki adımlardaki eksikleri tamamlayın.")
+            return
+        try:
+            metin = akreditasyon_metni(self.durum.sonuc)
+        except ValueError as e:
+            QMessageBox.warning(self, "Kopyalanamadı", str(e))
+            return
+        QGuiApplication.clipboard().setText(metin)
+        n = len(metin.splitlines())
+        QMessageBox.information(self, "Panoya kopyalandı", f"{self.durum.sinav_kisa_adi()} için {n} öğrencinin soru puanları kopyalandı.\n\n"
+                                "Akademik Bilgi Sistemi'nde aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranında:\n"
+                                "1. \"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.\n2. Aktarım Kutusu'na yapıştırın (Cmd+V ya da Ctrl+V).\n"
+                                "3. \"Aktar\" düğmesine basın.")
+        self.durum_satiri.setText(f"✓ {n} öğrencinin soru puanları panoya kopyalandı.")
 
     def _notlari_kopyala(self):
         self._kopyala([Sutun("ogrenci_no", "Öğrenci No"), Sutun("puan", "Puan")], "öğrencinin numarası ve puanı", profil="ng")
@@ -480,7 +497,8 @@ class DisaAktarAdimi(Adim):
             return
         aciklama = {"soru_tanimi": "soruları tanımlamak için: Toplu Sınav Soru Tanım → Toplu Aktarım Yap; dosyayı açıp ilk sayfanın "
                                    "hepsini seçin, kopyalayın, Aktarım Kutusu'na yapıştırın",
-                    "akreditasyon": "öğrenci soru puanları: sorular tanımlandıktan sonra sisteme yükleyin",
+                    "akreditasyon": "öğrenci soru puanları: sorular tanımlandıktan sonra açıp ilk sayfanın hepsini seçin, kopyalayın, "
+                                    "öğrenci puanı Aktarım Kutusu'na yapıştırın",
                     "not_giris": "Not Giriş ekranı için öğrenci numarası ve puan"}
         satirlar = []
         for d in t.dosyalar:

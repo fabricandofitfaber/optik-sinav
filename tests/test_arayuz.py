@@ -412,7 +412,7 @@ def test_sinava_girmedi_isareti(pencere, fix, tmp_path, monkeypatch):
     assert sorted(d.proje.klasik_girmedi) == sorted([no1, d.liste.ogrenciler[2].no])
 
 
-def test_sisteme_aktar_adimi(pencere, fix):
+def test_sisteme_aktar_adimi(pencere, fix, monkeypatch):
     """4. adım: öğrenci puanları ve not girişi için panoya kopyalama; uyarılar en üstte; gelişmiş bölüm katlı."""
     from PySide6.QtGui import QGuiApplication
 
@@ -432,9 +432,14 @@ def test_sisteme_aktar_adimi(pencere, fix):
     pencere.adim_listesi.setCurrentRow(3)
     e = pencere.adimlar[3]
     assert not e.gelismis.isVisibleTo(e) and e.bilgi.isVisibleTo(e)  # aynı numara iki satırda: uyarı üstte
+    from PySide6.QtWidgets import QMessageBox
+
+    from optik_sinav.export.sistem_puan_dosyasi import akreditasyon_satirlari
+
+    monkeypatch.setattr(QMessageBox, "information", lambda *x, **k: None)
     e._ogrenci_puanlarini_kopyala()
     satirlar = QGuiApplication.clipboard().text().splitlines()
-    assert len(satirlar) == 12 and len(satirlar[0].split("\t")) == 1 + 10  # liste sırası: numara + 10 soru
+    assert [x.split("\t") for x in satirlar] == akreditasyon_satirlari(d.sonuc) and len(satirlar[0].split("\t")) == 1 + 10
     e._notlari_kopyala()
     assert len(QGuiApplication.clipboard().text().splitlines()[0].split("\t")) == 2
     assert "kopyalandı" in e.durum_satiri.text()

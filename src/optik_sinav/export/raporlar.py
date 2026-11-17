@@ -927,12 +927,10 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
         else:
             t.dosyalar.append(soru_tanimi_yaz(a, sonuc.ayarlar, ders_kodlari, klasor / cikti_adi(sinav, "soru_tanimi")))
     if ister("sistem_puanlari") and sonuc.ogrenciler:
-        from .sistem_puan_dosyasi import sistem_excel_yaz
+        from .sistem_puan_dosyasi import akreditasyon_excel_yaz
 
         try:
-            r = sistem_excel_yaz(sonuc, klasor / cikti_adi(sinav, "akreditasyon"))
-            t.dosyalar.append(r.cikti)
-            t.notlar.extend(r.notlar)
+            t.dosyalar.append(akreditasyon_excel_yaz(sonuc, klasor / cikti_adi(sinav, "akreditasyon")))
         except ValueError as e:
             t.notlar.append("Akreditasyon (öğrenci soru puanları) dosyası yazılmadı: " + str(e))
     if ister("sonuc"):

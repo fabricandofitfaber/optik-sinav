@@ -129,13 +129,13 @@ Uyarı türleri: numarada okunamayan karakter, boş ad, Türkçe karakteri bozuk
 Akademik Bilgi Sistemi'ne aktarım iki adımdır:
 
 1. **Soruları kopyala:** Sınav Akreditasyon İşlemleri'nde sınavı açın → "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap"; Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Soru puanları ve öğrenme çıktısı oranları gider; bonus soru gitmez. Ders bilgi paketi yüklü değilse program dersin öğrenme çıktısı sayısını sorar ve çıktıları sorulara eşit dağıtır.
-2. **Sistemin puan dosyasını doldur:** sorular tanımlandıktan sonra sistemde aynı dersin ve sınavın soru bazlı puan dosyasını (CSV) indirin ve bu düğmeyle seçin. Program her öğrencinin soru puanlarını ve sınav notunu yazar, sınava girmeyenleri "Girmedi" yapar ve dosyayı sistemin biçiminde (Windows Türkçe karakter kodlaması, noktalı virgül) kaydeder; o dosyayı sisteme yükleyin. Soru puanı = öğrencinin o sorudan aldığı pay × sistemdeki soru ağırlığı; sınav notu bunların toplamıdır. Dosyadaki öğrencilerin hiçbiri sınavda yoksa (başka dersin dosyası) program uyarır. Not girişi için ayrıca dosya gerekmez.
+2. **Öğrenci puanlarını kopyala:** sorular tanımlandıktan sonra aynı dersin ve sınavın öğrenci puanı toplu aktarım ekranında Kolon Ayracı "Excel'den Kopyalandı" olsun, Aktarım Kutusu'na yapıştırın. Her satırda öğrenci numarası ve soru puanları, başlıksız (sistemin örneği: `2023050601;7;10;8;10;0;0;5;5;10;10`). Soru puanı = öğrencinin sorudan aldığı pay × sorunun sistemdeki puanı (iki ondalık, virgül). Yalnızca sınava girenler; bonus soru yok. Not girişi için ayrıca bir şey gerekmez.
 
 Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür.
 
 **Dosyalar** bölümünde **"Sisteme giriş dosyalarını kaydet"** iki dosya yazar:
 - `..._soru_tanimi.xlsx`: 1. adımın dosya hâli. Dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, Aktarım Kutusu'na yapıştırın. İkinci sayfa sütunları ve adımları anlatır.
-- `..._akreditasyon.xlsx`: öğrenci soru puanları, sistemin puan dosyasıyla aynı sütunlarda (Excel; numara ve adlar metin, puanlar sayı) (öğrenci listesi sırasıyla; girmeyenler "Girmedi"; sınıf sütunu boş). Sorular tanımlandıktan sonra sisteme yükleyin. Sistem kabul etmezse sistemden kendi dosyasını indirip "2. Sistemin puan dosyasını doldur" ile doldurun.
+- `..._akreditasyon.xlsx`: "Öğrenci puanlarını kopyala"nın dosya hâli. Dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, öğrenci puanı Aktarım Kutusu'na yapıştırın. Gelişmiş bölümünde, sistemden indirilen soru bazlı puan dosyasını (CSV) doldurma da vardır.
 
 Öteki raporlar (sonuç, istatistik, öğrenme çıktısı, karneler, özet; isterseniz programın kendi biçiminde öğrenci soru puanları ve not girişi) **"Diğer raporlar…"** ile işaretleyerek seçilir; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
 
@@ -147,7 +147,7 @@ Dosya adlarında ders kodu, sınav türü ve tarih bulunur, örneğin `UTL4513_A
 |---|---|
 | `..._soru_tanimi.xlsx` | Soru tanımı: ilk sayfa sisteme yapıştırılacak satırlar (başlıksız), ikinci sayfa açıklama |
 | `..._sonuc.xlsx` | Sonuç (soru puanları, doğru, yanlış, boş, puan, uyarı), Cevaplar, Uyarılar, Düzeltme Kaydı, Anahtar ve Ayarlar sayfaları. Renkli, süzgeçli, ilk satır sabit. |
-| `..._akreditasyon.xlsx` | Sisteme yüklenecek öğrenci soru puanları (sistemin puan dosyası sütunları) |
+| `..._akreditasyon.xlsx` | Öğrenci puanı Aktarım Kutusu'na yapıştırılacak numara ve soru puanları |
 | `..._soru_puanlari.xlsx` | Soru bazlı puanlar, seçili profile göre (isteğe bağlı, "Diğer raporlar") |
 | `..._akreditasyon_sablon.xlsx` | Sistem şablonu verildiyse doldurulmuş şablon |
 | `..._not_giris.xlsx` | Öğrenci numarası ve puan, seçili profile göre |

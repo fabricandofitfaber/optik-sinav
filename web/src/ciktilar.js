@@ -209,5 +209,16 @@
     return sistemDosyasiniDoldur(cp1254Kodla(satirlar.join("\r\n") + "\r\n"), sonuc);
   }
 
-  Object.assign(OS, { sistemDosyasiUret, sistemDosyasiniCoz, sistemDosyasiniDoldur, dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
+  /** Python: akreditasyon_satirlari (sistemin öğrenci puanı aktarım kutusu: numara ve soru puanları, başlıksız). */
+  function akreditasyonSatirlari(sonuc) {
+    const { bayt } = sistemDosyasiUret(sonuc);
+    const [m] = OS.baytlariCoz(bayt);
+    const d = sistemDosyasiniCoz(m);
+    return m.split("\r\n").filter((x) => x.trim()).slice(1).map((x) => x.split(d.ayirici))
+      .filter((h) => d.durum_sutun === null || h[d.durum_sutun] === "Girdi")
+      .map((h) => [h[d.no_sutun].replace(/\s/g, "").replace(/^"|"$/g, "")].concat(d.soru_sutunlari.map((j) => h[j])));
+  }
+  const akreditasyonMetni = (sonuc) => akreditasyonSatirlari(sonuc).map((s) => s.join("\t")).join("\n");
+
+  Object.assign(OS, { akreditasyonSatirlari, akreditasyonMetni, sistemDosyasiUret, sistemDosyasiniCoz, sistemDosyasiniDoldur, dosyaAdiParcasi, ciktiAdi, soruTanimiSatirlari, soruTanimiMetni, PROFILLER, tabloUret, hucreMetni, panoMetni });
 })(typeof globalThis !== "undefined" ? globalThis : window);
