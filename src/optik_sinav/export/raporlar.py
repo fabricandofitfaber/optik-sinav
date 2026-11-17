@@ -877,6 +877,17 @@ def pdf_ozet_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, yol: str | Path, esikl
     return yol
 
 
+# Sisteme giriş için gerekenler (varsayılan) ve isteğe bağlı raporlar
+GIRIS_DOSYALARI = ("soru_tanimi", "akreditasyon", "not_giris")
+DIGER_RAPORLAR = (
+    ("sonuc", "Sonuç (ayrıntılı: cevaplar, uyarılar, düzeltme kaydı)"),
+    ("istatistik", "İstatistik (grafikli; madde analizi, çeldiriciler ve ötekiler)"),
+    ("ogrenme_ciktisi", "Öğrenme çıktısı raporu"),
+    ("karne", "Öğrenci karneleri (her öğrenciye bir sayfa)"),
+    ("ozet", "Özet (PDF; arşiv ve bölüm dosyası için)"),
+)
+
+
 @dataclass
 class TopluCikti:
     dosyalar: list[Path] = field(default_factory=list)
@@ -888,15 +899,32 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
                       pdf: bool = True, kaynaklar: dict[str, str] | None = None,
                       cikti_aciklamalari: dict[str, str] | None = None, ara_agirlik: float = 40.0,
                       arsiv_klasoru: str | Path | None = None, donem=None, karne: bool = True,
-                      giris_sirasi: list[str] | None = None) -> TopluCikti:
+                      giris_sirasi: list[str] | None = None, secim=None, ders_kodlari: list[str] | None = None) -> TopluCikti:
+    """`secim`: yazılacak dosya türleri (GIRIS_DOSYALARI ve DIGER_RAPORLAR anahtarları); None ise hepsi."""
     from .sablon_doldurucu import sablonu_doldur
     from .xlsx_yazici import aktarim_yaz, uzanti
+
+    def ister(ad: str) -> bool:
+        return secim is None or ad in secim
 
     klasor = Path(klasor)
     klasor.mkdir(parents=True, exist_ok=True)
     t = TopluCikti()
-    t.dosyalar.append(sonuc_dosyasi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "sonuc"), duzeltmeler, kaynaklar))
-    if akreditasyon_profili is not None:
+    if ister("soru_tanimi"):
+        from ..core.madde_analizi import cikti_denetimi
+        from .soru_tanimi import soru_tanimi_yaz
+
+        a = sonuc.anahtar
+        hatalar, _ = cikti_denetimi(a, ders_kodlari or None)
+        if not any(s.ogrenme_ciktilari for s in a.sorular):
+            t.notlar.append("Soru tanımı yazılmadı: sorulara öğrenme çıktısı seçilmedi (2. adım). Sistem her soru için öğrenme çıktısı istiyor.")
+        elif hatalar:
+            t.notlar.append("Soru tanımı yazılmadı: " + " ".join(hatalar))
+        else:
+            t.dosyalar.append(soru_tanimi_yaz(a, sonuc.ayarlar, ders_kodlari, klasor / cikti_adi(sinav, "soru_tanimi")))
+    if ister("sonuc"):
+        t.dosyalar.append(sonuc_dosyasi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "sonuc"), duzeltmeler, kaynaklar))
+    if akreditasyon_profili is not None and ister("akreditasyon"):
         if sistem_sablonu:
             rapor = sablonu_doldur(sistem_sablonu, akreditasyon_profili, sonuc, klasor / cikti_adi(sinav, "akreditasyon_sablon"))
             t.dosyalar.append(rapor.cikti)
@@ -906,28 +934,30 @@ def tum_raporlari_yaz(sonuc: SinavSonucu, sinav: SinavBilgisi, klasor: str | Pat
                 t.notlar.append("Sonuçta olup şablonda olmayan numaralar: " + ", ".join(rapor.sablonda_olmayan))
         elif akreditasyon_profili.dosya_turu != "sablon":
             t.dosyalar.append(aktarim_yaz(akreditasyon_profili, sonuc, klasor / cikti_adi(sinav, "akreditasyon", uzanti(akreditasyon_profili)), sinav))
-    if not_giris_profili is not None and not_giris_profili.dosya_turu != "sablon":
+    if not_giris_profili is not None and not_giris_profili.dosya_turu != "sablon" and ister("not_giris"):
         t.dosyalar.append(aktarim_yaz(not_giris_profili, sonuc, klasor / cikti_adi(sinav, "not_giris", uzanti(not_giris_profili)), sinav))
     arsiv = []
-    if arsiv_klasoru and sinav.ders_kodu and sonuc.ogrenciler:
+    if arsiv_klasoru and sinav.ders_kodu and sonuc.ogrenciler and ister("istatistik"):
         from ..core import ek_istatistik as E
 
         esik = float(sonuc.ayarlar.basari_esigi)
         _, genel = madde_analizi(sonuc, MaddeEsikleri(basari_esigi=esik, cikti_esigi=esik))
         E.arsive_yaz(Path(arsiv_klasoru), E.arsiv_kaydi_olustur(sonuc, sinav, genel, ogrenme_ciktisi_raporu(sonuc, esik)))
         arsiv = E.arsivi_oku(Path(arsiv_klasoru), sinav.ders_kodu)
-    t.dosyalar.append(madde_analizi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "istatistik"), ara_agirlik=ara_agirlik, arsiv=arsiv, donem=donem,
-                                       giris_sirasi=giris_sirasi))
-    if karne and sonuc.ogrenciler:
+    if ister("istatistik"):
+        t.dosyalar.append(madde_analizi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "istatistik"), ara_agirlik=ara_agirlik, arsiv=arsiv,
+                                           donem=donem, giris_sirasi=giris_sirasi))
+    if karne and sonuc.ogrenciler and ister("karne"):
         from .karne import karne_yaz
 
         t.dosyalar.append(karne_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "karneler", ".html"), cikti_aciklamalari))
-    oc = ogrenme_ciktisi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "ogrenme_ciktisi"), cikti_aciklamalari)
-    if oc:
-        t.dosyalar.append(oc)
-    else:
-        t.notlar.append("Soru ile öğrenme çıktısı eşlemesi girilmediği için öğrenme çıktısı raporu yazılmadı.")
-    if pdf:
+    if ister("ogrenme_ciktisi"):
+        oc = ogrenme_ciktisi_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "ogrenme_ciktisi"), cikti_aciklamalari)
+        if oc:
+            t.dosyalar.append(oc)
+        else:
+            t.notlar.append("Soru ile öğrenme çıktısı eşlemesi girilmediği için öğrenme çıktısı raporu yazılmadı.")
+    if pdf and ister("ozet"):
         p = pdf_ozet_yaz(sonuc, sinav, klasor / cikti_adi(sinav, "ozet", ".pdf"))
         if p:
             t.dosyalar.append(p)

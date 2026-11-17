@@ -17,7 +17,7 @@ from ...core.ek_istatistik import ara_agirligi
 from ...core.modeller import UyariTuru
 from ...export.pano import pano_metni
 from ...export.profil import Profil, Sutun, hucre_metni, profil_bul, profilleri_listele, tablo_uret
-from ...export.raporlar import tum_raporlari_yaz
+from ...export.raporlar import DIGER_RAPORLAR, GIRIS_DOSYALARI, tum_raporlari_yaz
 from ...export.sablon_doldurucu import numara_sirasi, sablondan_profil_oner, sablonu_doldur
 from ...export.xlsx_yazici import aktarim_yaz, uzanti
 from ...kaynaklar import kullanici_klasoru
@@ -103,20 +103,33 @@ class DisaAktarAdimi(Adim):
             v.addLayout(s)
         self.duzen.addWidget(g)
 
-        # --- Raporlar
-        g = QGroupBox("Raporlar")
-        s = QHBoxLayout(g)
-        b = QPushButton("Bütün raporları klasöre kaydet…")
-        b.setToolTip("Sonuç, aktarım, istatistik (grafikli), öğrenme çıktısı, karneler ve özet dosyaları.")
+        # --- Dosyalar: sisteme giriş için gerekenler önde; öteki raporlar seçimli
+        g = QGroupBox("Dosyalar")
+        v = QVBoxLayout(g)
+        s = QHBoxLayout()
+        b = QPushButton("Sisteme giriş dosyalarını kaydet…")
+        b.setToolTip("Yalnızca Akademik Bilgi Sistemi'ne giriş için gereken üç dosya.")
         b.setStyleSheet(VURGULU_DUGME)
         b.setMinimumHeight(38)
-        b.clicked.connect(self._hepsi)
+        b.clicked.connect(self._giris_dosyalari)
+        s.addWidget(b, 0, Qt.AlignmentFlag.AlignTop)
+        l = QLabel("Üç dosya: <b>soru tanımı</b> (Toplu Sınav Soru Tanım → Aktarım Kutusu'na; dosyayı açıp hepsini seçin, kopyalayın, "
+                   "yapıştırın), <b>öğrenci soru puanları</b> ve <b>not girişi</b>.")
+        l.setWordWrap(True)
+        l.setStyleSheet("color: gray")
+        s.addWidget(l, 1)
+        v.addLayout(s)
+        s = QHBoxLayout()
+        b = QPushButton("Diğer raporlar…")
+        b.setToolTip("Sonuç, istatistik, öğrenme çıktısı, karneler ve özet: istediklerinizi işaretleyerek seçin.")
+        b.clicked.connect(self._diger_raporlar)
         s.addWidget(b)
         b = QPushButton("Öğrenci karneleri…")
         b.setToolTip("Her öğrenciye bir sayfa: puan, sıra, öğrenme çıktıları ve soru soru sonuç. Tarayıcıda açılır, yazdırılır.")
         b.clicked.connect(self._karneler)
         s.addWidget(b)
         s.addStretch(1)
+        v.addLayout(s)
         self.duzen.addWidget(g)
 
         # --- Gelişmiş: aktarım biçimi (profil), tek tek dosyalar ve önizleme
@@ -375,14 +388,47 @@ class DisaAktarAdimi(Adim):
         p = self.durum.proje_yolu or (Path(pr.dat_yolu) if pr.dat_yolu else (Path(pr.liste_yolu) if pr.liste_yolu else None))
         return p.parent if p else Path.home()
 
+    def _giris_dosyalari(self):
+        self._yaz(set(GIRIS_DOSYALARI), "Sisteme giriş dosyalarının yazılacağı klasör")
+
+    def _diger_raporlar(self):
+        """İsteğe bağlı raporları işaretleyerek seçme penceresi (hepsi işaretli gelir)."""
+        from PySide6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox
+
+        p = QDialog(self)
+        p.setWindowTitle("Diğer raporlar")
+        v = QVBoxLayout(p)
+        v.addWidget(QLabel("Kaydedilecek raporları işaretleyin:"))
+        kutular = {}
+        for ad, metin in DIGER_RAPORLAR:
+            k = QCheckBox(metin)
+            k.setChecked(True)
+            v.addWidget(k)
+            kutular[ad] = k
+        bb = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        bb.button(QDialogButtonBox.StandardButton.Ok).setText("Kaydet…")
+        bb.button(QDialogButtonBox.StandardButton.Cancel).setText("Vazgeç")
+        bb.accepted.connect(p.accept)
+        bb.rejected.connect(p.reject)
+        v.addWidget(bb)
+        if p.exec() != QDialog.DialogCode.Accepted:
+            return
+        secim = {ad for ad, k in kutular.items() if k.isChecked()}
+        if secim:
+            self._yaz(secim, "Raporların yazılacağı klasör")
+
     def _hepsi(self):
-        klasor = QFileDialog.getExistingDirectory(self, "Raporların yazılacağı klasör", str(self._klasor()))
+        self._yaz(None, "Raporların yazılacağı klasör")
+
+    def _yaz(self, secim, baslik: str, klasor: str | None = None):
+        klasor = klasor or QFileDialog.getExistingDirectory(self, baslik, str(self._klasor()))
         if not klasor:
             return
         p = self.durum.proje
         try:
             t = tum_raporlari_yaz(self.durum.sonuc, p.sinav, klasor, p.duzeltmeler, self._profil("akr"), self._profil("ng"),
-                                  p.sistem_sablonu_yolu or None, giris_sirasi=p.klasik_giris_sirasi,
+                                  p.sistem_sablonu_yolu or None, giris_sirasi=p.klasik_giris_sirasi, secim=secim,
+                                  ders_kodlari=self.durum.ogrenme_kodlari() or None,
                                   kaynaklar={"Sınav biçimi": "Klasik" if p.klasik else "Optik",
                                              "Optik dosya": Path(p.dat_yolu).name if p.dat_yolu else "",
                                              "Öğrenci listesi": Path(p.liste_yolu).name if p.liste_yolu else ""},
@@ -393,7 +439,16 @@ class DisaAktarAdimi(Adim):
         except Exception as e:  # noqa: BLE001
             QMessageBox.warning(self, "Raporlar yazılamadı", str(e))
             return
-        QMessageBox.information(self, "Raporlar yazıldı", "\n".join([str(d.name) for d in t.dosyalar] + [""] + t.notlar) + f"\n\nKlasör: {klasor}")
-        self.bilgi.setText(f"{len(t.dosyalar)} dosya yazıldı: {klasor}")
+        aciklama = {"soru_tanimi": "soruları tanımlamak için: Toplu Sınav Soru Tanım → Toplu Aktarım Yap; dosyayı açıp ilk sayfanın "
+                                   "hepsini seçin, kopyalayın, Aktarım Kutusu'na yapıştırın",
+                    "akreditasyon": "öğrenci soru puanları (sorular tanımlandıktan sonra açılan puan ekranı için)",
+                    "not_giris": "Not Giriş ekranı için öğrenci numarası ve puan"}
+        satirlar = []
+        for d in t.dosyalar:
+            tur = next((k for k in aciklama if d.stem.endswith("_" + k)), None)
+            satirlar.append(f"• {d.name}" + (f"\n   {aciklama[tur]}" if tur else ""))
+        QMessageBox.information(self, "Dosyalar yazıldı", f"{self.durum.sinav_kisa_adi()}\n\n" + "\n".join(satirlar)
+                                + ("\n\n" + "\n".join(t.notlar) if t.notlar else "") + f"\n\nKlasör: {klasor}")
+        self.durum_satiri.setText(f"✓ {len(t.dosyalar)} dosya yazıldı: {klasor}")
 
 

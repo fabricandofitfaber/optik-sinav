@@ -155,3 +155,5 @@ button.aktar-dugme { min-width: 250px; text-align: left; font-weight: 600; paddi
 .kimlik { margin: 12px 20px 0; padding: 7px 12px; border-radius: 8px; background: var(--vurgu-acik); border: 1px solid color-mix(in srgb, var(--vurgu) 35%, transparent);
   color: var(--yazi); font-size: 14px; cursor: pointer; }
 .kimlik a.duzenle { font-size: 12px; margin-left: 6px; color: var(--vurgu); }
+
+.aktar-satir .zorunlu-dugme { margin-top: 0; flex: none; }

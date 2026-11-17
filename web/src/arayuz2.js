@@ -438,7 +438,7 @@
     const arsiv = (yerel.al("os_arsiv", {}) || {})[D.proje.sinav.ders_kodu] || [];
     h.push("<h3>Önceki sınavlar</h3>");
     h.push(arsiv.length ? basitTablo(["Tarih", "Sınav", "Öğrenci", "Ortalama", "Başarılı"], arsiv.map((x) => [e(x.tarih), e(x.sinav_turu), x.ogrenci_sayisi, sayi(x.ortalama, 1), pct(x.basari_orani)]))
-      : `<p class="soluk">Bu ders için bu tarayıcıda arşiv kaydı yok. 4. adımda "Bütün Excel dosyalarını indir" her kullanıldığında sınavın özeti burada saklanır; sonraki dönemlerde karşılaştırma görünür.</p>`);
+      : `<p class="soluk">Bu ders için bu tarayıcıda arşiv kaydı yok. 4. adımda "Diğer raporlar" ile istatistik her indirildiğinde sınavın özeti burada saklanır; sonraki dönemlerde karşılaştırma görünür.</p>`);
     return h.join("");
   }
   function kavramHtml(k) {
@@ -654,14 +654,15 @@
           ${adim("puanlariKopyala", "2. Öğrenci puanlarını kopyala", "Sorular tanımlandıktan sonra açılan öğrenci puanı ekranına yapıştırın: öğrenci listesi sırasıyla numara ve soru puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın.")}
           ${adim("notlariKopyala", "3. Not girişi için puanları kopyala", "Not Giriş ekranı için: öğrenci numarası ve sınav puanı (öğrenci listesi sırasıyla).")}
         </div>
-        <div class="kutu"><h3>Raporlar</h3>
-          <div class="satir"><button class="zorunlu-dugme" id="hepsi">Bütün Excel dosyalarını indir</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button></div>
-          <p class="soluk">Sonuç, istatistik (madde analizi, çeldiriciler ve ötekiler) ve öğrenme çıktısı dosyaları.</p></div>
+        <div class="kutu"><h3>Dosyalar</h3>
+          <div class="aktar-satir"><button class="zorunlu-dugme" id="girisDosyalari">Sisteme giriş dosyalarını indir</button>
+            <span class="soluk">Üç dosya: <b>soru tanımı</b> (Toplu Sınav Soru Tanım → Aktarım Kutusu'na; dosyayı açıp hepsini seçin, kopyalayın, yapıştırın), <b>öğrenci soru puanları</b> ve <b>not girişi</b>.</span></div>
+          <div class="satir"><button id="digerRaporlar">Diğer raporlar…</button><button id="rapor">Yazdırılabilir rapor (grafikli)</button><button id="karne">Öğrenci karneleri</button></div></div>
         <details class="kutu" id="aktarGelismis" ${X.gelismisAcik ? "open" : ""}><summary class="soluk">Gelişmiş: aktarım biçimi, tek tek dosyalar ve önizleme</summary>
           <div class="satir"><label>Biçim</label><select id="profil">${Object.values(OS.PROFILLER).map((x) => `<option value="${x.ad}" ${x.ad === X.profil ? "selected" : ""}>${e(x.baslik)}</option>`).join("")}</select>
             <button id="pano">Sütun seçerek panoya kopyala</button>
             ${UI.acilirMenu("Tek tek indir", ['<button data-dosya="sonuc">Sonuç</button>', '<button data-dosya="istatistik">İstatistik</button>',
-              '<button data-dosya="cikti">Öğrenme çıktısı</button>', '<button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button>', '<button data-dosya="not">Not girişi</button>'])}</div>
+              '<button data-dosya="cikti">Öğrenme çıktısı</button>', '<button data-dosya="soru_tanimi">Soru tanımı</button>', '<button data-dosya="akreditasyon">Akreditasyon (soru bazlı)</button>', '<button data-dosya="not">Not girişi</button>'])}</div>
           <div class="tablo-kap" style="max-height:340px"><table class="veri"><thead><tr>${bas.map((b) => `<th>${e(b)}</th>`).join("")}</tr></thead>
           <tbody>${veri.slice(0, 200).map((r) => `<tr>${r.map((h) => `<td>${e(OS.hucreMetni(h, p))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></details>`;
       $("#aktarGelismis", k).ontoggle = (ev) => { X.gelismisAcik = ev.target.open; };
@@ -690,25 +691,45 @@
         if (tur === "sonuc") return [await UI.excel.sonuc(s, sn, D.proje.duzeltmeler, { "Sınav biçimi": s.klasik ? "Klasik" : "Optik", "Optik dosya": D.proje.dat_yolu, "Öğrenci listesi": D.proje.liste_yolu }), OS.ciktiAdi(sn, "sonuc")];
         if (tur === "istatistik") return [await UI.excel.istatistik(s, sn, OS.araAgirligi(sn, D.ders), (yerel.al("os_arsiv", {}) || {})[sn.ders_kodu] || [], donemVerisi(s)), OS.ciktiAdi(sn, "istatistik")];
         if (tur === "cikti") { const b = await UI.excel.cikti(s, UI.aciklamalar(), UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null); return b ? [b, OS.ciktiAdi(sn, "ogrenme_ciktisi")] : null; }
+        if (tur === "soru_tanimi") {
+          const a = D.proje.anahtar, kodlar = UI.ogrenmeKodlari().length ? UI.ogrenmeKodlari() : null;
+          if (!a.sorular.some((x) => (x.ogrenme_ciktilari || []).length)) return { not: "Soru tanımı indirilmedi: sorulara öğrenme çıktısı seçilmedi (2. adım). Sistem her soru için öğrenme çıktısı istiyor." };
+          const [hatalar] = OS.ciktiDenetimi(a, kodlar);
+          if (hatalar.length) return { not: "Soru tanımı indirilmedi: " + hatalar.join(" ") };
+          return [await UI.excel.soruTanimi(a, D.proje.ayarlar, kodlar), OS.ciktiAdi(sn, "soru_tanimi")];
+        }
         if (tur === "akreditasyon") return [await UI.excel.profil(OS.PROFILLER.akreditasyon_soru_bazli_varsayilan, s), OS.ciktiAdi(sn, "akreditasyon")];
         if (tur === "not") return [await UI.excel.profil(OS.PROFILLER.not_giris_varsayilan, s), OS.ciktiAdi(sn, "not_giris")];
         return null;
       };
       $$("[data-dosya]", k).forEach((b) => (b.onclick = async () => {
         const r = await dosya(b.dataset.dosya);
-        if (r) indir(r[0], r[1]); else bilgi("Öğrenme çıktısı", "Sorulara öğrenme çıktısı atanmadığı için bu dosya yazılmadı.");
+        if (r && r.not) bilgi("İndirilmedi", r.not);
+        else if (r) indir(r[0], r[1]); else bilgi("Öğrenme çıktısı", "Sorulara öğrenme çıktısı atanmadığı için bu dosya yazılmadı.");
       }));
-      $("#hepsi", k).onclick = async () => {
-        arsiveEkle(s);
-        const adlar = [];
-        for (const t of ["sonuc", "istatistik", "cikti", "akreditasyon", "not"]) {
+      const toplu = async (turler, baslik) => {
+        const adlar = [], notlar = [];
+        const aciklama = { soru_tanimi: "soruları tanımlamak için: Toplu Sınav Soru Tanım → Toplu Aktarım Yap; dosyayı açıp ilk sayfanın hepsini seçin, kopyalayın, Aktarım Kutusu'na yapıştırın",
+          akreditasyon: "öğrenci soru puanları (sorular tanımlandıktan sonra açılan puan ekranı için)", not: "Not Giriş ekranı için öğrenci numarası ve puan" };
+        for (const t of turler) {
           const r = await dosya(t);
-          if (!r) continue;
+          if (!r) { if (t === "cikti") notlar.push("Sorulara öğrenme çıktısı atanmadığı için öğrenme çıktısı raporu indirilmedi."); continue; }
+          if (r.not) { notlar.push(r.not); continue; }
           indir(r[0], r[1]);
-          adlar.push(r[1]);
+          adlar.push(`• ${r[1]}${aciklama[t] ? "\n   " + aciklama[t] : ""}`);
           await new Promise((c) => setTimeout(c, 400));
         }
-        bilgi("Dosyalar indirildi", adlar.join("\n") + "\n\nDosyalar tarayıcının İndirilenler klasörüne kaydedildi. Sınavın özeti bu tarayıcıdaki arşive eklendi.");
+        bilgi(baslik, `${UI.sinavKisaAdi()}\n\n${adlar.join("\n")}${notlar.length ? "\n\n" + notlar.join("\n") : ""}\n\nDosyalar tarayıcının İndirilenler klasörüne kaydedildi.`);
+      };
+      $("#girisDosyalari", k).onclick = () => toplu(["soru_tanimi", "akreditasyon", "not"], "Sisteme giriş dosyaları indirildi");
+      $("#digerRaporlar", k).onclick = async () => {
+        const secenek = [["sonuc", "Sonuç (ayrıntılı: cevaplar, uyarılar, düzeltme kaydı)"], ["istatistik", "İstatistik (madde analizi, çeldiriciler ve ötekiler)"], ["cikti", "Öğrenme çıktısı raporu"]];
+        const secim = await pencere("Diğer raporlar", `<p>İndirilecek raporları işaretleyin:</p>${secenek.map(([id, t]) => `<label style="display:block;margin:4px 0"><input type="checkbox" data-rapor="${id}" checked> ${t}</label>`).join("")}
+          <p class="soluk">Yazdırılabilir rapor ve öğrenci karneleri için bu adımdaki ayrı düğmeleri kullanın.</p>`,
+          [{ metin: "Vazgeç", deger: null }, { metin: "İndir", ana: true, deger: (q) => $$("[data-rapor]", q).filter((x) => x.checked).map((x) => x.dataset.rapor) }]);
+        if (!secim || !secim.length) return;
+        if (secim.includes("istatistik")) arsiveEkle(s);
+        toplu(secim, "Raporlar indirildi");
       };
       $("#rapor", k).onclick = () => UI.yazdirilabilirRapor(s);
       $("#karne", k).onclick = () => {

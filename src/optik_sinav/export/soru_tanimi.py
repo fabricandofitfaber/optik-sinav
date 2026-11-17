@@ -50,3 +50,49 @@ def soru_tanimi_metni(anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari, ders_ko
                       ondalik_ayirici: str = ",") -> str:
     """Sistemdeki "Aktarım Kutusu"na yapıştırılacak sekmeyle ayrılmış metin (başlık satırı yok)."""
     return "\n".join("\t".join(s) for s in soru_tanimi_satirlari(anahtar, ayarlar, ders_kodlari, ondalik_ayirici))
+
+
+SORU_TANIMI_ADIMLARI = [
+    "Akademik Bilgi Sistemi'nde Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.",
+    "\"Toplu Sınav Soru Tanım\" kutusunda \"Toplu Aktarım Yap\" seçin.",
+    "\"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.",
+    "Bu dosyanın ilk sayfasında (Aktarım) bütün hücreleri seçip kopyalayın (Cmd+A, Cmd+C ya da Ctrl+A, Ctrl+C).",
+    "Sistemdeki Aktarım Kutusu'na tıklayıp yapıştırın ve \"Aktar\" düğmesine basın.",
+]
+
+
+def soru_tanimi_yaz(anahtar: CevapAnahtari, ayarlar: PuanlamaAyarlari, ders_kodlari: list[str] | None, yol) -> "Path":
+    """Soru tanımını Excel dosyası olarak yazar: ilk sayfa yalnızca aktarılacak satırlar (başlıksız; hepsini seçip
+    kopyalayıp sistemin Aktarım Kutusu'na yapıştırmak için), ikinci sayfa sütunların anlamı ve adımlar.
+    Değerler metin olarak yazılır: kopyalanınca panodaki metinle (soru_tanimi_metni) birebir aynı olur."""
+    from pathlib import Path
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    satirlar = soru_tanimi_satirlari(anahtar, ayarlar, ders_kodlari)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Aktarım"
+    for r, satir in enumerate(satirlar, start=1):
+        for c, v in enumerate(satir, start=1):
+            h = ws.cell(row=r, column=c, value=v)
+            h.number_format = "@"
+    ws.column_dimensions["C"].width = 12
+    a = wb.create_sheet("Açıklama")
+    a.cell(row=1, column=1, value="Soru tanımı: Akademik Bilgi Sistemi'ne nasıl aktarılır?").font = Font(bold=True, size=13)
+    for i, adim in enumerate(SORU_TANIMI_ADIMLARI, start=1):
+        a.cell(row=2 + i, column=1, value=f"{i}. {adim}")
+    a.cell(row=9, column=1, value="Aktarım sayfasındaki sütunlar").font = Font(bold=True)
+    for i, (b, m) in enumerate((("Soru No", "1'den başlar; bonus soru gönderilmez."), ("Soru Puan", "Soru puanlarının toplamı 100."),
+                                ("Soru metni", "\"Soru 1\", \"Soru 2\" … (sistemde değiştirebilirsiniz)."),
+                                ("DÇ Sıra", "Dersin öğrenme çıktısının sırası (Ö05 için 5)."),
+                                ("Etki Oran", "Sorunun o çıktıya katkı yüzdesi; her sorunun oranları toplamı 100."),
+                                ("…", "Soru birden çok çıktıya bağlıysa DÇ Sıra ve Etki Oran çiftleri sağa doğru devam eder.")), start=10):
+        a.cell(row=i, column=1, value=b).font = Font(bold=True)
+        a.cell(row=i, column=2, value=m)
+    a.column_dimensions["A"].width = 30
+    a.column_dimensions["B"].width = 80
+    Path(yol).parent.mkdir(parents=True, exist_ok=True)
+    wb.save(yol)
+    return Path(yol)

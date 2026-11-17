@@ -141,3 +141,29 @@ def test_tum_raporlar(sonuc, tmp_path):
     assert wb.sheetnames == ["Sonuç", "Cevaplar", "Uyarılar", "Düzeltme Kaydı", "Anahtar ve Ayarlar"]
     ws = wb["Sonuç"]
     assert ws.freeze_panes == "A2" and ws.auto_filter.ref
+
+
+def test_sisteme_giris_dosyalari_ve_soru_tanimi(sonuc, tmp_path):
+    """Varsayılan giriş seçimi yalnızca üç dosya yazar; soru tanımı dosyasının ilk sayfası panodaki metinle aynıdır."""
+    import openpyxl
+
+    from optik_sinav.export.profil import profil_bul
+    from optik_sinav.export.raporlar import GIRIS_DOSYALARI, tum_raporlari_yaz
+    from optik_sinav.export.soru_tanimi import soru_tanimi_metni
+
+    for s in sonuc.anahtar.sorular:
+        s.ogrenme_ciktilari = ["Ö01"] if s.no % 2 else ["Ö01", "Ö02"]
+    t = tum_raporlari_yaz(sonuc, SINAV, tmp_path, [], profil_bul("akreditasyon_soru_bazli_varsayilan"),
+                          profil_bul("not_giris_varsayilan"), secim=set(GIRIS_DOSYALARI))
+    adlar = sorted(d.name.rsplit("_", 1)[-1] for d in t.dosyalar)
+    assert len(t.dosyalar) == 3 and any(d.stem.endswith("_soru_tanimi") for d in t.dosyalar)
+    st = next(d for d in t.dosyalar if d.stem.endswith("_soru_tanimi"))
+    ws = openpyxl.load_workbook(st)["Aktarım"]
+    metin = "\n".join("\t".join(str(c.value) for c in satir if c.value is not None) for satir in ws.iter_rows())
+    assert metin == soru_tanimi_metni(sonuc.anahtar, sonuc.ayarlar)
+    # çıktı yoksa soru tanımı yazılmaz, neden not olarak döner
+    for s in sonuc.anahtar.sorular:
+        s.ogrenme_ciktilari = []
+    t = tum_raporlari_yaz(sonuc, SINAV, tmp_path / "b", [], None, None, secim={"soru_tanimi"})
+    assert not t.dosyalar and "öğrenme çıktısı" in t.notlar[0]
+    assert adlar

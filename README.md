@@ -132,7 +132,14 @@ Akademik Bilgi Sistemi'nin toplu aktarım ekranları yapıştırma kabul eder; b
 2. **Öğrenci puanlarını kopyala:** sorular tanımlandıktan sonra açılan öğrenci puanı ekranına; öğrenci listesi sırasıyla numara ve soru puanları. Bu ekranın biçimi henüz doğrulanmadı; ilk kullanımda bir öğrencinin satırını ekranla karşılaştırın.
 3. **Not girişi için puanları kopyala:** öğrenci numarası ve sınav puanı.
 
-Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür. **Raporlar** bölümündeki "Bütün raporları klasöre kaydet" aşağıdaki dosyaların hepsini tek seferde yazar; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
+Önemli uyarılar (aynı numaranın iki kez okunması, listede olmayan numara) adımın en üstünde görünür.
+
+**Dosyalar** bölümünde öne çıkan **"Sisteme giriş dosyalarını kaydet"** yalnızca sisteme giriş için gereken üç dosyayı yazar:
+- `..._soru_tanimi.xlsx`: soruları tanımlamak için. Dosyayı açın, ilk sayfada (Aktarım) hepsini seçip kopyalayın, sistemde "Toplu Sınav Soru Tanım" → "Toplu Aktarım Yap" → Aktarım Kutusu'na yapıştırın (Kolon Ayracı "Excel'den Kopyalandı"). İkinci sayfa sütunları ve adımları anlatır. Aynı içeriği "1. Soruları kopyala" düğmesi doğrudan panoya da kopyalar.
+- `..._akreditasyon.xlsx`: öğrenci soru puanları.
+- `..._not_giris.xlsx`: öğrenci numarası ve puan.
+
+Öteki raporlar (sonuç, istatistik, öğrenme çıktısı, karneler, özet) **"Diğer raporlar…"** ile işaretleyerek seçilir; "Öğrenci karneleri" her öğrenciye bir sayfa üretir.
 
 **Gelişmiş** bölümünde (katlı): aktarım biçimi seçimi ve önizleme, sistemden indirilen şablonu doldurma (şablondaki öğrenci sırası korunur), tek tek dosya kaydetme ve sütun seçerek panoya kopyalama.
 
@@ -140,6 +147,7 @@ Dosya adlarında ders kodu, sınav türü ve tarih bulunur, örneğin `UTL4513_A
 
 | Dosya | İçerik |
 |---|---|
+| `..._soru_tanimi.xlsx` | Soru tanımı: ilk sayfa sisteme yapıştırılacak satırlar (başlıksız), ikinci sayfa açıklama |
 | `..._sonuc.xlsx` | Sonuç (soru puanları, doğru, yanlış, boş, puan, uyarı), Cevaplar, Uyarılar, Düzeltme Kaydı, Anahtar ve Ayarlar sayfaları. Renkli, süzgeçli, ilk satır sabit. |
 | `..._akreditasyon.xlsx` | Soru bazlı puanlar, seçili profile göre |
 | `..._akreditasyon_sablon.xlsx` | Sistem şablonu verildiyse doldurulmuş şablon |

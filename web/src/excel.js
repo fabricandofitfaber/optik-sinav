@@ -427,6 +427,23 @@
     return kitabe(wb);
   };
   /** Puan tablosu: girilen puanlar (sayı olarak), toplam ve "Girmedi" işareti. "Excel'den puan al" ile geri okunur. */
+  /** Soru tanımı (Python: soru_tanimi_yaz): ilk sayfa yalnızca aktarılacak satırlar (başlıksız, metin), ikinci sayfa açıklama. */
+  X.soruTanimi = async function (anahtar, ayar, kodlar) {
+    const wb = yeni();
+    const ws = wb.addWorksheet("Aktarım");
+    OS.soruTanimiSatirlari(anahtar, ayar, kodlar).forEach((satir, i) => satir.forEach((v, j) => { const c = metin(ws, i + 1, j + 1, v); c.numFmt = "@"; }));
+    const a = wb.addWorksheet("Açıklama");
+    metin(a, 1, 1, "Soru tanımı: Akademik Bilgi Sistemi'ne nasıl aktarılır?").font = { bold: true, size: 13 };
+    ["Akademik Bilgi Sistemi'nde Sınav Akreditasyon İşlemleri'nde dersi ve sınavı açın.", "\"Toplu Sınav Soru Tanım\" kutusunda \"Toplu Aktarım Yap\" seçin.",
+      "\"Kolon Ayracı\" \"Excel'den Kopyalandı\" olsun.", "Bu dosyanın ilk sayfasında (Aktarım) bütün hücreleri seçip kopyalayın (Cmd+A, Cmd+C ya da Ctrl+A, Ctrl+C).",
+      "Sistemdeki Aktarım Kutusu'na tıklayıp yapıştırın ve \"Aktar\" düğmesine basın."].forEach((x, i) => metin(a, 3 + i, 1, `${i + 1}. ${x}`));
+    metin(a, 9, 1, "Aktarım sayfasındaki sütunlar").font = { bold: true };
+    [["Soru No", "1'den başlar; bonus soru gönderilmez."], ["Soru Puan", "Soru puanlarının toplamı 100."], ["Soru metni", "\"Soru 1\", \"Soru 2\" … (sistemde değiştirebilirsiniz)."],
+      ["DÇ Sıra", "Dersin öğrenme çıktısının sırası (Ö05 için 5)."], ["Etki Oran", "Sorunun o çıktıya katkı yüzdesi; her sorunun oranları toplamı 100."],
+      ["…", "Soru birden çok çıktıya bağlıysa DÇ Sıra ve Etki Oran çiftleri sağa doğru devam eder."]].forEach(([b, m], i) => { metin(a, 10 + i, 1, b).font = { bold: true }; metin(a, 10 + i, 2, m); });
+    a.getColumn(1).width = 30; a.getColumn(2).width = 80;
+    return kitabe(wb);
+  };
   X.klasikSablon = async function (ogrenciler, n, puanlar, girmedi = [], tam = []) {
     const wb = yeni();
     const ws = wb.addWorksheet("Puanlar");
