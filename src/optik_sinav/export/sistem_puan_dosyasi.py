@@ -207,7 +207,7 @@ def akreditasyon_satirlari(sonuc: SinavSonucu) -> list[list[str]]:
     for satir in sistem_satirlari(bayt)[1:]:
         no = _numara(satir[d.no_sutun])
         if d.durum_sutun is not None and satir[d.durum_sutun] != GIRDI:
-            cikti.append([no, "G"])
+            cikti.append([no, "G"] + [""] * (len(d.soru_sutunlari) - 1))  # sistem satırı Excel aralığı gibi tam sütunla bekliyor
             continue
         cikti.append([no] + [satir[j] for j in d.soru_sutunlari])
     return cikti

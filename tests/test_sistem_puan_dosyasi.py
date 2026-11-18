@@ -87,7 +87,8 @@ def test_aktarim_kutusu_girmeyen_G(fix):
     satirlar = akreditasyon_satirlari(s)
     assert [r[0] for r in satirlar] == list(dict.fromkeys(o.no for o in s.liste.ogrenciler))
     girmeyen = {g.no for g in s.girmeyenler}
-    assert girmeyen and all((r[1:] == ["G"]) == (r[0] in girmeyen) for r in satirlar)
+    assert girmeyen and all((r[1:] == ["G"] + [""] * 9) == (r[0] in girmeyen) for r in satirlar)
+    assert all(len(r) == 11 for r in satirlar)  # G satırı da tam sütun (sistem kısa satırı tanımıyor)
     assert all(len(r) == 11 for r in satirlar if r[0] not in girmeyen)
 
 

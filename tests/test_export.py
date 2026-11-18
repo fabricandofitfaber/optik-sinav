@@ -162,7 +162,7 @@ def test_sisteme_giris_dosyalari_ve_soru_tanimi(sonuc, tmp_path):
     from optik_sinav.export.sistem_puan_dosyasi import akreditasyon_metni
 
     ws = openpyxl.load_workbook(next(d for d in t.dosyalar if d.stem.endswith("_akreditasyon")))["Aktarım"]
-    metin = "\n".join("\t".join(str(c.value) for c in satir if c.value is not None) for satir in ws.iter_rows())
+    metin = "\n".join("\t".join("" if c.value is None else str(c.value) for c in satir[:max(i for i, c in enumerate(satir, 1) if c.value is not None)]) if satir[1].value != "G" else "\t".join("" if c.value is None else str(c.value) for c in satir) for satir in ws.iter_rows())
     assert metin == akreditasyon_metni(sonuc)  # sistemin örneği: numara ve soru puanları, başlıksız
     ilk = metin.splitlines()[0].split("\t")
     assert len(ilk) == 11 and ilk[0].isdigit() and all(x in ("0", "10") for x in ilk[1:])
